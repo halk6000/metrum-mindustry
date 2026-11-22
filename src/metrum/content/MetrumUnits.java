@@ -110,7 +110,10 @@ public class MetrumUnits {
      */
     private static UnitType booster(String name, UnitType from, float rangeTiles, float healthMul, float reload) {
         ErekirUnitType u = new ErekirUnitType(name);
-        u.constructor = UnitEntity::create;
+        // C and above can lift and place hull turrets (2x2 payloads)
+        u.constructor = mindustry.gen.PayloadUnit::create;
+        u.payloadCapacity = (2f * 8f) * (2f * 8f);
+        u.pickupUnits = false;
         // default: escort/assist the army (boosting needs allies nearby). Mining stays available
         // as a manual command; MinerAI would keep dumping the boost material into the core.
         u.defaultCommand = UnitCommand.assistCommand;

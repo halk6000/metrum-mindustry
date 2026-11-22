@@ -13,7 +13,7 @@ import static mindustry.type.ItemStack.with;
 /** Blocks ported from the original Metrum JSON mod. */
 public class MetrumBlocks {
     public static Block oreIron;
-    public static Block quarkCannon, carborundumBore;
+    public static Block quarkCannon, carborundumBore, hullGunTurret, hullMissileTurret;
     public static Block carborundumWall, carborundumWallLarge, tungstenCarbideWall, tungstenCarbideWallLarge;
     public static Block streamDrillT1, streamDrillT1Adv, streamDrillT2, streamDrillT2Adv, rockScraper;
 
@@ -32,6 +32,36 @@ public class MetrumBlocks {
             itemCapacity = 30;
             consumePower(2f);
             consumeItem(MetrumItems.carborundum).boost();
+        }};
+
+        // hull turrets: a hull + weapon module made into a 2x2 turret; C+ drones can lift and re-place them.
+        // Ammo: 1 ammo crate per shot.
+        hullGunTurret = new mindustry.world.blocks.defense.turrets.ItemTurret("hull-gun-turret") {{
+            requirements(Category.turret, with(MetrumItems.hullMedium, 1, MetrumItems.weaponMachineGun, 1, MetrumItems.steel, 20));
+            size = 2;
+            health = 1100;
+            range = 190f;
+            reload = 10f;
+            rotateSpeed = 8f;
+            shootSound = mindustry.gen.Sounds.shoot;
+            ammo(MetrumItems.ammoCrate, new mindustry.entities.bullet.BasicBulletType(5f, 22f) {{
+                lifetime = 38f; width = 7f; height = 10f; ammoMultiplier = 1f;
+            }});
+        }};
+        hullMissileTurret = new mindustry.world.blocks.defense.turrets.ItemTurret("hull-missile-turret") {{
+            requirements(Category.turret, with(MetrumItems.hullMedium, 1, MetrumItems.weaponMissiles, 1, MetrumItems.steel, 20));
+            size = 2;
+            health = 1000;
+            range = 260f;
+            reload = 55f;
+            rotateSpeed = 5f;
+            shoot.shots = 2;
+            shoot.shotDelay = 6f;
+            shootSound = mindustry.gen.Sounds.shootMissile;
+            ammo(MetrumItems.ammoCrate, new mindustry.entities.bullet.MissileBulletType(4.2f, 35f) {{
+                lifetime = 62f; splashDamage = 40f; splashDamageRadius = 28f; homingPower = 0.08f; ammoMultiplier = 1f;
+                backColor = arc.graphics.Color.valueOf("dc3c3c");
+            }});
         }};
 
         // endgame turret fed with collider products

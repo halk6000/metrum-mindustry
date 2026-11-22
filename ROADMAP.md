@@ -13,7 +13,7 @@
 - [x] Drukarka części (silnik, skrzydła, nogi) + Magazyn części (tylko kadłuby i części)
 - [x] Drukarka broni (laser, rakiety, ładunki, zbiornik paliwa, karabin) + Magazyn broni
 - [x] Montownia dronów 4x4: wybór kadłuba, sloty-kwadraty (klik = moduł), 60 s, okno nazwy statku
-- [ ] Wieżyczki z kadłubów: drony C+ przenoszą kadłub i montują jako wieżyczkę; amunicja wg broni albo 1 skrzynka/strzał
+- [x] Wieżyczki z kadłubów (karabin, rakiety; 1 skrzynka/strzał), drony C+ mogą je podnosić (PayloadUnit 2x2): drony C+ przenoszą kadłub i montują jako wieżyczkę; amunicja wg broni albo 1 skrzynka/strzał
 - [x] Szkielet Java (Gradle 8.10 wrapper, Mindustry v146 compileOnly) — `gradlew jar` → build/libs/Metrum.jar
 - [x] Port: itemy (5) + płyn steam
 - [x] Port: wiertła (5), produkcja (6)
