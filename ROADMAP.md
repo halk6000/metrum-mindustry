@@ -24,7 +24,7 @@
 - [x] Zderzacz cz.1: 6 atomowych itemów + Atomizer (2 minerały -> 1 atom)
 - [x] Zderzacz cz.2: Hadron Collider 3x3, 5 receptur (karborund, węglik wolframu, brąz berylowy, żelazowolfram, materia kwarkowa) + drzewko
 - [x] Ściany z karborundu (odbijają pociski) i węglika wolframu (najcięższe), 1x1 i 2x2
-- [ ] Dalsze zastosowania produktów zderzacza (beryl. brąz, materia kwarkowa)
+- [x] Działo kwarkowe 3x3: amunicja brąz berylowy (szybkie, przebijające) i materia kwarkowa (wybuch 650, topienie)
 - [x] Lokalizacja: EN domyślny + PL (assets/bundles)
 - [x] Planeta Ferrox (orbita słońca, teren z generatora Erekiru, rdzeń Bastion, wspólne drzewko z Erekirem)
 - [x] Generator Ferrox: układ Erekiru przemalowany na rdzawy (red stone / rhyolite, kolor globu)

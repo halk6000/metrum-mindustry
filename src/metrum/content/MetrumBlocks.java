@@ -13,12 +13,49 @@ import static mindustry.type.ItemStack.with;
 /** Blocks ported from the original Metrum JSON mod. */
 public class MetrumBlocks {
     public static Block oreIron;
+    public static Block quarkCannon;
     public static Block carborundumWall, carborundumWallLarge, tungstenCarbideWall, tungstenCarbideWallLarge;
     public static Block streamDrillT1, streamDrillT1Adv, streamDrillT2, streamDrillT2Adv, rockScraper;
 
     public static void load() {
         // iron ore: generated on Ferrox, mineable by drills and MonoMet drones
         oreIron = new mindustry.world.blocks.environment.OreBlock("ore-iron", MetrumItems.iron);
+
+        // endgame turret fed with collider products
+        quarkCannon = new mindustry.world.blocks.defense.turrets.ItemTurret("quark-cannon") {{
+            requirements(Category.turret, with(MetrumItems.tungstenCarbide, 150, MetrumItems.ferrotungsten, 120, Items.surgeAlloy, 100, Items.silicon, 200));
+            size = 3;
+            health = 3200;
+            range = 330f;
+            reload = 70f;
+            recoil = 3f;
+            shake = 3f;
+            rotateSpeed = 2.5f;
+            shootY = 10f;
+            outlineColor = mindustry.graphics.Pal.darkOutline;
+            drawer = new mindustry.world.draw.DrawTurret("reinforced-");
+            consumePower(4f);
+            coolant = consumeCoolant(0.3f);
+            shootSound = mindustry.gen.Sounds.shootQuad;
+            ammo(
+                // beryllium bronze: fast, piercing slugs
+                MetrumItems.berylliumBronze, new mindustry.entities.bullet.BasicBulletType(9f, 140f) {{
+                    width = 10f; height = 18f; lifetime = 37f; pierceCap = 3; pierce = true;
+                    frontColor = arc.graphics.Color.valueOf("ffe2a0"); backColor = arc.graphics.Color.valueOf("c8a050");
+                    reloadMultiplier = 1.6f; ammoMultiplier = 2f;
+                    hitEffect = mindustry.content.Fx.hitBulletColor;
+                }},
+                // quark matter: slow orb, huge splash
+                MetrumItems.quarkMatter, new mindustry.entities.bullet.BasicBulletType(5f, 120f) {{
+                    width = height = 16f; lifetime = 66f; sprite = "large-orb";
+                    frontColor = arc.graphics.Color.white; backColor = arc.graphics.Color.valueOf("ff50c8");
+                    splashDamage = 650f; splashDamageRadius = 60f;
+                    status = mindustry.content.StatusEffects.melting; statusDuration = 240f;
+                    hitEffect = mindustry.content.Fx.massiveExplosion; despawnEffect = mindustry.content.Fx.massiveExplosion;
+                    hitShake = 6f; ammoMultiplier = 1f;
+                }}
+            );
+        }};
 
         // collider-product walls: carborundum = light + deflects bullets, tungsten carbide = heaviest armour
         carborundumWall = wall("carborundum-wall", 1, MetrumItems.carborundum, 6, 1400, 0.25f);

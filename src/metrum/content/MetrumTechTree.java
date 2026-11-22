@@ -68,6 +68,7 @@ public class MetrumTechTree {
         node(MetrumPhysics.hadronCollider, tungstenCarbide);
         node(tungstenCarbide, tungstenCarbideWall);
         node(tungstenCarbideWall, tungstenCarbideWallLarge);
+        node(tungstenCarbide, quarkCannon);
         node(MetrumPhysics.hadronCollider, berylliumBronze);
         node(MetrumPhysics.hadronCollider, ferrotungsten);
         node(MetrumPhysics.hadronCollider, quarkMatter);
