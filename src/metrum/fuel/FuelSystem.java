@@ -5,6 +5,7 @@ import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
 import arc.struct.IntFloatMap;
+import arc.struct.IntIntMap;
 import arc.struct.IntSeq;
 import arc.struct.ObjectIntMap;
 import arc.util.Time;
@@ -34,6 +35,9 @@ public class FuelSystem {
     public static boolean affectWaveTeam = false;
 
     public static StatusEffect outOfFuel;
+    /** speed boost by fuel quality: 1 = slag +10%, 2 = magma +30%, 3 = plasma +50% */
+    public static final StatusEffect[] boosts = new StatusEffect[4];
+    private static final IntIntMap quality = new IntIntMap();
 
     /** unit type -> tier (1 = factory output, +1 per reconstructor step) */
     public static final ObjectIntMap<UnitType> tiers = new ObjectIntMap<>();
@@ -47,12 +51,25 @@ public class FuelSystem {
         outOfFuel.speedMultiplier = 0.1f;
         outOfFuel.color = barColor;
         outOfFuel.permanent = false;
+
+        float[] mult = {0f, 1.1f, 1.3f, 1.5f};
+        String[] names = {null, "fuel-slag", "fuel-magma", "fuel-plasma"};
+        String[] colors = {null, "ffaa5f", "ff6a2e", "c896ff"};
+        for (int q = 1; q <= 3; q++) {
+            StatusEffect e = new StatusEffect(names[q]);
+            e.speedMultiplier = mult[q];
+            e.color = Color.valueOf(colors[q]);
+            boosts[q] = e;
+        }
     }
 
     /** Call after all content is loaded. */
     public static void init() {
         computeTiers();
-        Events.on(WorldLoadEvent.class, e -> fuel.clear());
+        Events.on(WorldLoadEvent.class, e -> {
+            fuel.clear();
+            quality.clear();
+        });
         Events.run(Trigger.update, FuelSystem::update);
         Events.run(Trigger.draw, FuelSystem::draw);
     }
@@ -80,11 +97,19 @@ public class FuelSystem {
         return fuel.get(unit.id, capacity(unit.type));
     }
 
-    /** Adds fuel; returns the amount actually accepted. */
-    public static float refuel(Unit unit, float amount) {
+    public static int quality(Unit unit) {
+        return quality.get(unit.id, 0);
+    }
+
+    /** Adds fuel of the given quality (1-3); returns the amount actually accepted. */
+    public static float refuel(Unit unit, float amount, int fuelQuality) {
         float cap = capacity(unit.type), cur = fuel(unit);
         float added = Math.min(amount, cap - cur);
-        if (added > 0f) fuel.put(unit.id, cur + added);
+        if (added > 0f) {
+            fuel.put(unit.id, cur + added);
+            // the tank takes on the quality of the fuel last pumped in
+            quality.put(unit.id, fuelQuality);
+        }
         return Math.max(added, 0f);
     }
 
@@ -119,7 +144,12 @@ public class FuelSystem {
             if (!usesFuel(u)) return;
             float f = Math.max(fuel(u) - burn, 0f);
             fuel.put(u.id, f);
-            if (f <= 0f) u.apply(outOfFuel, 20f);
+            if (f <= 0f) {
+                u.apply(outOfFuel, 20f);
+            } else {
+                int q = quality.get(u.id, 0);
+                if (q > 0) u.apply(boosts[q], 20f);
+            }
         });
         // forget dead units
         dead.clear();
@@ -128,7 +158,10 @@ public class FuelSystem {
             int id = keys.next();
             if (Groups.unit.getByID(id) == null) dead.add(id);
         }
-        for (int i = 0; i < dead.size; i++) fuel.remove(dead.get(i), 0f);
+        for (int i = 0; i < dead.size; i++) {
+            fuel.remove(dead.get(i), 0f);
+            quality.remove(dead.get(i), 0);
+        }
     }
 
     static void draw() {

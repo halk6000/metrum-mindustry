@@ -63,6 +63,9 @@ public class MetrumTechTree {
         // drones
         node(Blocks.tankFabricator, airMinerDock);
         node(airMinerDock, airMinerRebuilder);
+        node(airMinerDock, fuelStation);
+        node(Liquids.slag, MetrumLiquids.magma);
+        node(MetrumLiquids.magma, MetrumLiquids.plasma);
         node(airMinerDock, monoMetT1);
         node(monoMetT1, monoMetT1b);
         node(monoMetT1, monoMetT2);

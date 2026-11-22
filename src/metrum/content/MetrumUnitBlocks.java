@@ -1,6 +1,8 @@
 package metrum.content;
 
 import arc.struct.Seq;
+import metrum.fuel.FuelStation;
+import mindustry.content.Liquids;
 import mindustry.content.Items;
 import mindustry.type.Category;
 import mindustry.type.UnitType;
@@ -13,6 +15,7 @@ import static mindustry.type.ItemStack.with;
 /** Drone factory and reconstructor ported from the original Metrum JSON mod. */
 public class MetrumUnitBlocks {
     public static Block airMinerDock, airMinerRebuilder;
+    public static FuelStation fuelStation;
 
     public static void load() {
         airMinerDock = new UnitFactory("air-miner-dock") {{
@@ -41,5 +44,9 @@ public class MetrumUnitBlocks {
                 new UnitType[]{MetrumUnits.monoMetT2, MetrumUnits.monoMetT2b},
                 new UnitType[]{MetrumUnits.monoMetT3, MetrumUnits.monoMetT3b});
         }};
+    
+        fuelStation = new FuelStation("fuel-station");
+        fuelStation.requirements(Category.units, with(MetrumItems.steel, 60, Items.silicon, 50, Items.graphite, 40, Items.beryllium, 80));
+        fuelStation.fuel(Liquids.slag, 1).fuel(MetrumLiquids.magma, 2).fuel(MetrumLiquids.plasma, 3);
     }
 }
