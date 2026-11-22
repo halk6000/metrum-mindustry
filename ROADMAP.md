@@ -18,7 +18,7 @@
 - [x] Falownik cieplny 2x2 (HeatCrafter: ciepło 6, woda 0.25 → para 0.5, przegrzanie do 300%)
 - [ ] Drony-wzmacniacze (+20% zasięg/obrażenia, koszt 20 mat. najsłabszego, -2 na kolejny tier)
 - [ ] Stacja paliw 2x2, zasięg 8, paliwo żużel/magma/plazma (+10/30/50% prędkości)
-- [ ] Bak paliwa jednostek ≥ tier C (100/200/250), zużycie 1/0.6 s, pomarańczowy pasek, -90% prędkości przy 0
+- [x] Bak paliwa T3/T4/T5 = 100/200/250, 1 na 0.6 s, pomarańczowy pasek, -90% przy 0 (tylko drużyny gracza; paliwo nie zapisuje się w save)
 - [x] Drzewko tech: cała zawartość podpięta pod drzewo Erekiru
 - [x] Zderzacz cz.1: 6 atomowych itemów + Atomizer (2 minerały -> 1 atom)
 - [x] Zderzacz cz.2: Hadron Collider 3x3, 5 receptur (karborund, węglik wolframu, brąz berylowy, żelazowolfram, materia kwarkowa) + drzewko

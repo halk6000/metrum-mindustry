@@ -1,6 +1,7 @@
 package metrum;
 
 import arc.util.Log;
+import metrum.fuel.FuelSystem;
 import metrum.content.MetrumBlocks;
 import metrum.content.MetrumItems;
 import metrum.content.MetrumPower;
@@ -15,6 +16,7 @@ import mindustry.mod.Mod;
 public class MetrumMod extends Mod {
     @Override
     public void loadContent() {
+        FuelSystem.load();
         MetrumItems.load();
         MetrumLiquids.load();
         MetrumBlocks.load();
@@ -25,5 +27,17 @@ public class MetrumMod extends Mod {
         MetrumPhysics.load();
         MetrumTechTree.load();
         Log.info("[Metrum] content loaded");
+    }
+
+    @Override
+    public void init() {
+        // Metrum MonoMets all come from one dock, so set their tiers explicitly.
+        FuelSystem.setTier(MetrumUnits.monoMetT1, 1);
+        FuelSystem.setTier(MetrumUnits.monoMetT2, 2);
+        FuelSystem.setTier(MetrumUnits.monoMetT3, 3);
+        FuelSystem.setTier(MetrumUnits.monoMetT1b, 2);
+        FuelSystem.setTier(MetrumUnits.monoMetT2b, 3);
+        FuelSystem.setTier(MetrumUnits.monoMetT3b, 4);
+        FuelSystem.init();
     }
 }
