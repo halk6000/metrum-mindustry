@@ -56,6 +56,23 @@ public class WarReconstructor extends Reconstructor {
     }
 
     public class WarReconstructorBuild extends ReconstructorBuild {
+        /** one upgrade per visit: like other factories, the upgraded unit is pushed out, not upgraded again */
+        public boolean upgradedHere;
+
+        @Override
+        public boolean hasUpgrade(UnitType type) {
+            return !upgradedHere && super.hasUpgrade(type);
+        }
+
+        @Override
+        public void updateTile() {
+            UnitType before = payload == null ? null : payload.unit.type;
+            super.updateTile();
+            if (payload == null) upgradedHere = false;
+            else if (before != null && payload.unit.type != before) upgradedHere = true;
+        }
+
+
         int level() {
             if (payload == null) return 0;
             UnitType to = upgrade(payload.unit.type);
