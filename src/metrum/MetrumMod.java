@@ -132,6 +132,7 @@ public class MetrumMod extends Mod {
                 }
             }
         }
+        sb.append("balance fuel.tank.t1=").append(Balance.f("fuel.tank.t1", -1f)).append(" war.costGrowth=").append(Balance.f("war.costGrowth", -1f)).append(System.lineSeparator());
         sb.append("content=").append(count).append(" missingSprites=").append(missing).append(" errors=").append(errors).append("\n");
         mindustry.Vars.dataDirectory.child("metrum-load.txt").writeString(sb.toString());
         Log.info("[Metrum] " + sb.toString().trim().replace("\n", " | "));

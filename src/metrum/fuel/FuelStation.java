@@ -21,9 +21,9 @@ import mindustry.world.meta.StatUnit;
 public class FuelStation extends Block {
     /** fuel liquid -> quality (1..3) */
     public ObjectIntMap<Liquid> fuels = new ObjectIntMap<>();
-    public float range = 8f * Vars.tilesize;
+    public float range = metrum.Balance.f("station.range", 8f) * Vars.tilesize;
     /** fuel units pumped per tick into each unit */
-    public float pumpRate = 1f;
+    public float pumpRate = metrum.Balance.f("station.pumpRate", 1f);
     /** liquid used per fuel unit */
     public float liquidPerFuel = 0.05f;
 

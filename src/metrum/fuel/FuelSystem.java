@@ -24,7 +24,7 @@ import mindustry.type.UnitType;
  * Fuel stations refill tanks via {@link #refuel}.
  */
 public class FuelSystem {
-    public static final float ticksPerFuel = 36f; // 0.6 s
+    public static final float ticksPerFuel = metrum.Balance.f("fuel.secondsPerUnit", 0.6f) * 60f;
     public static final Color barColor = Color.valueOf("ff9a2e");
 
     /** Only player teams use fuel by default, so enemy waves are not crippled. */
@@ -38,7 +38,7 @@ public class FuelSystem {
     /** unit type -> tank capacity; only registered types use fuel */
     public static final arc.struct.ObjectFloatMap<UnitType> capacities = new arc.struct.ObjectFloatMap<>();
     /** tank size per base tier (index = T) */
-    public static final float[] tankByTier = {0f, 100f, 200f, 250f};
+    public static final float[] tankByTier = {0f, metrum.Balance.f("fuel.tank.t1", 100f), metrum.Balance.f("fuel.tank.t2", 200f), metrum.Balance.f("fuel.tank.t3", 250f)};
     /** unit id -> current fuel */
     private static final IntFloatMap fuel = new IntFloatMap();
     private static final IntSeq dead = new IntSeq();
@@ -46,11 +46,11 @@ public class FuelSystem {
 
     public static void load() {
         outOfFuel = new StatusEffect("out-of-fuel");
-        outOfFuel.speedMultiplier = 0.1f;
+        outOfFuel.speedMultiplier = metrum.Balance.f("fuel.emptySpeed", 0.1f);
         outOfFuel.color = barColor;
         outOfFuel.permanent = false;
 
-        float[] mult = {0f, 1.1f, 1.3f, 1.5f};
+        float[] mult = {0f, metrum.Balance.f("fuel.boost.slag", 1.1f), metrum.Balance.f("fuel.boost.magma", 1.3f), metrum.Balance.f("fuel.boost.plasma", 1.5f)};
         String[] names = {null, "fuel-slag", "fuel-magma", "fuel-plasma"};
         String[] colors = {null, "ffaa5f", "ff6a2e", "c896ff"};
         for (int q = 1; q <= 3; q++) {

@@ -71,7 +71,7 @@ public class MetrumProduction {
         ammoFactory = new GenericCrafter("ammo-factory") {{
             requirements(Category.crafting, with(MetrumItems.steel, 80, MetrumItems.iron, 100, Items.silicon, 60, Items.beryllium, 120));
             size = 3;
-            craftTime = 90f;
+            craftTime = metrum.Balance.f("ammo.craftSeconds", 1.5f) * 60f;
             itemCapacity = 30;
             liquidCapacity = 60f;
             consumePower(1.2f);

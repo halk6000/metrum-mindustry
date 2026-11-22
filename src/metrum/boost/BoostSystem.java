@@ -21,7 +21,7 @@ import metrum.content.MetrumItems;
  * Cost per boost: 20 of the weakest material, 2 less for each more advanced one (min 2).
  */
 public class BoostSystem {
-    public static final float rangeMultiplier = 1.2f;
+    public static final float rangeMultiplier = metrum.Balance.f("boost.range", 1.2f);
     public static StatusEffect boosted;
 
     /** weakest -> most advanced */
@@ -31,7 +31,7 @@ public class BoostSystem {
 
     public static void load() {
         boosted = new StatusEffect("boosted");
-        boosted.damageMultiplier = 1.2f;
+        boosted.damageMultiplier = metrum.Balance.f("boost.damage", 1.2f);
         boosted.color = Color.valueOf("7fe3ff");
     }
 
@@ -40,7 +40,7 @@ public class BoostSystem {
             Items.tungsten, Items.oxide, Items.thorium, Items.carbide, MetrumItems.berylliumBronze,
             MetrumItems.ferrotungsten, Items.surgeAlloy, MetrumItems.tungstenCarbide, Items.phaseFabric,
             MetrumItems.carborundum, MetrumItems.quarkMatter);
-        for (int i = 0; i < ladder.size; i++) costs.put(ladder.get(i), Math.max(20 - 2 * i, 2));
+        for (int i = 0; i < ladder.size; i++) costs.put(ladder.get(i), Math.max(metrum.Balance.i("boost.baseCost", 20) - metrum.Balance.i("boost.costStep", 2) * i, metrum.Balance.i("boost.minCost", 2)));
 
         Events.on(WorldLoadEvent.class, e -> stretched.clear());
         Events.run(Trigger.update, BoostSystem::update);

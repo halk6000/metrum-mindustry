@@ -53,12 +53,12 @@ public class MetrumUnitBlocks {
         warReconstructor.size = 3;
         warReconstructor.health = 1500;
         warReconstructor.regionSuffix = "-dark";
-        warReconstructor.constructTime = 1200f;
+        warReconstructor.constructTime = metrum.Balance.f("war.constructSeconds", 20f) * 60f;
         warReconstructor.consumePower(3f);
-        warReconstructor.baseItems = with(MetrumItems.ammoCrate, 1, MetrumItems.steel, 2);
+        warReconstructor.baseItems = with(MetrumItems.ammoCrate, metrum.Balance.i("war.crates", 1), MetrumItems.steel, metrum.Balance.i("war.steel", 2));
         warReconstructor.liquid = MetrumLiquids.steam;
-        warReconstructor.baseLiquidPerSecond = 0.09f;
-        warReconstructor.costGrowth = 1.5f;
+        warReconstructor.baseLiquidPerSecond = metrum.Balance.f("war.steamPerSecond", 0.09f);
+        warReconstructor.costGrowth = metrum.Balance.f("war.costGrowth", 1.5f);
         warReconstructor
             .upgrade(MetrumUnits.monoMetT1b, MetrumUnits.monoMetT1c, 1)
             .upgrade(MetrumUnits.monoMetT2b, MetrumUnits.monoMetT2c, 1)

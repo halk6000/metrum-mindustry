@@ -5,6 +5,8 @@
 ## Wykonane
 - [x] Rozpakowanie oryginału, repo git, roadmapa
 
+- [x] Edytor balansu (suwaki z limitami) + eksport do jar: `Edytor balansu.bat`
+
 ## Pozostałe
 - [x] Szkielet Java (Gradle 8.10 wrapper, Mindustry v146 compileOnly) — `gradlew jar` → build/libs/Metrum.jar
 - [x] Port: itemy (5) + płyn steam
