@@ -44,7 +44,7 @@
 - [ ] Test kampanii Ferrox (TEST.md)
 
 ## Repo
-- GitHub (prywatne): https://github.com/halk6000/metrum-mindustry
+- GitHub (publiczne): https://github.com/halk6000/metrum-mindustry
 
 ## Blokady / uwagi
 - Oryginalny mod.json ma błędy składni (brak przecinków) — działa tylko dzięki tolerancyjnemu HJSON.

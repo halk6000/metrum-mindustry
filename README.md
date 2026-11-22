@@ -14,7 +14,9 @@ Compiles against the installed game (`.../Steam/steamapps/common/Mindustry/jre/d
 `Edytor balansu.bat` / `tools/balance_editor.py`: sliders (min/max limits) for `assets/balance.properties`; "Eksportuj do gry" builds the jar with the values baked in and installs it.
 `tools/sprites.py` regenerates the procedural sprites ("Erekir dark" style).
 
-Install: `gradlew deploy` (writes `saves/mods/Metrum.zip`). Keep only one Metrum file in `saves/mods` — two copies with the same mod name conflict and the old one may load.
+Download: [Releases](https://github.com/halk6000/metrum-mindustry/releases) → put `Metrum-x.y.z.jar` into Mindustry `saves/mods`.
+
+Install from source: `gradlew deploy` (writes `saves/mods/Metrum.zip`). Keep only one Metrum file in `saves/mods` — two copies with the same mod name conflict and the old one may load.
 
 ## Content
 
