@@ -33,10 +33,35 @@ public class MetrumMod extends Mod {
         MetrumTechTree.load();
         MetrumPlanets.load();
         Log.info("[Metrum] content loaded");
+        mark("content loaded");
     }
 
     @Override
     public void init() {
+        mark("init start");
+        try {
+            initInner();
+            mark("init ok");
+        } catch (Throwable t) {
+            java.io.StringWriter sw = new java.io.StringWriter();
+            t.printStackTrace(new java.io.PrintWriter(sw));
+            mark("init FAILED
+" + sw);
+            Log.err("[Metrum] init failed", t);
+        }
+    }
+
+    /** Appends a line to saves/metrum-trace.txt (plain java.io, works even if Vars is half-ready). */
+    static void mark(String what) {
+        try {
+            arc.files.Fi f = mindustry.Vars.dataDirectory == null ? arc.Core.files.local("metrum-trace.txt") : mindustry.Vars.dataDirectory.child("metrum-trace.txt");
+            f.writeString(new java.util.Date() + " " + what + "
+", true);
+        } catch (Throwable ignored) {
+        }
+    }
+
+    void initInner() {
         // Metrum tiers: T1-T3, upgrades B / C / D. Fuel tanks start at C.
         // level: 0 = base, 1 = B, 2 = C, 3 = D
         FuelSystem.register(MetrumUnits.monoMetT1, 1, 0);
