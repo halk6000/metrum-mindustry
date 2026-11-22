@@ -16,19 +16,43 @@ public class WelcomeDialog {
         if (Vars.headless) return;
         Mods.LoadedMod mod = Vars.mods.getMod(MetrumMod.class);
         String version = mod == null ? "?" : mod.meta.version;
-        if (version.equals(Core.settings.getString(key, ""))) return;
+        boolean forced = Vars.dataDirectory.child("metrum-showwelcome").exists(); // testing aid
+        if (!forced && version.equals(Core.settings.getString(key, ""))) return;
 
         BaseDialog d = new BaseDialog(Core.bundle.format("metrum.welcome.title", version));
+        float w = Math.min(Core.graphics.getWidth() / arc.scene.ui.layout.Scl.scl(1f) - 80f, 640f);
         d.cont.pane(p -> {
-            p.add(Core.bundle.get("metrum.welcome.thanks")).wrap().width(560f).left().padBottom(12f).row();
-            p.add("[accent]" + Core.bundle.get("metrum.welcome.changes")).left().row();
-            p.add(Core.bundle.get("metrum.changelog")).wrap().width(560f).left().padBottom(12f).row();
-            p.add(Core.bundle.get("metrum.welcome.support")).wrap().width(560f).left().row();
-        }).maxHeight(Core.graphics.getHeight() * 0.7f);
-        d.buttons.defaults().size(210f, 54f).pad(4f);
-        d.buttons.button("GitHub: halk6000", () -> Core.app.openURI("https://github.com/halk6000"));
-        d.buttons.button("akinoxmusic.pl", () -> Core.app.openURI("https://akinoxmusic.pl"));
-        d.buttons.button("@ok", () -> {
+            p.defaults().width(w).left();
+            // header
+            p.table(mindustry.gen.Tex.button, h -> {
+                h.image(mindustry.gen.Icon.box).size(40f).color(mindustry.graphics.Pal.accent).padRight(12f);
+                h.add(Core.bundle.get("metrum.welcome.thanks")).wrap().growX().fontScale(1.15f);
+            }).pad(4f).padBottom(14f).row();
+            // changes: one row per line, with a coloured bullet and alternating background
+            p.add("[accent]" + Core.bundle.get("metrum.welcome.changes")).padBottom(6f).row();
+            p.image().color(mindustry.graphics.Pal.accent).height(3f).growX().padBottom(8f).row();
+            arc.scene.style.Drawable stripe = ((arc.scene.style.TextureRegionDrawable) mindustry.gen.Tex.whiteui)
+                .tint(new arc.graphics.Color(1f, 1f, 1f, 0.06f));
+            String[] lines = Core.bundle.get("metrum.changelog").split("\n");
+            for (int i = 0; i < lines.length; i++) {
+                String line = lines[i].trim();
+                if (line.startsWith("-")) line = line.substring(1).trim();
+                if (line.isEmpty()) continue;
+                String text = line;
+                int idx = i;
+                p.table(idx % 2 == 0 ? stripe : null, r -> {
+                    r.add("[accent]>").padRight(10f).top();
+                    r.add(text).wrap().growX().left();
+                }).pad(2f).row();
+            }
+            // support
+            p.image().color(mindustry.graphics.Pal.darkerGray).height(2f).growX().padTop(14f).padBottom(8f).row();
+            p.add("[lightgray]" + Core.bundle.get("metrum.welcome.support")).wrap().row();
+        }).maxHeight(Core.graphics.getHeight() * 0.72f / arc.scene.ui.layout.Scl.scl(1f));
+        d.buttons.defaults().size(250f, 54f).pad(4f);
+        d.buttons.button("GitHub: halk6000", mindustry.gen.Icon.github, () -> Core.app.openURI("https://github.com/halk6000"));
+        d.buttons.button("akinoxmusic.pl", mindustry.gen.Icon.link, () -> Core.app.openURI("https://akinoxmusic.pl"));
+        d.buttons.button("@ok", mindustry.gen.Icon.ok, () -> {
             Core.settings.put(key, version);
             d.hide();
         });
