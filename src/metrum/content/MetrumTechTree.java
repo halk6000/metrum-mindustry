@@ -64,8 +64,10 @@ public class MetrumTechTree {
         node(Blocks.tankFabricator, airMinerDock);
         node(airMinerDock, airMinerRebuilder);
         node(airMinerDock, fuelStation);
-        node(Liquids.slag, MetrumLiquids.magma);
-        node(MetrumLiquids.magma, MetrumLiquids.plasma);
+        node(fuelStation, magmaForge);
+        node(magmaForge, MetrumLiquids.magma);
+        node(magmaForge, plasmaIonizer);
+        node(plasmaIonizer, MetrumLiquids.plasma);
         node(airMinerDock, monoMetT1);
         node(monoMetT1, monoMetT1b);
         node(monoMetT1, monoMetT2);

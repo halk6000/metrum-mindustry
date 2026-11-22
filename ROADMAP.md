@@ -18,7 +18,7 @@
 - [x] Falownik cieplny 2x2 (HeatCrafter: ciepło 6, woda 0.25 → para 0.5, przegrzanie do 300%)
 - [ ] Drony-wzmacniacze (+20% zasięg/obrażenia, koszt 20 mat. najsłabszego, -2 na kolejny tier)
 - [x] Stacja paliw 2x2, zasięg 8, żużel/magma/plazma (+10/30/50%)
-- [ ] Produkcja magmy i plazmy (na razie brak źródła)
+- [x] Kuźnia magmy (ciepło + odłamki) i jonizator plazmy (magma + atomowy węgiel + prąd)
 - [x] Bak paliwa T3/T4/T5 = 100/200/250, 1 na 0.6 s, pomarańczowy pasek, -90% przy 0 (tylko drużyny gracza; paliwo nie zapisuje się w save)
 - [x] Drzewko tech: cała zawartość podpięta pod drzewo Erekiru
 - [x] Zderzacz cz.1: 6 atomowych itemów + Atomizer (2 minerały -> 1 atom)

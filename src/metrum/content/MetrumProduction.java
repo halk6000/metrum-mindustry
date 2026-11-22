@@ -18,7 +18,7 @@ import static mindustry.type.ItemStack.with;
 /** Crafting blocks ported from the original Metrum JSON mod. */
 public class MetrumProduction {
     public static Block graphiteDecompressor, graphiteDecompressorOverclocked,
-        steamFurnace, largeSteamFurnace, heatInverter, stoneCrusher, infusionSmelter, salvager;
+        steamFurnace, largeSteamFurnace, heatInverter, magmaForge, plasmaIonizer, stoneCrusher, infusionSmelter, salvager;
 
     private static final Color flame = Color.valueOf("fdb380");
 
@@ -65,6 +65,33 @@ public class MetrumProduction {
             outputLiquid = new LiquidStack(MetrumLiquids.steam, 0.5f);
             updateEffect = Fx.steam;
             updateEffectChance = 0.04f;
+        }};
+
+        // fuel liquids for the fuel station
+        magmaForge = new HeatCrafter("magma-forge") {{
+            requirements(Category.crafting, with(MetrumItems.steel, 40, Items.tungsten, 30, Items.graphite, 40));
+            size = 2;
+            craftTime = 40f;
+            itemCapacity = 20;
+            liquidCapacity = 120f;
+            heatRequirement = 10f;
+            maxEfficiency = 2f;
+            consumeItem(MetrumItems.pieceRock, 2);
+            outputLiquid = new LiquidStack(MetrumLiquids.magma, 0.25f);
+            updateEffect = Fx.melting;
+            updateEffectChance = 0.05f;
+        }};
+
+        plasmaIonizer = new GenericCrafter("plasma-ionizer") {{
+            requirements(Category.crafting, with(MetrumItems.steel, 100, Items.silicon, 120, Items.surgeAlloy, 40, MetrumItems.ferrotungsten, 30));
+            size = 3;
+            craftTime = 60f;
+            liquidCapacity = 200f;
+            consumePower(6f);
+            consumeLiquid(MetrumLiquids.magma, 0.2f);
+            consumeItem(MetrumItems.atomicCarbon, 1);
+            outputLiquid = new LiquidStack(MetrumLiquids.plasma, 0.2f);
+            updateEffect = Fx.smeltsmoke;
         }};
 
         stoneCrusher = new GenericCrafter("stone-crusher") {{
