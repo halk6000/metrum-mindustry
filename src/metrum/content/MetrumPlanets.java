@@ -18,7 +18,7 @@ public class MetrumPlanets {
     public static void load() {
         ferrox = new Planet("ferrox", Planets.sun, 1f, 2) {{
             // TODO: own generator (iron-rich terrain); Erekir terrain for now
-            generator = new ErekirPlanetGenerator();
+            generator = new metrum.world.gen.FerroxPlanetGenerator();
             meshLoader = () -> new HexMesh(this, 5);
             cloudMeshLoader = () -> new MultiMesh(
                 new HexSkyMesh(this, 3, 0.12f, 0.13f, 5, Color.valueOf("c89a7a").a(0.7f), 2, 0.42f, 1f, 0.43f),
