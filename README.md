@@ -13,7 +13,7 @@ Compiles against the installed game (`.../Steam/steamapps/common/Mindustry/jre/d
 `tools/check.py` runs before every build and fails it if any content lacks a sprite or an EN/PL name.
 `tools/sprites.py` regenerates the procedural sprites ("Erekir dark" style).
 
-Install: copy `Metrum.jar` to `saves/mods/` of the game.
+Install: `gradlew deploy` (writes `saves/mods/Metrum.zip`). Keep only one Metrum file in `saves/mods` — two copies with the same mod name conflict and the old one may load.
 
 ## Content
 

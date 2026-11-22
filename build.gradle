@@ -27,3 +27,11 @@ tasks.register('contentCheck', Exec) {
     commandLine 'python', 'tools/check.py'
 }
 jar.dependsOn contentCheck
+
+// gradlew deploy: build and install into the game (same file name the in-game importer uses)
+tasks.register('deploy', Copy) {
+    dependsOn jar
+    from jar.archiveFile
+    into 'C:/Program Files (x86)/Steam/steamapps/common/Mindustry/saves/mods'
+    rename { 'Metrum.zip' }
+}
