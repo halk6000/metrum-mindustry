@@ -37,6 +37,9 @@
 - [x] Fabryka amunicji 3x3 (2 Fe + 1 stal + 3 Be + woda -> 2 skrzynki, para uboczna); Rekonstruktor Wojenny B->C (1 skrzynka + 2 stal + para 0.09/s), wersja D też wymaga skrzynki+stali+pary
 - [ ] Test kampanii Ferrox
 
+## Repo
+- GitHub (prywatne): https://github.com/halk6000/metrum-mindustry
+
 ## Blokady / uwagi
 - Oryginalny mod.json ma błędy składni (brak przecinków) — działa tylko dzięki tolerancyjnemu HJSON.
 - "dll": Mindustry to Java — mod będzie .jar (DLL nie dotyczy tej gry).
