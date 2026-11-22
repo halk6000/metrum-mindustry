@@ -137,6 +137,10 @@ public class MetrumUnits {
         podRing.strokeTo = 0f;
         podRing.colorFrom = podRing.colorTo = Color.valueOf("e3a76a");
         pb.hitEffect = new MultiEffect(Fx.blastExplosion, podRing);
+        // own art: red-nosed rocket; back sprite = exhaust glow tinted by backColor
+        pb.sprite = "metrum-rocket";
+        pb.frontColor = Color.white;
+        pb.width = 7f; pb.height = 16f;
         pods.bullet = pb;
 
         // side torpedoes: slow, homing, 300 dmg, range 800, once per 30 s
@@ -153,7 +157,10 @@ public class MetrumUnits {
         torpRing.strokeTo = 0f;
         torpRing.colorFrom = torpRing.colorTo = Color.valueOf("e6be28");
         tb.hitEffect = new MultiEffect(Fx.massiveExplosion, torpRing);
-        tb.homingPower = 0.05f; tb.width = 9f; tb.height = 16f; tb.trailLength = 12; tb.trailColor = Color.valueOf("e6be28");
+        tb.sprite = "metrum-torpedo";
+        tb.frontColor = Color.white;
+        tb.width = 10f; tb.height = 26f;
+        tb.homingPower = 0.05f; tb.trailLength = 12; tb.trailColor = Color.valueOf("e6be28");
         torpedo.bullet = tb;
 
         u.weapons.addAll(laser, pods, torpedo);
