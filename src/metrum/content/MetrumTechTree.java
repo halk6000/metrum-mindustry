@@ -17,6 +17,17 @@ import static metrum.content.MetrumUnits.*;
 public class MetrumTechTree {
 
     public static void load() {
+        // research cost tuning: endgame tech is pricier than its build cost suggests
+        MetrumPhysics.hadronCollider.researchCostMultiplier = 2f;
+        MetrumPhysics.atomizer.researchCostMultiplier = 1.5f;
+        plasmaIonizer.researchCostMultiplier = 1.5f;
+        warReconstructor.researchCostMultiplier = 1.5f;
+        warReconstructorD.researchCostMultiplier = 2.5f;
+        fuelStation.researchCostMultiplier = 1.2f;
+        // early steam tech stays cheap so the campaign opens quickly
+        steamFurnace.researchCostMultiplier = 0.6f;
+        rockScraper.researchCostMultiplier = 0.6f;
+
         // items & liquids
         node(Items.sand, pieceRock);
         node(pieceRock, iron);
