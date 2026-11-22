@@ -35,7 +35,8 @@
 - [x] BaseExpander: tylko wieżyczki na amunicję (breach/diffuse/titan/disperse/scathe/smite), co 5 s dosypuje amunicję z rdzenia
 - [x] tools/check.py (sprite + EN/PL dla każdej zawartości) wpięty w gradlew jar
 - [x] Wróg na Ferrox: od fali 15 wystawia prawdziwe wzmacniacze (T2C, od fali 30 T3C), max 1 + (fala-15)/10, lecą za armią (do zestrzelenia)
-- [x] Fabryka amunicji 3x3 (2 Fe + 1 stal + 3 Be + woda -> 2 skrzynki, para uboczna); Rekonstruktor Wojenny B->C (1 skrzynka + 2 stal + para 0.09/s), wersja D też wymaga skrzynki+stali+pary
+- [x] Fabryka amunicji 3x3 (2 Fe + 1 stal + 3 Be + woda -> 2 skrzynki, para uboczna)
+- [x] Rekonstruktor Wojenny = ostateczny (B->C i C->D), koszt bazowy 1 skrzynka + 2 stal + 0.09 pary/s, rośnie x1.5 na poziom (C->D: 2 skrzynki, 3 stal, 0.135 pary/s)
 - [x] Mod potwierdzony w grze 160.8: 63 elementy, 0 błędów, 0 brakujących sprite, init OK (auto-test 22.11 11:42)
 - [x] Ikony statusów (paliwo, wzmocnienie)
 - [ ] Test kampanii Ferrox (TEST.md)

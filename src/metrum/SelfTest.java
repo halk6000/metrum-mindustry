@@ -27,7 +27,7 @@ public class SelfTest {
             Team team = Team.sharded;
             check(sb, team, MetrumUnitBlocks.airMinerRebuilder, MetrumUnits.monoMetT1, 5);
             check(sb, team, MetrumUnitBlocks.warReconstructor, MetrumUnits.monoMetT1b, 15);
-            check(sb, team, MetrumUnitBlocks.warReconstructorD, MetrumUnits.monoMetT1c, 27);
+            check(sb, team, MetrumUnitBlocks.warReconstructor, MetrumUnits.monoMetT1c, 27);
         } catch (Throwable t) {
             sb.append(" ERROR ").append(t);
         } finally {

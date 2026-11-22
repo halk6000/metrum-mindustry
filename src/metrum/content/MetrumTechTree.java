@@ -22,7 +22,7 @@ public class MetrumTechTree {
         MetrumPhysics.atomizer.researchCostMultiplier = 1.5f;
         plasmaIonizer.researchCostMultiplier = 1.5f;
         warReconstructor.researchCostMultiplier = 1.5f;
-        warReconstructorD.researchCostMultiplier = 2.5f;
+        warReconstructor.researchCostMultiplier = 2f;
         fuelStation.researchCostMultiplier = 1.2f;
         // early steam tech stays cheap so the campaign opens quickly
         steamFurnace.researchCostMultiplier = 0.6f;
@@ -97,7 +97,6 @@ public class MetrumTechTree {
         node(monoMetT1b, monoMetT1c);
         node(monoMetT2b, monoMetT2c);
         node(monoMetT3b, monoMetT3c);
-        node(warReconstructor, warReconstructorD);
         node(monoMetT1c, monoMetT1d);
         node(monoMetT2c, monoMetT2d);
         node(monoMetT3c, monoMetT3d);

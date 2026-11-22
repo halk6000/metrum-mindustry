@@ -2,6 +2,7 @@ package metrum.content;
 
 import arc.struct.Seq;
 import metrum.fuel.FuelStation;
+import metrum.world.WarReconstructor;
 import mindustry.content.Liquids;
 import mindustry.content.Items;
 import mindustry.type.Category;
@@ -14,7 +15,8 @@ import static mindustry.type.ItemStack.with;
 
 /** Drone factory and reconstructor ported from the original Metrum JSON mod. */
 public class MetrumUnitBlocks {
-    public static Block airMinerDock, airMinerRebuilder, warReconstructor, warReconstructorD;
+    public static Block airMinerDock, airMinerRebuilder;
+    public static WarReconstructor warReconstructor;
     public static FuelStation fuelStation;
 
     public static void load() {
@@ -45,38 +47,26 @@ public class MetrumUnitBlocks {
                 new UnitType[]{MetrumUnits.monoMetT3, MetrumUnits.monoMetT3b});
         }};
     
-        // B -> C: War Reconstructor (booster variants)
-        warReconstructor = new Reconstructor("war-reconstructor") {{
-            requirements(Category.units, with(MetrumItems.steel, 120, Items.silicon, 100, Items.tungsten, 80, MetrumItems.berylliumBronze, 40));
-            size = 3;
-            health = 1500;
-            regionSuffix = "-dark";
-            constructTime = 1200f;
-            consumePower(3f);
-            // C+ cost: 1 ammo crate + 2 steel, steam 0.09/s
-            consumeItems(with(MetrumItems.ammoCrate, 1, MetrumItems.steel, 2));
-            consumeLiquid(MetrumLiquids.steam, 0.09f / 60f);
-            upgrades.addAll(
-                new UnitType[]{MetrumUnits.monoMetT1b, MetrumUnits.monoMetT1c},
-                new UnitType[]{MetrumUnits.monoMetT2b, MetrumUnits.monoMetT2c},
-                new UnitType[]{MetrumUnits.monoMetT3b, MetrumUnits.monoMetT3c});
-        }};
-
-        // C -> D: advanced boosters
-        warReconstructorD = new Reconstructor("war-reconstructor-d") {{
-            requirements(Category.units, with(MetrumItems.steel, 200, Items.silicon, 200, MetrumItems.tungstenCarbide, 80, MetrumItems.ferrotungsten, 60));
-            size = 5;
-            health = 2600;
-            regionSuffix = "-dark";
-            constructTime = 1800f;
-            consumePower(6f);
-            consumeItems(with(MetrumItems.ammoCrate, 1, MetrumItems.steel, 2, MetrumItems.tungstenCarbide, 6, MetrumItems.ferrotungsten, 4));
-            consumeLiquids(mindustry.type.LiquidStack.with(MetrumLiquids.steam, 0.09f / 60f, MetrumLiquids.plasma, 0.1f));
-            upgrades.addAll(
-                new UnitType[]{MetrumUnits.monoMetT1c, MetrumUnits.monoMetT1d},
-                new UnitType[]{MetrumUnits.monoMetT2c, MetrumUnits.monoMetT2d},
-                new UnitType[]{MetrumUnits.monoMetT3c, MetrumUnits.monoMetT3d});
-        }};
+        // The final reconstructor: B -> C and C -> D, cost x1.5 per level
+        warReconstructor = new WarReconstructor("war-reconstructor");
+        warReconstructor.requirements(Category.units, with(MetrumItems.steel, 120, Items.silicon, 100, Items.tungsten, 80, MetrumItems.berylliumBronze, 40));
+        warReconstructor.size = 3;
+        warReconstructor.health = 1500;
+        warReconstructor.regionSuffix = "-dark";
+        warReconstructor.constructTime = 1200f;
+        warReconstructor.consumePower(3f);
+        warReconstructor.baseItems = with(MetrumItems.ammoCrate, 1, MetrumItems.steel, 2);
+        warReconstructor.liquid = MetrumLiquids.steam;
+        warReconstructor.baseLiquidPerSecond = 0.09f;
+        warReconstructor.costGrowth = 1.5f;
+        warReconstructor
+            .upgrade(MetrumUnits.monoMetT1b, MetrumUnits.monoMetT1c, 1)
+            .upgrade(MetrumUnits.monoMetT2b, MetrumUnits.monoMetT2c, 1)
+            .upgrade(MetrumUnits.monoMetT3b, MetrumUnits.monoMetT3c, 1)
+            .upgrade(MetrumUnits.monoMetT1c, MetrumUnits.monoMetT1d, 2)
+            .upgrade(MetrumUnits.monoMetT2c, MetrumUnits.monoMetT2d, 2)
+            .upgrade(MetrumUnits.monoMetT3c, MetrumUnits.monoMetT3d, 2);
+        warReconstructor.setupConsumers();
 
         fuelStation = new FuelStation("fuel-station");
         fuelStation.requirements(Category.units, with(MetrumItems.steel, 60, Items.silicon, 50, Items.graphite, 40, Items.beryllium, 80));
