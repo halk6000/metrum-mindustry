@@ -60,9 +60,10 @@ public class MetrumMod extends Mod {
     }
 
     void initInner() {
-        // Reconstructors only accept units whose *upgrade* is researched (unlockedNowHost).
+        // Factories/reconstructors only take units that are researched (unlockedNow / unlockedNowHost).
         // The reconstructor block itself is the research gate, so upgraded variants are always unlocked.
         for (mindustry.type.UnitType t : new mindustry.type.UnitType[]{
+            MetrumUnits.monoMetT1, MetrumUnits.monoMetT2, MetrumUnits.monoMetT3,
             MetrumUnits.monoMetT1b, MetrumUnits.monoMetT2b, MetrumUnits.monoMetT3b,
             MetrumUnits.monoMetT1c, MetrumUnits.monoMetT2c, MetrumUnits.monoMetT3c,
             MetrumUnits.monoMetT1d, MetrumUnits.monoMetT2d, MetrumUnits.monoMetT3d}) {
