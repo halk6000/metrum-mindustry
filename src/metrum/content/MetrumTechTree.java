@@ -92,6 +92,7 @@ public class MetrumTechTree {
         node(partPrinter, partsMagazine);
         node(partPrinter, weaponPrinter);
         node(weaponPrinter, weaponsMagazine);
+        node(weaponPrinter, metrum.modular.MetrumModular.assembler);
         node(weaponPrinter, weaponMiningLaser);
         node(weaponPrinter, weaponMissiles);
         node(weaponPrinter, weaponExplosives);

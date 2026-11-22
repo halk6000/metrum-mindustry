@@ -15,11 +15,21 @@ import metrum.modular.ModularUnitType.ModuleWeapon;
 /** Modular drone hulls. Every hull carries all module weapons; only mounted ones are active. */
 public class MetrumModular {
     public static ModularUnitType droneLight, droneMedium, droneHeavy;
+    public static DroneAssembler assembler;
 
     public static void load() {
         droneLight = hull("modular-light", MetrumItems.hullLight, 2, 8f, 3.4f, 260f, 0f);
         droneMedium = hull("modular-medium", MetrumItems.hullMedium, 3, 12f, 2.6f, 620f, 3f);
         droneHeavy = hull("modular-heavy", MetrumItems.hullHeavy, 4, 18f, 1.8f, 1400f, 7f);
+
+        assembler = new DroneAssembler("drone-assembler");
+        assembler.requirements(mindustry.type.Category.units, mindustry.type.ItemStack.with(MetrumItems.steel, 150, Items.silicon, 150, Items.tungsten, 60, MetrumItems.berylliumBronze, 30));
+        assembler.size = 4;
+        assembler.consumePower(3f);
+        assembler.buildTime = metrum.Balance.f("assembler.buildSeconds", 60f) * 60f;
+        assembler.hulls.addAll(droneLight, droneMedium, droneHeavy);
+        assembler.modules.addAll(MetrumItems.weaponMiningLaser, MetrumItems.weaponMachineGun, MetrumItems.weaponMissiles,
+            MetrumItems.weaponExplosives, MetrumItems.weaponFuelTank, MetrumItems.partEngine, MetrumItems.partWings, MetrumItems.partLegs);
     }
 
     static ModularUnitType hull(String name, mindustry.type.Item hullItem, int slots, float size, float speed, float health, float armor) {
