@@ -1,15 +1,15 @@
 package metrum;
 
 import arc.util.Log;
+import metrum.content.MetrumItems;
+import metrum.content.MetrumLiquids;
 import mindustry.mod.Mod;
 
 public class MetrumMod extends Mod {
-    public MetrumMod() {
-        Log.info("[Metrum] loaded constructor");
-    }
-
     @Override
     public void loadContent() {
-        Log.info("[Metrum] loading content");
+        MetrumItems.load();
+        MetrumLiquids.load();
+        Log.info("[Metrum] content loaded");
     }
 }
