@@ -120,7 +120,25 @@ def upgraded_unit(src, dst, accent, pods):
     d.point((cx, cy), fill=(255, 255, 255, 255))
     canvas.save(UNITS / dst)
 
+CARB = (60, 150, 150)
+
+def carborundum_bore(base):
+    im, d, S = frame(3, CARB)
+    d.rectangle([14, 14, S - 15, S - 15], fill=DARK + (255,), outline=RING + (255,), width=3)
+    for i in range(3):
+        x = 22 + i * 18
+        d.polygon([(x, 30), (x + 8, 22), (x + 16, 30), (x + 8, 38)], fill=CARB + (255,), outline=EDGE + (255,))
+    im.save(base + ".png")
+    top = Image.new("RGBA", (S, S), (0, 0, 0, 0)); t = ImageDraw.Draw(top)
+    t.rectangle([S // 2 - 8, 4, S // 2 + 8, 22], fill=RING + (255,), outline=EDGE + (255,), width=2)
+    t.ellipse([S // 2 - 14, S // 2 - 14, S // 2 + 14, S // 2 + 14], fill=BODY + (255,), outline=CARB + (255,), width=3)
+    top.save(base + "-top.png")
+    glow = Image.new("RGBA", (S, S), (0, 0, 0, 0)); g = ImageDraw.Draw(glow)
+    g.ellipse([S // 2 - 8, S // 2 - 8, S // 2 + 8, S // 2 + 8], fill=(140, 255, 240, 200))
+    glow.save(base + "-glow.png")
+
 if __name__ == "__main__":
+    carborundum_bore(str(OUT / "drills/carborundum-bore"))
     for t in (1, 2, 3):
         upgraded_unit(f"monomet-t{t}b.png", f"monomet-t{t}c.png", PHYS, 1)
         upgraded_unit(f"monomet-t{t}c.png", f"monomet-t{t}d.png", (200, 120, 255), 2)
