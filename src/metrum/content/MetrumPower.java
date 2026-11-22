@@ -17,6 +17,7 @@ import static mindustry.type.ItemStack.with;
 public class MetrumPower {
     public static Block turbineAdvanced;
     public static metrum.world.FusionReactor fusionReactor;
+    public static metrum.world.DecayReactor decayReactor;
 
     public static void load() {
         turbineAdvanced = new SteamTurbine("turbine-advanced") {{
@@ -53,6 +54,18 @@ public class MetrumPower {
         fusionReactor.transmute.put(MetrumItems.atomicSilicon, MetrumItems.atomicIron);
         fusionReactor.transmute.put(MetrumItems.atomicIron, MetrumItems.atomicTungsten);
         fusionReactor.transmute.put(MetrumItems.atomicTungsten, MetrumItems.atomicThorium);
+
+        // safe sibling: steady power, no meltdown, random resources from each decay
+        decayReactor = new metrum.world.DecayReactor("decay-reactor");
+        decayReactor.requirements(Category.power, with(MetrumItems.tungstenCarbide, 150, MetrumItems.ferrotungsten, 100, Items.silicon, 250, MetrumItems.steel, 250));
+        decayReactor.size = 4;
+        decayReactor.health = 2500;
+        decayReactor.powerProduction = metrum.Balance.f("reactor.decay.powerPerSecond", 3000f) / 60f;
+        decayReactor.fuel = MetrumItems.quarkMatter;
+        decayReactor.decayTime = metrum.Balance.f("reactor.decay.seconds", 10f) * 60f;
+        decayReactor.product(Items.thorium, 4).product(Items.tungsten, 4).product(Items.beryllium, 5).product(Items.graphite, 5)
+            .product(Items.oxide, 2).product(Items.carbide, 1).product(Items.surgeAlloy, 1).product(Items.phaseFabric, 1)
+            .product(MetrumItems.atomicThorium, 1);
     }
 
     /** Thermal generator that runs at 75% output when no steam is supplied. */
