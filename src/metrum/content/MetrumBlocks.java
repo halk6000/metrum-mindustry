@@ -12,9 +12,13 @@ import static mindustry.type.ItemStack.with;
 
 /** Blocks ported from the original Metrum JSON mod. */
 public class MetrumBlocks {
+    public static Block oreIron;
     public static Block streamDrillT1, streamDrillT1Adv, streamDrillT2, streamDrillT2Adv, rockScraper;
 
     public static void load() {
+        // iron ore: generated on Ferrox, mineable by drills and MonoMet drones
+        oreIron = new mindustry.world.blocks.environment.OreBlock("ore-iron", MetrumItems.iron);
+
         streamDrillT1 = streamDrill("stream-drill-t1", 3, 150f, 0.09f, 0.001f, 1.25f,
             with(Items.graphite, 45, Items.silicon, 30, Items.beryllium, 65));
         streamDrillT1Adv = streamDrill("stream-drill-t1-adv", 4, 100f, 0.12f, 0.001f, 1.15f,

@@ -43,6 +43,19 @@ public class FerroxPlanetGenerator extends ErekirPlanetGenerator {
             if (w != null) tile.setBlock(w);
         }
         addVents();
+        addIronOre();
+    }
+
+    /** iron ore veins on Ferrox's red ground */
+    void addIronOre() {
+        Block ore = metrum.content.MetrumBlocks.oreIron;
+        int seed = Vars.state.rules.sector == null ? 3 : Vars.state.rules.sector.id;
+        for (Tile tile : Vars.world.tiles) {
+            if (tile.block() != Blocks.air || tile.overlay() != Blocks.air || tile.floor().isLiquid) continue;
+            if (tile.floor() != Blocks.redStone && tile.floor() != Blocks.rhyolite) continue;
+            float n = arc.util.noise.Simplex.noise2d(seed, 3, 0.5f, 1f / 18f, tile.x, tile.y);
+            if (n > 0.7f) tile.setOverlay(ore);
+        }
     }
 
     /** sprinkle extra rhyolite steam vents on open ground (Ferrox is volcanically active) */
