@@ -11,7 +11,8 @@
 - [x] Port: wiertła (5), produkcja (6)
 - [x] Port: turbina zaawansowana
 - [x] Port: jednostki MonoMet T1–T3 + warianty b
-- [ ] Port: doki (airminerdock, rebuilder)
+- [x] Port: doki (Air Miner Dock, Rebuilder) — cały oryginał przeniesiony
+- [ ] Test w grze (wczytanie jar, brak błędów sprite/crash)
 - [ ] Falownik cieplny (heat in → woda → para)
 - [ ] Drony-wzmacniacze (+20% zasięg/obrażenia, koszt 20 mat. najsłabszego, -2 na kolejny tier)
 - [ ] Stacja paliw 2x2, zasięg 8, paliwo żużel/magma/plazma (+10/30/50% prędkości)
