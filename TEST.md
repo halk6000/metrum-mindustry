@@ -22,4 +22,12 @@ Najszybciej w **Edytorze / Sandbox (Erekir)** z nieskończonymi zasobami.
 | 13 | Mapa planet → Ferrox | Rdzawa planeta, da się wylądować, teren czerwony z kominami i rudą żelaza | |
 | 14 | Zapisz grę z T1C o niepełnym baku, wczytaj | Bak ma tyle samo co przed zapisem | |
 
+## Ustawienie linii dronów
+```
+[Dok 3x3] -> [Air Miner Rebuilder 3x3] -> [Rekonstruktor Wojenny 3x3] -> [Zaawansowany Rek. Wojenny 5x5]
+   T1-T3          -> B (Fe 8, para)          -> C (skrzynka + 2 stal, para)    -> D (+ węglik W, żelazowolfram, plazma)
+```
+- Bloki muszą się **stykać**, a strzałka (obrót) każdego wskazuje na **następny** blok.
+- Każdy rekonstruktor potrzebuje prądu i swoich surowców — bez nich dron wejdzie, ale nie wyjdzie.
+
 Problemy: zrzut ekranu + `saves/last_log.txt` po zamknięciu gry.
