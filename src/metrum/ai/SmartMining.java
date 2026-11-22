@@ -99,10 +99,30 @@ public class SmartMining {
         Item desired() {
             int m = mode(unit);
             if (m >= 0) return Vars.content.item(m);
-            if (m == leastStored) return null; // vanilla MinerAI already picks the scarcest ore
-            // nearest: re-evaluated every 2 s
-            if ((retarget -= arc.util.Time.delta) > 0f) return targetItem;
+            // re-evaluated every 2 s
+            if ((retarget -= arc.util.Time.delta) > 0f && targetItem != null) return targetItem;
             retarget = 120f;
+            return m == leastStored ? leastStoredOre() : nearestOre();
+        }
+
+        /** mineable ore with a reachable deposit that the core has the least of; ties -> alphabetical */
+        Item leastStoredOre() {
+            mindustry.gen.Building core = unit.closestCore();
+            Item best = null;
+            int bestAmount = Integer.MAX_VALUE;
+            for (Item it : unit.type.mineItems) {
+                if (!unit.canMine(it) || Vars.indexer.findClosestOre(unit, it) == null) continue;
+                int amount = core == null ? 0 : core.items.get(it);
+                if (best == null || amount < bestAmount
+                    || (amount == bestAmount && it.localizedName.compareToIgnoreCase(best.localizedName) < 0)) {
+                    best = it;
+                    bestAmount = amount;
+                }
+            }
+            return best;
+        }
+
+        Item nearestOre() {
             Item best = null;
             float bestDst = Float.MAX_VALUE;
             for (Item it : unit.type.mineItems) {
