@@ -42,5 +42,36 @@ public class FerroxPlanetGenerator extends ErekirPlanetGenerator {
             Block w = walls.get(tile.block());
             if (w != null) tile.setBlock(w);
         }
+        addVents();
+    }
+
+    /** sprinkle extra rhyolite steam vents on open ground (Ferrox is volcanically active) */
+    void addVents() {
+        arc.math.Rand r = new arc.math.Rand(Vars.state.rules.sector == null ? 1 : Vars.state.rules.sector.id * 7919L);
+        int w = Vars.world.width(), h = Vars.world.height();
+        int target = Math.max(2, w * h / 3000), placed = 0;
+        for (int attempt = 0; attempt < target * 40 && placed < target; attempt++) {
+            int x = r.random(4, w - 5), y = r.random(4, h - 5);
+            if (!ventFits(x, y)) continue;
+            for (arc.math.geom.Point2 p : mindustry.world.blocks.environment.SteamVent.offsets) {
+                Vars.world.tile(x + p.x, y + p.y).setFloor(Blocks.rhyoliteVent.asFloor());
+            }
+            placed++;
+        }
+    }
+
+    boolean ventFits(int x, int y) {
+        for (arc.math.geom.Point2 p : mindustry.world.blocks.environment.SteamVent.offsets) {
+            Tile t = Vars.world.tile(x + p.x, y + p.y);
+            if (t == null || t.block() != Blocks.air || t.floor().isLiquid || t.floor() instanceof mindustry.world.blocks.environment.SteamVent || t.overlay() == Blocks.spawn) return false;
+        }
+        // keep clear of cores and enemy spawns
+        Tile c = Vars.world.tile(x, y);
+        for (mindustry.game.Team team : mindustry.game.Team.baseTeams) {
+            for (mindustry.world.blocks.storage.CoreBlock.CoreBuild core : team.cores()) {
+                if (core.tile.dst(c) < 12f * Vars.tilesize) return false;
+            }
+        }
+        return true;
     }
 }
