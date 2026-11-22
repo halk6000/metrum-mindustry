@@ -32,6 +32,7 @@ public class MetrumMod extends Mod {
         metrum.modular.MetrumModular.load();
         MetrumUnitBlocks.load();
         MetrumPhysics.load();
+        MetrumPower.loadReactors();
         MetrumTechTree.load();
         MetrumPlanets.load();
         Log.info("[Metrum] content loaded");
@@ -145,6 +146,12 @@ public class MetrumMod extends Mod {
             }
         }
         sb.append("balance fuel.tank.t1=").append(Balance.f("fuel.tank.t1", -1f)).append(" war.costGrowth=").append(Balance.f("war.costGrowth", -1f)).append(System.lineSeparator());
+        sb.append("hardness:");
+        for (mindustry.type.Item it : mindustry.Vars.content.items()) if (it.hardness > 0) sb.append(' ').append(it.name).append('=').append(it.hardness);
+        sb.append(System.lineSeparator());
+        sb.append("drill tiers:");
+        for (mindustry.world.Block b : mindustry.Vars.content.blocks()) if (b instanceof mindustry.world.blocks.production.BeamDrill) sb.append(' ').append(b.name).append('=').append(((mindustry.world.blocks.production.BeamDrill) b).tier);
+        sb.append(System.lineSeparator());
         sb.append("content=").append(count).append(" missingSprites=").append(missing).append(" errors=").append(errors).append("\n");
         mindustry.Vars.dataDirectory.child("metrum-load.txt").writeString(sb.toString());
         Log.info("[Metrum] " + sb.toString().trim().replace("\n", " | "));
