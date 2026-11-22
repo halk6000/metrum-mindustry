@@ -15,7 +15,7 @@
 - [x] Kompilacja pod grę 160.8 (desktop.jar ze Steam), dźwięki zaktualizowane
 - [x] Turbina: bez pary 75% mocy; duży piec parowy 3x3
 - [ ] Test w grze (wczytanie jar, brak błędów sprite/crash)
-- [ ] Falownik cieplny (heat in → woda → para)
+- [x] Falownik cieplny 2x2 (HeatCrafter: ciepło 6, woda 0.25 → para 0.5, przegrzanie do 300%)
 - [ ] Drony-wzmacniacze (+20% zasięg/obrażenia, koszt 20 mat. najsłabszego, -2 na kolejny tier)
 - [ ] Stacja paliw 2x2, zasięg 8, paliwo żużel/magma/plazma (+10/30/50% prędkości)
 - [ ] Bak paliwa jednostek ≥ tier C (100/200/250), zużycie 1/0.6 s, pomarańczowy pasek, -90% prędkości przy 0

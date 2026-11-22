@@ -9,6 +9,7 @@ import mindustry.type.ItemStack;
 import mindustry.type.LiquidStack;
 import mindustry.world.Block;
 import mindustry.world.blocks.production.GenericCrafter;
+import mindustry.world.blocks.production.HeatCrafter;
 import mindustry.world.blocks.production.Separator;
 import mindustry.world.draw.*;
 
@@ -17,7 +18,7 @@ import static mindustry.type.ItemStack.with;
 /** Crafting blocks ported from the original Metrum JSON mod. */
 public class MetrumProduction {
     public static Block graphiteDecompressor, graphiteDecompressorOverclocked,
-        steamFurnace, largeSteamFurnace, stoneCrusher, infusionSmelter, salvager;
+        steamFurnace, largeSteamFurnace, heatInverter, stoneCrusher, infusionSmelter, salvager;
 
     private static final Color flame = Color.valueOf("fdb380");
 
@@ -50,6 +51,20 @@ public class MetrumProduction {
             consumeItem(Items.coal);
             consumeLiquid(Liquids.water, 0.5f);
             outputLiquid = new LiquidStack(MetrumLiquids.steam, 2f);
+        }};
+
+        // Heat inverter: accepts heat (Erekir heaters) on one side, boils water into steam.
+        heatInverter = new HeatCrafter("heat-inverter") {{
+            requirements(Category.crafting, with(MetrumItems.iron, 40, Items.graphite, 30, Items.silicon, 30, Items.beryllium, 40));
+            size = 2;
+            craftTime = 60f;
+            liquidCapacity = 120f;
+            heatRequirement = 6f;
+            maxEfficiency = 3f;
+            consumeLiquid(Liquids.water, 0.25f);
+            outputLiquid = new LiquidStack(MetrumLiquids.steam, 0.5f);
+            updateEffect = Fx.steam;
+            updateEffectChance = 0.04f;
         }};
 
         stoneCrusher = new GenericCrafter("stone-crusher") {{
