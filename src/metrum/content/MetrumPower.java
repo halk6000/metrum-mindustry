@@ -18,7 +18,7 @@ public class MetrumPower {
     public static Block turbineAdvanced;
 
     public static void load() {
-        turbineAdvanced = new ThermalGenerator("turbine-advanced") {{
+        turbineAdvanced = new SteamTurbine("turbine-advanced") {{
             requirements(Category.power, with(Items.tungsten, 40, Items.silicon, 160));
             attribute = Attribute.steam;
             group = BlockGroup.liquids;
@@ -30,10 +30,26 @@ public class MetrumPower {
             squareSprite = false;
             generateEffect = Fx.turbinegenerate;
             effectChance = 0.04f;
-            consumeLiquid(MetrumLiquids.steam, 0.4f);
+            consumeLiquid(MetrumLiquids.steam, 0.4f).boost();
             outputLiquid = new LiquidStack(Liquids.water, 0.05f);
             drawer = new DrawMulti(new DrawDefault(),
                 new DrawBlurSpin("-rotator", 2.7f) {{ blurThresh = 0.01f; }});
         }};
+    }
+
+    /** Thermal generator that runs at 75% output when no steam is supplied. */
+    public static class SteamTurbine extends ThermalGenerator {
+        public float noSteamMultiplier = 0.75f;
+
+        public SteamTurbine(String name) {
+            super(name);
+        }
+
+        public class SteamTurbineBuild extends ThermalGeneratorBuild {
+            @Override
+            public float getPowerProduction() {
+                return super.getPowerProduction() * (optionalEfficiency > 0f ? 1f : noSteamMultiplier);
+            }
+        }
     }
 }

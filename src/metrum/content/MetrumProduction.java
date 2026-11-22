@@ -17,7 +17,7 @@ import static mindustry.type.ItemStack.with;
 /** Crafting blocks ported from the original Metrum JSON mod. */
 public class MetrumProduction {
     public static Block graphiteDecompressor, graphiteDecompressorOverclocked,
-        steamFurnace, stoneCrusher, infusionSmelter, salvager;
+        steamFurnace, largeSteamFurnace, stoneCrusher, infusionSmelter, salvager;
 
     private static final Color flame = Color.valueOf("fdb380");
 
@@ -37,6 +37,19 @@ public class MetrumProduction {
             consumeItem(Items.coal);
             consumeLiquid(Liquids.water, 0.2f);
             outputLiquid = new LiquidStack(MetrumLiquids.steam, 0.6f);
+        }};
+
+        largeSteamFurnace = new GenericCrafter("large-steam-furnace") {{
+            requirements(Category.crafting, with(MetrumItems.pieceRock, 120, MetrumItems.iron, 60, Items.graphite, 60, Items.silicon, 50));
+            size = 3;
+            craftTime = 30f;
+            itemCapacity = 30;
+            liquidCapacity = 300f;
+            updateEffect = Fx.smeltsmoke;
+            consumePower(0.5f);
+            consumeItem(Items.coal);
+            consumeLiquid(Liquids.water, 0.5f);
+            outputLiquid = new LiquidStack(MetrumLiquids.steam, 2f);
         }};
 
         stoneCrusher = new GenericCrafter("stone-crusher") {{

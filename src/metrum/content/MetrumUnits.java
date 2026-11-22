@@ -51,7 +51,7 @@ public class MetrumUnits {
         shotgun.reload = 36f; shotgun.inaccuracy = 35f; shotgun.recoil = 2.5f;
         shotgun.shoot = shots(3, 0.5f);
         shotgun.ejectEffect = Fx.none;
-        shotgun.shootSound = Sounds.spark;
+        shotgun.shootSound = Sounds.shootArc;
         shotgun.bullet = heal;
         monoMetT1b.weapons.add(shotgun);
 
@@ -143,7 +143,7 @@ public class MetrumUnits {
         Weapon w = new Weapon(P + "c1-mass-weapon");
         w.top = top; w.x = -4.2f; w.y = 2.7f; w.reload = reload;
         w.mirror = true; w.alternate = true;
-        w.shootSound = Sounds.sap;
+        w.shootSound = Sounds.shootSap;
         w.bullet = bullet;
         return w;
     }

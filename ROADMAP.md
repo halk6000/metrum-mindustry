@@ -12,6 +12,8 @@
 - [x] Port: turbina zaawansowana
 - [x] Port: jednostki MonoMet T1–T3 + warianty b
 - [x] Port: doki (Air Miner Dock, Rebuilder) — cały oryginał przeniesiony
+- [x] Kompilacja pod grę 160.8 (desktop.jar ze Steam), dźwięki zaktualizowane
+- [x] Turbina: bez pary 75% mocy; duży piec parowy 3x3
 - [ ] Test w grze (wczytanie jar, brak błędów sprite/crash)
 - [ ] Falownik cieplny (heat in → woda → para)
 - [ ] Drony-wzmacniacze (+20% zasięg/obrażenia, koszt 20 mat. najsłabszego, -2 na kolejny tier)
@@ -26,3 +28,5 @@
 - "dll": Mindustry to Java — mod będzie .jar (DLL nie dotyczy tej gry).
 - Jar jest desktopowy (bez dexa na Androida) — do dodania później.
 - Oryginał miał temperature 10.5 / heatCapacity 40 (skala gry 0–1) — znormalizowane do 0.9/0.4. Hardness 25 → 4 (25 blokowało wydobycie).
+- Test w grze: last_log.txt nie odświeża się przy automatycznym uruchomieniu (Steam Cloud?) — potrzebny ręczny test użytkownika.
+- Stary Metrum.zip przeniesiony z saves/mods do Metrum-backup-from-game.zip (konflikt nazw z jar).
