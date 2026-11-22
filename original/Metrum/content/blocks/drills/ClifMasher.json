@@ -1,0 +1,24 @@
+{
+  "name": "Rock Scraper",
+  "description": "Advanced Crasher just be eco"
+  "type": "WallCrafter",
+  "hasPower": true,
+  "hasLiquids": true,
+  "liquidCapacity": 40,
+  "consumes": {
+    "power": 0.6,
+  },
+  "output": "PieceRock",
+  "attribute": "sand",
+  "buildTime": 60, 
+  "size": 2,
+  "tier": 4,
+  "drillTime": 40,
+  "requirements": [
+    "silicon/100",
+    "beryllium/200",
+	"graphite/200",
+  ],
+  "category": "production",
+  "research": "cliff-crusher"
+}

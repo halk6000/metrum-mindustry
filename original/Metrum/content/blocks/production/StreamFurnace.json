@@ -1,0 +1,27 @@
+{
+	"type": "GenericCrafter",
+	"name": "Stream Furnace",
+	"description": "use hot wather with coal.",
+	"hasPower": true,
+	"hasLiquids": true,
+	"hasItems": true,
+	"liquidCapacity": 100,
+	"itemCapacity": 20,
+	"outputLiquid": {"liquid": "stream", "amount": 0.60},
+	"size": 2,
+	"craftTime": 40,
+	"updateEffect": "smeltsmoke",
+	"consumes": {
+		"item": "coal",
+		"liquid": {
+		"liquid": "water", "amount": 0.20,
+		}
+	},
+	"requirements": [
+		{ "item": "PieceRock", "amount": 40 },
+		{ "item": "graphite", "amount": 20 },
+		{ "item": "silicon", "amount": 20 }
+	],
+	"category": "crafting",
+	"research": "ClifMasher",
+}

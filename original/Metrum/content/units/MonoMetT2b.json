@@ -1,0 +1,86 @@
+{	
+	"name": "MonoMetT2B",
+	"description": "Reconstruct Version Mono T2 he have more health and more repairs agility",
+	"template": "ErekirUnitType",
+	"controller": "MinerAI",
+    "defaultCommand": "mine",
+	"mineWalls":  true,
+    "mineFloor":  true,
+	"research": "MonoMetT2",
+	"researchCostMultiplier": 0,
+	"hitSize": 12,
+	"flying":  true,
+	"drag":  0.06,
+	"accel":  0.30,
+	"speed":  7.2,
+	"health":  600,
+	"engineSize":  2.2,
+	"engineOffset":  5.7,
+	"itemCapacity": 150,
+	"minerange":  150,
+	"range":  175,
+	"mineTier":  4,
+	"mineSpeed":  12.2,
+	"mineItems": [
+    "beryllium",
+    "thorium"
+    ]
+	"weapons": [
+    {
+      "name": "c1-mass-weapon",
+      "top": true,
+      "y": 2.7,
+      "x": -4.2,
+      "reload": 12,
+      "inaccuracy": 0,
+      "mirror": true,
+      "alternate": true,
+      "shootSound": "sap",
+      "bullet": {
+        "type": "shrapnelBulletType",
+        "lifetime": 15,
+        "damage": 5,
+        "pierceCap": 3,
+        "serrations": 1,
+        "fromColor": "91aaed",
+        "toColor": "5e7ccb",
+        "length": 120,
+        "width": 5,
+        "hitEffect": "blastExplosion",
+        "shootEffect": "blastExplosion",
+        "pierce": true,
+        "healAmount": 10,
+        "healColor": "91aaed",
+        "range": 90
+		}
+	}
+	{
+      "name": "c1-mass-weapon",
+      "top": false,
+      "y": 2.7,
+      "x": -4.2,
+      "reload": 3,
+      "inaccuracy": 0,
+      "mirror": true,
+      "alternate": true,
+      "shootSound": "sap",
+      "bullet": {
+        "type": "shrapnelBulletType",
+        "lifetime": 6,
+        "damage": 5,
+        "pierceCap": 5,
+        "serrations": 1,
+        "fromColor": "79DEE0",
+        "toColor": "80E184",
+        "length": 40,
+        "width": 12,
+        "hitEffect": "blastExplosion",
+        "shootEffect": "blastExplosion",
+        "pierce": true,
+        "healAmount": 15,
+        "healColor": "80E184",
+        "range": 90
+		}
+	}
+  ]
+}

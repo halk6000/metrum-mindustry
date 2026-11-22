@@ -1,0 +1,35 @@
+{
+	"type": "Reconstructor",
+	"regionSuffix": "-dark",
+	"configurable": true,
+	"size": 3,
+	"health":  1200,
+	"constructTime": 800,
+	"consumes": {
+		"power": 2.0,
+		"items": [
+			{ "item": "Iron", "amount": 8, }
+		],
+		"liquid": {
+		"liquid": "stream", "amount": 0.10,
+		}
+	},
+	"upgrades": [
+		[ 
+		"MonoMetT3", "MonoMetT3b" 
+		],
+		[ 
+		"MonoMetT2", "MonoMetT2b" 
+		],
+		[ 
+		"MonoMetT1", "MonoMetT1b" 
+		],
+	]
+	"requirements": [
+		{ "item": "beryllium", "amount": 60 },
+		{ "item": "Iron", "amount": 20 },
+		{ "item": "silicon", "amount": 20 }
+	],
+	"category": "units",
+	"research": "tank-fabricator",
+}

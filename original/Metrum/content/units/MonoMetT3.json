@@ -1,0 +1,82 @@
+{	
+	"name": "MonoMetT3",
+	"description": "Upgraded version mono Large impostor",
+	"template": "ErekirUnitType",
+	"controller": "MinerAI",
+    "defaultCommand": "mine",
+	"mineWalls":  true,
+    "mineFloor":  true,
+	"mineItems": [
+    "thorium"
+    ]
+	"research": "MonoMetT2",
+	"researchCostMultiplier": 0,
+	"hitSize": 30,
+	"flying":  true,
+	"drag":  0.06,
+	"accel":  0.40,
+	"speed":  3.2,
+	"health":  900,
+	"engineSize":  8.2,
+	"engineOffset":  5.7,
+	"itemCapacity": 300,
+	"range":  190,
+	"buildSpeed": 1.6,
+	"mineTier":  4,
+	"mineSpeed":  25.0,
+	"weapons": [
+    {
+      "name": "c1-mass-weapon",
+      "top": true,
+      "y": 2.7,
+      "x": -4.2,
+      "reload": 12,
+      "inaccuracy": 0,
+      "mirror": true,
+      "alternate": true,
+      "shootSound": "sap",
+      "bullet": {
+        "type": "shrapnelBulletType",
+        "lifetime": 15,
+        "damage": 5,
+        "pierceCap": 3,
+        "serrations": 1,
+        "fromColor": "91aaed",
+        "toColor": "5e7ccb",
+        "length": 120,
+        "width": 5,
+        "hitEffect": "blastExplosion",
+        "shootEffect": "blastExplosion",
+        "pierce": true,
+        "healAmount": 10,
+        "healColor": "91aaed",
+        "range": 90
+		}
+	}
+	{
+		"name": "Missle-put",
+		"x": 5,
+		"y": -3.5,
+		"reload": 60,
+		"shake": 1,
+		"shoot": {
+			"shots": 4,
+		}
+		"inaccuracy": 5,
+		"alternate": true,
+		"bullet": {
+			"type": "MissileBulletType",
+			"lifetime": 50,
+			"speed": 6,
+			"splashDamageRadius": 25,
+			"splashDamage": 10,
+			"frontColor": "ffff00",
+			"backColor": "00ffff",
+			"homingPower": 100,
+			"homingRange": 60,
+			"damage": 30,
+			"range": 100
+			}
+		},
+  ]
+}

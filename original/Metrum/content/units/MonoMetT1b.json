@@ -1,0 +1,67 @@
+{	
+	"name": "MonoMetT1B",
+	"description": "Reconstructed MonoMet T1- Use Zaap he have more Efective to Reconstruction",
+	"template": "ErekirUnitType",
+	"controller": "MinerAI",
+    "defaultCommand": "mine",
+	"mineWalls":  true,
+    "mineFloor":  true,
+	"hitSize": 8,
+	"flying":  true,
+	"drag":  0.06,
+	"accel":  0.32,
+	"speed":  7.8,
+	"health":  140,
+	"engineSize":  1.8,
+	"engineOffset":  5.7,
+	"itemCapacity": 120,
+	"range":  120,
+	"buildSpeed": 2.1,
+	"mineTier":  4,
+	"mineSpeed":  6.2,
+	"mineItems": [
+    "beryllium",
+    ]
+	"research": "MonoMetT1",
+	"researchCostMultiplier": 0,
+	"weapons": [
+    {
+      "name": "heal-shotgun-weapon",
+      "top": false,
+      "x": 5,
+      "shake": 2.2,
+      "y": 0.5,
+      "shootY": 2.5,
+      "reload": 36,
+      "inaccuracy": 35,
+      "shoot": {
+        "shots": 3,
+        "shotDelay": 0.5
+      },
+      "ejectEffect": "none",
+      "recoil": 2.5,
+      "shootSound": "spark",
+      "bullet": {
+		"type": "lightningBulletType",
+        "lightningColor": "2FEB79",
+        "hitColor": "2FEB79",
+        "damage": 25,
+        "lightningLength": 16,
+        "lightningLengthRand": 16,
+        "shootEffect": "shootHeal",
+		"healAmount": 40,
+        "healPercent": 2,
+        "lightningType": {
+          "lifetime": 16,
+          "hitEffect": "hitLancer",
+          "despawnEffect": "none",
+          "status": "shocked",
+          "statusDuration": 10,
+          "hittable": false,
+          "healPercent": 1.6,
+          "collidesTeam": true
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+	"name": "Steel",
+	"description": "Iron with infuse little Coal",
+	"type": "item",
+	"color": "#504848"
+	"radioactivity": 0
+	"explosiveness": 0
+	"flammability": 0
+	"charge": 0.6
+	"hardness": 10
+	"research": {
+	"parent":"Iron"
+			"requirements": [
+			{ "item": "graphite", "amount": 1000 }
+			{ "item": "silicon", "amount": 1000 }
+			{ "item": "Iron", "amount": 1000 }
+		],
+	}
+}

@@ -1,0 +1,28 @@
+{"type": "BeamDrill"
+	"name": "Stream Bore Advance Electrycity"
+	"description": "More Faster, Energy cost up boost weak a little, can drill more hardes material"
+	"optionalBoostIntensity": 1.15
+	"tier": 4
+	"drillTime": 100  
+	"size": 2
+	"range": 6
+	"hasPower": true
+	"updateEffect": "pulverizeRed"
+	"updateEffectChance": 0.03
+	"drillEffect": "mineHuge"
+	"rotateSpeed": 6
+	"warmupSpeed": 0.01
+	"itemCapacity": 20
+	"consumes": {
+		"power": 0.12
+		"liquid":	{ "liquid":  "stream", "amount": 0.001, "optional": true, "booster": true, "heatColor": "#d8d8dd", "boostHeatColor": "#dae2f2", }
+	}
+	"category": "production"
+	"research": "StreamDrillT1"
+	"requirements": [
+	  "graphite/45"
+	  "silicon/30"
+	  "beryllium/60"
+	  "Iron/60"
+	]
+}

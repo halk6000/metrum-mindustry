@@ -1,0 +1,20 @@
+{
+	"name": "Weapon Part",
+	"description": "A Packed part of weapons for now is usless",
+	"type": "item",
+	"color": "#534b2d"
+	"radioactivity": 0
+	"explosiveness": 0
+	"flammability": 0
+	"charge": 0.6
+	"hardness": 3
+	"research": {
+	"parent":"Iron"
+			"requirements": [
+			{ "item": "graphite", "amount": 1000 }
+			{ "item": "silicon", "amount": 1000 }
+			{ "item": "PieceRock", "amount": 1000 }
+			{ "item": "Iron", "amount": 1000 }
+		],
+	}
+}

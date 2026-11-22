@@ -1,0 +1,27 @@
+{	
+	"name": "MonoMetT1",
+	"description": "Upgraded version mono",
+	"template": "ErekirUnitType",
+	"controller": "MinerAI",
+    "defaultCommand": "mine",
+	"mineWalls":  true,
+    "mineFloor":  true,
+	"hitSize": 8,
+	"flying":  true,
+	"drag":  0.06,
+	"accel":  0.12,
+	"speed":  3.8,
+	"health":  120,
+	"engineSize":  1.8,
+	"engineOffset":  5.7,
+	"itemCapacity": 90,
+	"buildSpeed": 0.5,
+	"range":  60,
+	"mineTier":  3,
+	"mineSpeed":  6.2,
+	"mineItems": [
+    "beryllium",
+    ]
+	"research": "airminerdock",
+	"researchCostMultiplier": 0,
+}

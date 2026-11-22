@@ -1,0 +1,57 @@
+{	
+	"name": "MonoMetT2",
+	"description": "Upgraded version mono secundary",
+	"template": "ErekirUnitType",
+	"controller": "MinerAI",
+    "defaultCommand": "mine",
+	"mineWalls":  true,
+    "mineFloor":  true,
+	"research": "MonoMetT1",
+	"researchCostMultiplier": 0,
+	"hitSize": 12,
+	"flying":  true,
+	"drag":  0.06,
+	"accel":  0.30,
+	"speed":  4.2,
+	"health":  250,
+	"engineSize":  2.2,
+	"engineOffset":  5.7,
+	"itemCapacity": 250,
+	"range":  150,
+	"mineTier":  4,
+	"mineSpeed":  12.2,
+	"mineItems": [
+    "beryllium",
+    "thorium"
+    ]
+	"weapons": [
+    {
+      "name": "c1-mass-weapon",
+      "top": true,
+      "y": 2.7,
+      "x": -4.2,
+      "reload": 12,
+      "inaccuracy": 0,
+      "mirror": true,
+      "alternate": true,
+      "shootSound": "sap",
+      "bullet": {
+        "type": "shrapnelBulletType",
+        "lifetime": 15,
+        "damage": 15,
+        "pierceCap": 3,
+        "serrations": 1,
+        "fromColor": "91aaed",
+        "toColor": "5e7ccb",
+        "length": 120,
+        "width": 5,
+        "hitEffect": "blastExplosion",
+        "shootEffect": "blastExplosion",
+        "pierce": true,
+        "healAmount": 10,
+        "healColor": "91aaed",
+        "range": 90
+		}
+	}
+  ]
+}

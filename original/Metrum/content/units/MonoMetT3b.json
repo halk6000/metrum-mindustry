@@ -1,0 +1,130 @@
+{	
+	"name": "MonoMetT3B",
+	"description": "Reconstruction mono Large impostor he have more powefull range weapons but more slowly so can be easy to kill",
+	"template": "ErekirUnitType",
+	"controller": "MinerAI",
+    "defaultCommand": "mine",
+	"mineWalls":  true,
+    "mineFloor":  true,
+	"mineItems": [
+    "thorium"
+	"beryllium"
+	"graphite"
+    ]
+	"research": "MonoMetT3",
+	"researchCostMultiplier": 0,
+	"hitSize": 40,
+	"flying":  true,
+	"drag":  0.06,
+	"accel":  0.40,
+	"speed":  2.2,
+	"health":  1200,
+	"engineSize":  8.2,
+	"engineOffset":  5.7,
+	"itemCapacity": 500,
+	"range":  220,
+	"buildSpeed": 1.2,
+	"mineTier":  4,
+	"mineSpeed":  30.0,
+	"weapons": [
+    {
+      "name": "c1-mass-weapon",
+      "top": true,
+      "y": 2.7,
+      "x": -4.2,
+      "reload": 12,
+      "inaccuracy": 0,
+      "mirror": true,
+      "alternate": true,
+      "shootSound": "sap",
+      "bullet": {
+        "type": "shrapnelBulletType",
+        "lifetime": 15,
+        "damage": 5,
+        "pierceCap": 3,
+        "serrations": 1,
+        "fromColor": "91aaed",
+        "toColor": "5e7ccb",
+        "length": 120,
+        "width": 5,
+        "hitEffect": "blastExplosion",
+        "shootEffect": "blastExplosion",
+        "pierce": true,
+        "healAmount": 10,
+        "healColor": "91aaed",
+        "range": 90
+		}
+	}
+	{
+	"name": "Missle-put",
+	"top": false,
+	"x": 5,
+	"y": -3.5,
+	"reload": 30,
+	"shake": 1,
+	"shoot": {
+		"shots": 6
+	},
+		"inaccuracy": 35,
+		"alternate": true,
+		"bullet": {
+			"type": "MissileBulletType",
+			"lifetime": 50,
+			"speed": 6,
+			"splashDamageRadius": 50,
+			"splashDamage": 10,
+			"frontColor": "ffff00",
+			"backColor": "00ffff",
+			"homingPower": 100,
+			"homingRange": 60,
+			"width": 6,
+			"height": 8,
+			"damage": 20,
+			"range": 100,
+			"hitEffect": {
+				"type": "MultiEffect",
+				"effects": [
+					{
+						"type": "WaveEffect",
+						"lifetime": 60,
+						"sizeFrom": 24,
+						"sizeTo": 24,
+						"strokeFrom": 4,
+						"strokeTo": 0,
+						"lightColor": "ffecd1",
+						"colorFrom": "e3a76a",
+						"colorTo": "e3a76a"
+					}
+				]
+			}
+		}
+	}
+	{
+	"name": "Missle-put",
+	"top": true,
+	"x": 5,
+	"y": -3.5,
+	"reload": 140,
+	"shake": 1,
+	"shoot": {
+		"shots": 1,
+	}
+	"inaccuracy": 25,
+	"alternate": true,
+	"bullet": {
+		"type": "MissileBulletType",
+		"lifetime": 60,
+		"speed": 8,
+		"splashDamageRadius": 30,
+		"splashDamage": 60,
+		"frontColor": "E00600",
+		"backColor": "E0C706",
+		"homingPower": 160,
+		"homingRange": 80,
+		"damage": 300,
+		"range": 100
+			
+		}
+	},
+  ]
+}

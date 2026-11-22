@@ -1,0 +1,21 @@
+{
+	"name": "Advanced Weapon Part",
+	"description": "A Advanced Weapon Part, just a nothing but if you realy want destroy so made drone witch this",
+	"type": "item",
+	"color": "#484742"
+	"radioactivity": 0
+	"explosiveness": 0
+	"flammability": 0
+	"charge": 0.6
+	"hardness":25
+	"research": {
+	"parent":"WeaponPart"
+			"requirements": [
+			{ "item": "graphite", "amount": 1000 }
+			{ "item": "silicon", "amount": 1000 }
+			{ "item": "Iron", "amount": 1000 }
+			{ "item": "Steel", "amount": 500 }
+			{ "item": "WeaponPart", "amount": 200 }
+		],
+	}
+}

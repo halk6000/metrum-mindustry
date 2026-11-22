@@ -1,0 +1,5 @@
+dodana Zaawansowana turbina / należy pamiętać że finalnie będzie kożystać z pary ale teraz używa wody dla testu
+- sposób działania BasePowerProduction - bazowy poziom produkcji po uwzględnieniu efektywności pól
+- MaxPowerProduction - poziom produkcji prądu jak powyżej i dostarczeniem cieczy która zwiększa wydajność mocniej
+base - 160 900 % ef = 1260 
+max - 320  2520 

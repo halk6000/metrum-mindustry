@@ -1,0 +1,19 @@
+{
+	"name": "Iron",
+	"description": "Iron just Fe",
+	"type": "item",
+	"color": "#adadac"
+	"radioactivity": 0
+	"explosiveness": 0
+	"flammability": 0
+	"charge": 0.6
+	"hardness": 2
+	"research": {
+	"parent":"PieceRock"
+			"requirements": [
+			{ "item": "graphite", "amount": 1000 }
+			{ "item": "silicon", "amount": 1000 }
+			{ "item": "PieceRock", "amount": 1000 }
+		],
+	}
+}

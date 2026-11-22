@@ -1,0 +1,28 @@
+{"type": "BeamDrill"
+	"name": "Stream Bore Booster Adv"
+	"description": "Use Stream to dig faster "
+	"optionalBoostIntensity": 3.00
+	"tier": 4
+	"drillTime": 120
+	"size": 2
+	"range": 6
+	"hasPower": true
+	"updateEffect": "pulverizeRed"
+	"updateEffectChance": 0.03
+	"drillEffect": "mineHuge"
+	"rotateSpeed": 6
+	"warmupSpeed": 0.01
+	"itemCapacity": 20
+	"consumes": {
+		"power": 0.06
+		"liquid":	{ "liquid":  "stream", "amount": 0.025, "optional": true, "booster": true, "heatColor": "#d8d8dd", "boostHeatColor": "#dae2f2", }
+	}
+	"category": "production"
+	"research": "StreamDrillT2"
+	"requirements": [
+	  "graphite/45"
+	  "silicon/30"
+	  "beryllium/80"
+	  "Iron/90"
+	]
+}

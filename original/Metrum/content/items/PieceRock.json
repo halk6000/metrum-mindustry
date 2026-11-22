@@ -1,0 +1,13 @@
+{
+	"name": "Piece Rock",
+	"description": "A strong fragment rock",
+	"type": "item",
+	"color": "#523D43"
+	"research": {
+	"parent":"sand"
+			"requirements": [
+			{ "item": "graphite", "amount": 1000 }
+			{ "item": "silicon", "amount": 1000 }
+		],
+	}
+}

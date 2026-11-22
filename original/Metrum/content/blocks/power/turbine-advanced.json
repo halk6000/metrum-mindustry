@@ -1,0 +1,43 @@
+{
+  "type": "ThermalGenerator",
+  "name": "Advanced Turbine",
+  "description": "Use Stream to boost producion power and water",
+  "attribute": "steam",
+   "group": "liquids",
+  "drawer": {
+    "type": "DrawMulti",
+    "drawers": [
+      {
+        "type": "DrawDefault"
+      },
+	  {
+        "type": "DrawBlurSpin",
+        "suffix": "-rotator",
+        "blurThresh": 0.01,
+        "speed": 2.7
+      }
+    ]
+  },
+  "powerProduction": 0.77,
+  "displayEfficiencyScale": 1.0,
+  "displayEfficiency": true,
+  "minEfficiency": 0.2,
+  "health": 1500,
+  "size": 3,
+  "hasPower": true,
+  "hasLiquids": true,
+  "outputLiquid": {"liquid": "water", "amount": 0.050},
+  "updateEffect": "pulverise",
+  "consumes": {
+    "liquids": [
+      "stream/0.4"
+    ]
+  },
+  "squareSprite": false,
+  "requirements": [
+    "tungsten/40",
+    "silicon/160"
+  ],
+  "category": "power",
+  "research": "turbine-condenser"
+}

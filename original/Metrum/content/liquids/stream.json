@@ -1,0 +1,10 @@
+{
+    "type": "liquid",
+    "name": "Stream",
+    "gas": true,
+    "temperature": 10.5,
+    "heatCapacity": 40.0,
+    "color": "F5F5F5",
+    "research": "water",
+    "description": "a Hot Water ,just be carefully okey ?"
+}

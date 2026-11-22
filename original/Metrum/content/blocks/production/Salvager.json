@@ -1,0 +1,32 @@
+{
+    "type": "Separator",
+    "name": "Salvager",
+    "description": "Salvage Iron with Rocks.",
+    "hasPower": true,
+    "hasLiquids": true,
+    "hasItems": true,
+    "liquidCapacity": 40,
+    "itemCapacity": 20,
+    "results":[ 
+    {"item": "Iron", "amount": 2 }, 
+    {"item": "sand", "amount": 3 },
+    ]
+    "outputLiquid": {"liquid": "water", "amount": 0.13},
+    "size": 2,
+    "craftTime": 20,
+    "updateEffect": "smeltsmoke",
+    "consumes": {
+        "power": 2,
+        "item": "PieceRock",
+        "liquid": {
+        "liquid": "stream", "amount": 0.12,
+        }
+    },
+    "requirements": [
+        { "item": "PieceRock", "amount": 30 },
+        { "item": "graphite", "amount": 80 },
+        { "item": "silicon", "amount": 20 }
+    ],
+    "category": "crafting",
+    "research": "StreamFurnace",
+}

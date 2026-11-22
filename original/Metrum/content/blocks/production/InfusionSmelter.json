@@ -1,0 +1,32 @@
+{
+	"type": "GenericCrafter",
+	"name": "Infusion Smelter",
+	"description": "Prepere to All alloys in one production block for now smith iron with coal.",
+	"hasPower": true,
+	"hasLiquids": true,
+	"hasItems": true,
+	"liquidCapacity": 100,
+	"itemCapacity": 60,
+	"outputItem": {"item": "Steel", "amount": 2},
+	"outputLiquid": {"liquid": "water", "amount": 0.2},
+	"size": 2,
+	"craftTime": 160,
+	"updateEffect": "smeltsmoke",
+	"consumes": {
+		"power": 6,
+		"items": [
+			{ "item": "Iron", "amount": 2, }
+			{ "item": "coal", "amount": 1, }
+		],
+		"liquid": {
+		"liquid": "stream", "amount": 0.33,
+		}
+	},
+	"requirements": [
+		{ "item": "PieceRock", "amount": 60 },
+		{ "item": "Iron", "amount": 30 },
+		{ "item": "silicon", "amount": 20 }
+	],
+	"category": "crafting",
+	"research": "StreamFurnace",
+}

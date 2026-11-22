@@ -1,0 +1,63 @@
+{
+    "name": "Graphite Decompressor Overclocer",
+    "description": "Decompresses Graphite into Coal",
+    "type": "GenericCrafter",
+    "health": 240,
+    "outputItems": [
+        "coal/5"
+    ],
+    "consumes": {
+        "power": 2.5,
+        "items": [
+          "graphite/2",
+        ],
+    },
+    "drawer": {
+        "type": "DrawMulti",
+        "drawers": [
+          {
+            "type": "DrawDefault"
+          },
+          {
+            "type": "DrawGlowRegion",
+            "color": "fdb380"
+          },
+          {
+            "type": "DrawCrucibleFlame",
+            "flameColor": "fdb380",
+            "particleRad": 12,
+            "particleSize": 1,
+            "particleColor": "fdb380"
+          }
+        ]
+    },
+    "size": 3,
+    "squareSprite": false,
+    "hasPower": true,
+    "hasItems": true,
+    "itemCapacity": 30,
+    "craftTime": 120,
+    "craftEffect": {
+        "type": "ParticleEffect",
+        "region": "circle",
+        "colorFrmom": "fdb38088",
+        "colorTo": "fdb38088",
+        "lightColor": "fdb38088",
+        "particles": 8
+        "sizeFrom": 3,
+        "sizeTo": 0,
+        "lifetime": 30,
+        "lengthOffset": 4,
+    },
+    "updateEffect": "none",
+    "category": "crafting",
+    "research": {
+        "parent": "1-graphite-decompressor",
+    },
+    "requirements": [
+      "graphite/20",
+      "silicon/60",
+      "beryllium/40",
+	  "Iron/20"
+    ]
+}
