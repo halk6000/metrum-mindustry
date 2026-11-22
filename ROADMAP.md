@@ -25,7 +25,9 @@
 - [x] Zderzacz cz.2: Hadron Collider 3x3, 5 receptur (karborund, węglik wolframu, brąz berylowy, żelazowolfram, materia kwarkowa) + drzewko
 - [ ] Zastosowania produktów zderzacza (nowe bloki/jednostki)
 - [x] Lokalizacja: EN domyślny + PL (assets/bundles)
-- [ ] Nowa planeta + AI wroga z auto-rozbudową
+- [x] Planeta Ferrox (orbita słońca, teren z generatora Erekiru, rdzeń Bastion, wspólne drzewko z Erekirem)
+- [ ] Własny generator terenu Ferrox
+- [ ] AI wroga z auto-rozbudową bazy
 
 ## Blokady / uwagi
 - Oryginalny mod.json ma błędy składni (brak przecinków) — działa tylko dzięki tolerancyjnemu HJSON.
