@@ -77,7 +77,10 @@ public class FuelSystem {
      * Only C and D variants get a tank.
      */
     public static void register(UnitType type, int baseTier, int level) {
-        if (level >= 2) capacities.put(type, tankByTier[Math.min(Math.max(baseTier, 1), 3)]);
+        if (level >= 2) {
+            capacities.put(type, tankByTier[Math.min(Math.max(baseTier, 1), 3)]);
+            if (!type.abilities.contains(a -> a instanceof FuelBarAbility)) type.abilities.add(new FuelBarAbility());
+        }
         else capacities.remove(type, 0f);
     }
 
