@@ -28,7 +28,8 @@
 - [x] Planeta Ferrox (orbita słońca, teren z generatora Erekiru, rdzeń Bastion, wspólne drzewko z Erekirem)
 - [ ] Własny generator terenu Ferrox
 - [ ] Warianty C i D dronów MonoMet (C = drony wzmacniające?) + rekonstruktory
-- [ ] AI wroga z auto-rozbudową bazy
+- [x] AI wroga na Ferrox: vanilla buildAi + rtsAi + BaseExpander (co 20 s fortyfikacja przy rdzeniu z zasobów rdzenia, tier obrony rośnie co 10 fal)
+- [ ] BaseExpander: zaopatrzenie wieżyczek (amunicja/prąd), test w kampanii
 
 ## Blokady / uwagi
 - Oryginalny mod.json ma błędy składni (brak przecinków) — działa tylko dzięki tolerancyjnemu HJSON.

@@ -1,6 +1,7 @@
 package metrum;
 
 import arc.util.Log;
+import metrum.ai.BaseExpander;
 import metrum.boost.BoostSystem;
 import metrum.fuel.FuelSystem;
 import metrum.content.MetrumBlocks;
@@ -47,5 +48,7 @@ public class MetrumMod extends Mod {
         FuelSystem.register(MetrumUnits.boosterDrone, 2, 2);
         FuelSystem.init();
         BoostSystem.init();
+        BaseExpander.planets.add(MetrumPlanets.ferrox);
+        BaseExpander.init();
     }
 }

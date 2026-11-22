@@ -45,6 +45,12 @@ public class MetrumPlanets {
                 r.waveTeam = Team.malis;
                 r.placeRangeCheck = false;
                 r.coreDestroyClear = true;
+                // smarter enemy: vanilla base builder + RTS squads, plus BaseExpander fortifications
+                r.teams.get(r.waveTeam).buildAi = true;
+                r.teams.get(r.waveTeam).buildAiTier = 1f;
+                r.teams.get(r.waveTeam).rtsAi = true;
+                r.teams.get(r.waveTeam).rtsMinSquad = 4;
+                r.teams.get(r.waveTeam).aiCoreSpawn = true;
             };
         }};
     }
