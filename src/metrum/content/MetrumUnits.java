@@ -107,6 +107,15 @@ public class MetrumUnits {
         gen.maxHealth = 500f; gen.regenPerSecond = 2f; gen.breakTime = 60f * 60f; gen.restoreHealth = 100f;
         gen.explosiveResist = 1f; gen.physicalResist = 0.6f; gen.radius = monoMetT3d.hitSize * 1.1f;
         monoMetT3d.abilities.add(gen);
+
+        // 1C and 1D: mini shield generator (same resistances, smaller)
+        for (UnitType t : new UnitType[]{monoMetT1c, monoMetT1d}) t.abilities.add(shield(150f, 0.5f, 30f, 50f, 1f, 0.6f, t.hitSize * 1.1f, 0f, 0f));
+        // 1D also gets the heavy missile pods of the 3D
+        for (Weapon w : monoMetT3c.weapons) if (w.name.endsWith("missile-pod-heavy")) {
+            Weapon pod = w.copy();
+            pod.x = monoMetT1d.hitSize * 0.45f;
+            monoMetT1d.weapons.add(pod);
+        }
     }
 
     /**
@@ -169,6 +178,16 @@ public class MetrumUnits {
         torpedo.bullet = tb;
 
         u.weapons.addAll(laser, pods, torpedo);
+    }
+
+    /** helper for the Metrum shield library */
+    private static metrum.shields.ResistShieldAbility shield(float hp, float regen, float breakSeconds, float restore,
+                                                             float explosive, float physical, float radius, float armor, float burn) {
+        metrum.shields.ResistShieldAbility a = new metrum.shields.ResistShieldAbility();
+        a.maxHealth = hp; a.regenPerSecond = regen; a.breakTime = breakSeconds * 60f; a.restoreHealth = restore;
+        a.explosiveResist = explosive; a.physicalResist = physical; a.radius = radius;
+        a.bonusArmor = armor; a.burnResist = burn;
+        return a;
     }
 
     private static UnitType booster(String name, UnitType from, float rangeTiles, float healthMul, float reload) {
