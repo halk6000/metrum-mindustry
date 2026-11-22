@@ -23,6 +23,8 @@ public class BoostAbility extends mindustry.entities.abilities.Ability {
     public float reload = 600f;
     public float duration = 600f;
     public float coreRange = 20f * Vars.tilesize;
+    /** containers / vaults this close act as boost-material depots */
+    public float depotRange = 8f * Vars.tilesize;
     public Color color = Color.valueOf("7fe3ff");
 
     protected float timer;
@@ -57,7 +59,12 @@ public class BoostAbility extends mindustry.entities.abilities.Ability {
     void refill(Unit unit) {
         if (unit.stack.amount > 0 || Vars.net.client()) return;
         Building core = unit.closestCore();
-        if (core == null || !unit.within(core, coreRange)) return;
+        if (core == null || !unit.within(core, coreRange)) {
+            // field depots: any friendly container/vault within depotRange holding boost material
+            core = Vars.indexer.findTile(unit.team, unit.x, unit.y, depotRange,
+                b -> b instanceof mindustry.world.blocks.storage.StorageBlock.StorageBuild && hasBoostMaterial(b));
+            if (core == null) return;
+        }
         for (int i = 0; i < BoostSystem.ladder.size; i++) {
             Item it = BoostSystem.ladder.get(i);
             int take = Math.min(core.items.get(it), unit.type.itemCapacity);
@@ -67,6 +74,11 @@ public class BoostAbility extends mindustry.entities.abilities.Ability {
                 return;
             }
         }
+    }
+
+    static boolean hasBoostMaterial(Building b) {
+        for (Item it : BoostSystem.ladder) if (b.items.get(it) >= BoostSystem.cost(it)) return true;
+        return false;
     }
 
     @Override
