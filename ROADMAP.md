@@ -53,3 +53,4 @@
 - Oryginał miał temperature 10.5 / heatCapacity 40 (skala gry 0–1) — znormalizowane do 0.9/0.4. Hardness 25 → 4 (25 blokowało wydobycie).
 - Test w grze: last_log.txt nie odświeża się przy automatycznym uruchomieniu (Steam Cloud?) — potrzebny ręczny test użytkownika.
 - Stary Metrum.zip przeniesiony z saves/mods do Metrum-backup-from-game.zip (konflikt nazw z jar).
+- Przeglądarka modów w grze: topic mindustry-mod, release z jar i [v160] w nazwie; lista odświeża się co ~2 h. Przy nowym wydaniu podbić version w mod.hjson.
