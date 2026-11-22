@@ -47,6 +47,9 @@ public class MetrumMod extends Mod {
         FuelSystem.register(MetrumUnits.monoMetT1c, 1, 2);
         FuelSystem.register(MetrumUnits.monoMetT2c, 2, 2);
         FuelSystem.register(MetrumUnits.monoMetT3c, 3, 2);
+        FuelSystem.register(MetrumUnits.monoMetT1d, 1, 3);
+        FuelSystem.register(MetrumUnits.monoMetT2d, 2, 3);
+        FuelSystem.register(MetrumUnits.monoMetT3d, 3, 3);
         FuelSystem.init();
         BoostSystem.init();
         BaseExpander.planets.add(MetrumPlanets.ferrox);

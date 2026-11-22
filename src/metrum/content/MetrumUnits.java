@@ -20,7 +20,7 @@ import mindustry.type.unit.ErekirUnitType;
 
 /** MonoMet mining drones ported from the original Metrum JSON mod. */
 public class MetrumUnits {
-    public static UnitType monoMetT1, monoMetT1b, monoMetT2, monoMetT2b, monoMetT3, monoMetT3b, monoMetT1c, monoMetT2c, monoMetT3c;
+    public static UnitType monoMetT1, monoMetT1b, monoMetT2, monoMetT2b, monoMetT3, monoMetT3b, monoMetT1c, monoMetT2c, monoMetT3c, monoMetT1d, monoMetT2d, monoMetT3d;
 
     private static final String P = "metrum-";
 
@@ -94,12 +94,16 @@ public class MetrumUnits {
      * to give nearby allies +20% damage and range. Built from the B variant, keeping its weapons.
      */
     private static void loadBoosters() {
-        monoMetT1c = booster("monomet-t1c", monoMetT1b, 8f, 1.5f);
-        monoMetT2c = booster("monomet-t2c", monoMetT2b, 10f, 1.5f);
-        monoMetT3c = booster("monomet-t3c", monoMetT3b, 12f, 1.4f);
+        monoMetT1c = booster("monomet-t1c", monoMetT1b, 8f, 1.5f, 600f);
+        monoMetT2c = booster("monomet-t2c", monoMetT2b, 10f, 1.5f, 600f);
+        monoMetT3c = booster("monomet-t3c", monoMetT3b, 12f, 1.4f, 600f);
+        // D: wider field, boosts every 7.5 s instead of 10 s
+        monoMetT1d = booster("monomet-t1d", monoMetT1c, 11f, 1.4f, 450f);
+        monoMetT2d = booster("monomet-t2d", monoMetT2c, 13f, 1.4f, 450f);
+        monoMetT3d = booster("monomet-t3d", monoMetT3c, 15f, 1.35f, 450f);
     }
 
-    private static UnitType booster(String name, UnitType from, float rangeTiles, float healthMul) {
+    private static UnitType booster(String name, UnitType from, float rangeTiles, float healthMul, float reload) {
         ErekirUnitType u = new ErekirUnitType(name);
         u.constructor = UnitEntity::create;
         u.flying = true;
@@ -121,6 +125,8 @@ public class MetrumUnits {
         for (Weapon w : from.weapons) u.weapons.add(w.copy());
         metrum.boost.BoostAbility boost = new metrum.boost.BoostAbility();
         boost.range = rangeTiles * mindustry.Vars.tilesize;
+        boost.reload = reload;
+        boost.duration = reload;
         u.abilities.add(boost);
         return u;
     }

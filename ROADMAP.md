@@ -27,7 +27,7 @@
 - [x] Lokalizacja: EN domyślny + PL (assets/bundles)
 - [x] Planeta Ferrox (orbita słońca, teren z generatora Erekiru, rdzeń Bastion, wspólne drzewko z Erekirem)
 - [ ] Własny generator terenu Ferrox
-- [ ] Warianty D (też wzmacniacze, mocniejsze) + rekonstruktor C -> D
+- [x] Warianty D (zasięg 11/13/15, co 7.5 s), Advanced Booster Rebuilder 5x5 na plazmie (C -> D)
 - [x] AI wroga na Ferrox: vanilla buildAi + rtsAi + BaseExpander (co 20 s fortyfikacja przy rdzeniu z zasobów rdzenia, tier obrony rośnie co 10 fal)
 - [ ] BaseExpander: zaopatrzenie wieżyczek (amunicja/prąd), test w kampanii
 

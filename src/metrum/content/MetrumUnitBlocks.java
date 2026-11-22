@@ -14,7 +14,7 @@ import static mindustry.type.ItemStack.with;
 
 /** Drone factory and reconstructor ported from the original Metrum JSON mod. */
 public class MetrumUnitBlocks {
-    public static Block airMinerDock, airMinerRebuilder, boosterRebuilder;
+    public static Block airMinerDock, airMinerRebuilder, boosterRebuilder, boosterRebuilderD;
     public static FuelStation fuelStation;
 
     public static void load() {
@@ -59,6 +59,22 @@ public class MetrumUnitBlocks {
                 new UnitType[]{MetrumUnits.monoMetT1b, MetrumUnits.monoMetT1c},
                 new UnitType[]{MetrumUnits.monoMetT2b, MetrumUnits.monoMetT2c},
                 new UnitType[]{MetrumUnits.monoMetT3b, MetrumUnits.monoMetT3c});
+        }};
+
+        // C -> D: advanced boosters
+        boosterRebuilderD = new Reconstructor("booster-rebuilder-d") {{
+            requirements(Category.units, with(MetrumItems.steel, 200, Items.silicon, 200, MetrumItems.tungstenCarbide, 80, MetrumItems.ferrotungsten, 60));
+            size = 5;
+            health = 2600;
+            regionSuffix = "-dark";
+            constructTime = 1800f;
+            consumePower(6f);
+            consumeItems(with(MetrumItems.tungstenCarbide, 6, MetrumItems.ferrotungsten, 4));
+            consumeLiquid(MetrumLiquids.plasma, 0.1f);
+            upgrades.addAll(
+                new UnitType[]{MetrumUnits.monoMetT1c, MetrumUnits.monoMetT1d},
+                new UnitType[]{MetrumUnits.monoMetT2c, MetrumUnits.monoMetT2d},
+                new UnitType[]{MetrumUnits.monoMetT3c, MetrumUnits.monoMetT3d});
         }};
 
         fuelStation = new FuelStation("fuel-station");
