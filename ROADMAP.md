@@ -11,9 +11,8 @@
 - [x] Panel wydobycia (komenda „Inteligentne wydobycie”): komenda "wydobywaj" -> okno: najbliższa ruda / najmniej w magazynie / konkretna ruda
 - [x] Drukarka kadłubów 3x3 (lekki / średni / ciężki, podgląd w środku, 20 s)
 - [x] Drukarka części (silnik, skrzydła, nogi) + Magazyn części (tylko kadłuby i części)
-- [ ] Modułowe drony:
-      Weapon Printer + Magazyn broni (laser wydobywczy, rakiety, ładunki wybuchowe, zbiornik paliwa, karabiny...),
-      sloty montażu na kadłubie, 60 s konstrukcji, nadanie nazwy statkowi
+- [x] Drukarka broni (laser, rakiety, ładunki, zbiornik paliwa, karabin) + Magazyn broni
+- [ ] Montownia dronów: sloty montażu na kadłubie, 60 s konstrukcji, nadanie nazwy statkowi
 - [ ] Wieżyczki z kadłubów: drony C+ przenoszą kadłub i montują jako wieżyczkę; amunicja wg broni albo 1 skrzynka/strzał
 - [x] Szkielet Java (Gradle 8.10 wrapper, Mindustry v146 compileOnly) — `gradlew jar` → build/libs/Metrum.jar
 - [x] Port: itemy (5) + płyn steam
