@@ -1,0 +1,20 @@
+apply plugin: 'java'
+version = '2.0.0'
+ext.mindustryVersion = 'v146'
+repositories {
+    mavenCentral()
+    maven { url 'https://raw.githubusercontent.com/Zelaux/MindustryRepo/master/repository' }
+    maven { url 'https://www.jitpack.io' }
+}
+java { sourceCompatibility = JavaVersion.VERSION_1_8; targetCompatibility = JavaVersion.VERSION_1_8 }
+sourceSets.main.java.srcDirs = ['src']
+dependencies {
+    compileOnly "com.github.Anuken.Arc:arc-core:$mindustryVersion"
+    compileOnly "com.github.Anuken.Mindustry:core:$mindustryVersion"
+}
+tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8'; options.compilerArgs << '-Xlint:-options' }
+jar {
+    archiveFileName = "${rootProject.name}.jar"
+    from(rootDir) { include 'mod.hjson', 'icon.png' }
+    from('assets/') { include '**' }
+}

@@ -6,7 +6,7 @@
 - [x] Rozpakowanie oryginału, repo git, roadmapa
 
 ## Pozostałe
-- [ ] Szkielet projektu Java (Gradle, Mindustry/Arc jako compileOnly, build .jar)
+- [x] Szkielet Java (Gradle 8.10 wrapper, Mindustry v146 compileOnly) — `gradlew jar` → build/libs/Metrum.jar
 - [ ] Port istniejącej zawartości (items, liquid stream, drills, production, turbine, MonoMet units, docks)
 - [ ] Falownik cieplny (heat in → woda → para)
 - [ ] Drony-wzmacniacze (+20% zasięg/obrażenia, koszt 20 mat. najsłabszego, -2 na kolejny tier)
@@ -19,3 +19,4 @@
 ## Blokady / uwagi
 - Oryginalny mod.json ma błędy składni (brak przecinków) — działa tylko dzięki tolerancyjnemu HJSON.
 - "dll": Mindustry to Java — mod będzie .jar (DLL nie dotyczy tej gry).
+- Jar jest desktopowy (bez dexa na Androida) — do dodania później.
