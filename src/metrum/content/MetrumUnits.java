@@ -111,8 +111,9 @@ public class MetrumUnits {
     private static UnitType booster(String name, UnitType from, float rangeTiles, float healthMul, float reload) {
         ErekirUnitType u = new ErekirUnitType(name);
         u.constructor = UnitEntity::create;
-        u.controller = from.controller;
-        u.defaultCommand = from.defaultCommand;
+        // default: escort/assist the army (boosting needs allies nearby). Mining stays available
+        // as a manual command; MinerAI would keep dumping the boost material into the core.
+        u.defaultCommand = UnitCommand.assistCommand;
         u.flying = true;
         u.drag = from.drag;
         u.hitSize = from.hitSize * 1.25f;
