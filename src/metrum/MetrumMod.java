@@ -5,6 +5,7 @@ import metrum.content.MetrumBlocks;
 import metrum.content.MetrumItems;
 import metrum.content.MetrumPower;
 import metrum.content.MetrumProduction;
+import metrum.content.MetrumUnits;
 import metrum.content.MetrumLiquids;
 import mindustry.mod.Mod;
 
@@ -16,6 +17,7 @@ public class MetrumMod extends Mod {
         MetrumBlocks.load();
         MetrumProduction.load();
         MetrumPower.load();
+        MetrumUnits.load();
         Log.info("[Metrum] content loaded");
     }
 }
