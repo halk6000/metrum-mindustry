@@ -93,6 +93,7 @@ public class MetrumMod extends Mod {
         arc.Core.app.post(() -> {
             try {
                 writeLoadReport();
+                SelfTest.runIfRequested();
             } catch (Throwable t) {
                 Log.err("[Metrum] load report failed", t);
             }
