@@ -45,8 +45,7 @@ public class MetrumMod extends Mod {
         } catch (Throwable t) {
             java.io.StringWriter sw = new java.io.StringWriter();
             t.printStackTrace(new java.io.PrintWriter(sw));
-            mark("init FAILED
-" + sw);
+            mark("init FAILED " + System.lineSeparator() + sw);
             Log.err("[Metrum] init failed", t);
         }
     }
@@ -55,8 +54,7 @@ public class MetrumMod extends Mod {
     static void mark(String what) {
         try {
             arc.files.Fi f = mindustry.Vars.dataDirectory == null ? arc.Core.files.local("metrum-trace.txt") : mindustry.Vars.dataDirectory.child("metrum-trace.txt");
-            f.writeString(new java.util.Date() + " " + what + "
-", true);
+            f.writeString(new java.util.Date() + " " + what + System.lineSeparator(), true);
         } catch (Throwable ignored) {
         }
     }
