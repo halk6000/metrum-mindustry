@@ -66,7 +66,40 @@ def heat_inverter(path):
     d.rectangle([29, 4, 34, S - 5], fill=EDGE + (255,))
     im.save(path)
 
+ITEMS = pathlib.Path(__file__).resolve().parent.parent / "assets/sprites/items"
+ATOMS = {"carbon": (110, 110, 125), "silicon": (140, 150, 175), "beryllium": (90, 210, 155),
+         "iron": (200, 200, 200), "tungsten": (125, 145, 210), "thorium": (225, 110, 175)}
+PRODUCTS = {"carborundum": (60, 150, 150), "tungsten-carbide": (95, 105, 125), "beryllium-bronze": (205, 160, 80),
+            "ferrotungsten": (145, 145, 165), "quark-matter": (255, 80, 200)}
+
+def shade(c, k):
+    return tuple(max(0, min(255, int(v * k))) for v in c)
+
+def atomic_item(name, c):
+    im = Image.new("RGBA", (32, 32), (0, 0, 0, 0)); d = ImageDraw.Draw(im)
+    d.ellipse([2, 10, 29, 21], outline=EDGE + (255,), width=4)
+    d.ellipse([10, 2, 21, 29], outline=EDGE + (255,), width=4)
+    d.ellipse([3, 11, 28, 20], outline=c + (255,), width=2)
+    d.ellipse([11, 3, 20, 28], outline=c + (255,), width=2)
+    d.ellipse([10, 10, 21, 21], fill=EDGE + (255,))
+    d.ellipse([11, 11, 20, 20], fill=shade(c, 1.25) + (255,))
+    d.ellipse([13, 12, 16, 15], fill=(255, 255, 255, 230))
+    im.save(ITEMS / f"atomic-{name}.png")
+
+def product_item(name, c):
+    im = Image.new("RGBA", (32, 32), (0, 0, 0, 0)); d = ImageDraw.Draw(im)
+    hexa = [(16, 1), (30, 9), (30, 23), (16, 31), (2, 23), (2, 9)]
+    d.polygon(hexa, fill=EDGE + (255,))
+    inner = [(16, 3), (28, 10), (28, 22), (16, 29), (4, 22), (4, 10)]
+    d.polygon(inner, fill=c + (255,))
+    d.polygon([(16, 3), (28, 10), (16, 16), (4, 10)], fill=shade(c, 1.35) + (255,))
+    d.polygon([(16, 16), (28, 10), (28, 22), (16, 29)], fill=shade(c, 0.7) + (255,))
+    d.line([(8, 11), (14, 8)], fill=(255, 255, 255, 200), width=1)
+    im.save(ITEMS / f"{name}.png")
+
 if __name__ == "__main__":
+    for n, c in ATOMS.items(): atomic_item(n, c)
+    for n, c in PRODUCTS.items(): product_item(n, c)
     fuel_station(OUT / "units/fuel-station.png")
     magma_forge(OUT / "production/magma-forge.png")
     plasma_ionizer(OUT / "production/plasma-ionizer.png")
