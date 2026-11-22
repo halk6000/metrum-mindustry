@@ -14,7 +14,7 @@
 - [x] Port: doki (Air Miner Dock, Rebuilder) — cały oryginał przeniesiony
 - [x] Kompilacja pod grę 160.8 (desktop.jar ze Steam), dźwięki zaktualizowane
 - [x] Turbina: bez pary 75% mocy; duży piec parowy 3x3
-- [ ] Test w grze (wczytanie jar, brak błędów sprite/crash)
+- [x] Test w grze: wczytanie OK, 0 błędów, 0 brakujących grafik
 - [x] Falownik cieplny 2x2 (HeatCrafter: ciepło 6, woda 0.25 → para 0.5, przegrzanie do 300%)
 - [x] Wzmacniacze = warianty C (T1C/T2C/T3C, zasięg 8/10/12): +20% obrażeń i zasięgu, koszt 20 najsłabszego materiału (-2 za wyższy, min 2), bak 100/200/250; Booster Rebuilder (B -> C)
 - [x] Stacja paliw 2x2, zasięg 8, żużel/magma/plazma (+10/30/50%)
@@ -23,7 +23,8 @@
 - [x] Drzewko tech: cała zawartość podpięta pod drzewo Erekiru
 - [x] Zderzacz cz.1: 6 atomowych itemów + Atomizer (2 minerały -> 1 atom)
 - [x] Zderzacz cz.2: Hadron Collider 3x3, 5 receptur (karborund, węglik wolframu, brąz berylowy, żelazowolfram, materia kwarkowa) + drzewko
-- [ ] Zastosowania produktów zderzacza (nowe bloki/jednostki)
+- [x] Ściany z karborundu (odbijają pociski) i węglika wolframu (najcięższe), 1x1 i 2x2
+- [ ] Dalsze zastosowania produktów zderzacza (beryl. brąz, materia kwarkowa)
 - [x] Lokalizacja: EN domyślny + PL (assets/bundles)
 - [x] Planeta Ferrox (orbita słońca, teren z generatora Erekiru, rdzeń Bastion, wspólne drzewko z Erekirem)
 - [x] Generator Ferrox: układ Erekiru przemalowany na rdzawy (red stone / rhyolite, kolor globu)

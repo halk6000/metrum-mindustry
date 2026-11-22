@@ -63,7 +63,11 @@ public class MetrumTechTree {
         node(MetrumPhysics.atomizer, atomicThorium);
         node(MetrumPhysics.atomizer, MetrumPhysics.hadronCollider);
         node(MetrumPhysics.hadronCollider, carborundum);
+        node(carborundum, carborundumWall);
+        node(carborundumWall, carborundumWallLarge);
         node(MetrumPhysics.hadronCollider, tungstenCarbide);
+        node(tungstenCarbide, tungstenCarbideWall);
+        node(tungstenCarbideWall, tungstenCarbideWallLarge);
         node(MetrumPhysics.hadronCollider, berylliumBronze);
         node(MetrumPhysics.hadronCollider, ferrotungsten);
         node(MetrumPhysics.hadronCollider, quarkMatter);

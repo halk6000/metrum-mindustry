@@ -13,11 +13,18 @@ import static mindustry.type.ItemStack.with;
 /** Blocks ported from the original Metrum JSON mod. */
 public class MetrumBlocks {
     public static Block oreIron;
+    public static Block carborundumWall, carborundumWallLarge, tungstenCarbideWall, tungstenCarbideWallLarge;
     public static Block streamDrillT1, streamDrillT1Adv, streamDrillT2, streamDrillT2Adv, rockScraper;
 
     public static void load() {
         // iron ore: generated on Ferrox, mineable by drills and MonoMet drones
         oreIron = new mindustry.world.blocks.environment.OreBlock("ore-iron", MetrumItems.iron);
+
+        // collider-product walls: carborundum = light + deflects bullets, tungsten carbide = heaviest armour
+        carborundumWall = wall("carborundum-wall", 1, MetrumItems.carborundum, 6, 1400, 0.25f);
+        carborundumWallLarge = wall("carborundum-wall-large", 2, MetrumItems.carborundum, 24, 1400 * 4, 0.25f);
+        tungstenCarbideWall = wall("tungsten-carbide-wall", 1, MetrumItems.tungstenCarbide, 6, 2600, 0f);
+        tungstenCarbideWallLarge = wall("tungsten-carbide-wall-large", 2, MetrumItems.tungstenCarbide, 24, 2600 * 4, 0f);
 
         streamDrillT1 = streamDrill("stream-drill-t1", 3, 150f, 0.09f, 0.001f, 1.25f,
             with(Items.graphite, 45, Items.silicon, 30, Items.beryllium, 65));
@@ -36,6 +43,20 @@ public class MetrumBlocks {
             drillTime = 40f;
             size = 2;
         }};
+    }
+
+    private static mindustry.world.blocks.defense.Wall wall(String name, int size, mindustry.type.Item item, int amount, int health, float deflect) {
+        mindustry.world.blocks.defense.Wall w = new mindustry.world.blocks.defense.Wall(name);
+        w.requirements(Category.defense, with(item, amount));
+        w.size = size;
+        w.health = health;
+        w.armor = deflect > 0f ? 8f : 14f;
+        if (deflect > 0f) {
+            w.chanceDeflect = deflect * 40f;
+            w.flashHit = true;
+        }
+        w.buildCostMultiplier = 5f;
+        return w;
     }
 
     private static BeamDrill streamDrill(String name, int tier, float drillTime, float power,
