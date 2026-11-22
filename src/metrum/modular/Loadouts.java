@@ -36,6 +36,72 @@ public class Loadouts {
             names.clear();
         });
         Events.run(Trigger.update, Loadouts::update);
+        mindustry.io.SaveVersion.addCustomChunk("metrum-loadouts", new Chunk());
+    }
+
+    static class Saved {
+        float x, y;
+        int type;
+        String name;
+        Seq<Item> mods = new Seq<>();
+    }
+
+    static final Seq<Saved> pending = new Seq<>();
+
+    /** Saves modules + ship names; units are re-matched by type and position on load (ids change). */
+    static class Chunk implements mindustry.io.SaveFileReader.CustomChunk {
+        @Override
+        public void write(java.io.DataOutput out) throws java.io.IOException {
+            Seq<Unit> list = new Seq<>();
+            Groups.unit.each(u -> { if (isModular(u) && modules.containsKey(u.id)) list.add(u); });
+            out.writeInt(list.size);
+            for (Unit u : list) {
+                out.writeFloat(u.x);
+                out.writeFloat(u.y);
+                out.writeShort(u.type.id);
+                String n = names.get(u.id);
+                out.writeUTF(n == null ? "" : n);
+                Seq<Item> m = modules.get(u.id);
+                out.writeByte(m.size);
+                for (Item it : m) out.writeShort(it.id);
+            }
+        }
+
+        @Override
+        public void read(java.io.DataInput in) throws java.io.IOException {
+            pending.clear();
+            int n = in.readInt();
+            for (int i = 0; i < n; i++) {
+                Saved s = new Saved();
+                s.x = in.readFloat();
+                s.y = in.readFloat();
+                s.type = in.readShort();
+                s.name = in.readUTF();
+                int c = in.readByte();
+                for (int j = 0; j < c; j++) {
+                    Item it = Vars.content.item(in.readShort());
+                    if (it != null) s.mods.add(it);
+                }
+                pending.add(s);
+            }
+        }
+    }
+
+    static void resolvePending() {
+        for (Saved s : pending) {
+            Unit best = null;
+            float bestDst = Vars.tilesize * 2f;
+            for (Unit u : Groups.unit) {
+                if (u.type.id != s.type || modules.containsKey(u.id)) continue;
+                float d = u.dst(s.x, s.y);
+                if (d < bestDst) {
+                    bestDst = d;
+                    best = u;
+                }
+            }
+            if (best != null) set(best, s.mods, s.name);
+        }
+        pending.clear();
     }
 
     public static void set(Unit unit, Seq<Item> mods, String name) {
@@ -63,6 +129,7 @@ public class Loadouts {
 
     static void update() {
         if (!Vars.state.isPlaying()) return;
+        if (!pending.isEmpty()) resolvePending();
         Groups.unit.each(u -> {
             if (!isModular(u)) return;
             int engines = Math.min(count(u, MetrumItems.partEngine), engineBoost.length - 1);
