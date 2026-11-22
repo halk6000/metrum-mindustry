@@ -8,6 +8,11 @@
 - [x] Edytor balansu (suwaki z limitami) + eksport do jar: `Edytor balansu.bat`
 
 ## Pozostałe
+- [ ] Panel wydobycia: komenda "wydobywaj" -> okno: najbliższa ruda / najmniej w magazynie / konkretna ruda
+- [ ] Modułowe drony: Hull Printer (wybór kadłuba, podgląd), Part Printer + Magazyn części (silniki, skrzydła, nogi),
+      Weapon Printer + Magazyn broni (laser wydobywczy, rakiety, ładunki wybuchowe, zbiornik paliwa, karabiny...),
+      sloty montażu na kadłubie, 60 s konstrukcji, nadanie nazwy statkowi
+- [ ] Wieżyczki z kadłubów: drony C+ przenoszą kadłub i montują jako wieżyczkę; amunicja wg broni albo 1 skrzynka/strzał
 - [x] Szkielet Java (Gradle 8.10 wrapper, Mindustry v146 compileOnly) — `gradlew jar` → build/libs/Metrum.jar
 - [x] Port: itemy (5) + płyn steam
 - [x] Port: wiertła (5), produkcja (6)

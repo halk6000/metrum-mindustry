@@ -53,3 +53,6 @@ Port oryginalnego moda Metrum (JSON) do Javy + nowe mechaniki. Wersja gry: **160
 - **Planeta Ferrox:** rdzawy teren, więcej kominów parowych, ruda żelaza, mądrzejszy wróg rozbudowujący bazę.
 
 Plan i postęp: `ROADMAP.md`.
+
+## License
+GPL-3.0 – see [LICENSE](LICENSE).

@@ -155,7 +155,8 @@ public class MetrumUnits {
                                   boolean hasCell, Item... mineItems) {
         ErekirUnitType u = new ErekirUnitType(name);
         u.constructor = UnitEntity::create;
-        u.controller = unit -> new MinerAI();
+        // no fixed controller: player units get CommandAI (shift+click RTS commands work),
+        // starting with the mine command; enemy/AI teams fall back to the type's default AI
         u.defaultCommand = UnitCommand.mineCommand;
         u.flying = true;
         u.mineWalls = true;
