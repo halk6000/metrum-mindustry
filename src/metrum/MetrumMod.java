@@ -55,7 +55,15 @@ public class MetrumMod extends Mod {
         BoostSystem.init();
         BaseExpander.planets.add(MetrumPlanets.ferrox);
         BaseExpander.init();
-        arc.Events.on(mindustry.game.EventType.ClientLoadEvent.class, e -> writeLoadReport());
+        Log.info("[Metrum] init done");
+        // ClientLoadEvent can fire before mod init on some builds; post to the next frame instead
+        arc.Core.app.post(() -> {
+            try {
+                writeLoadReport();
+            } catch (Throwable t) {
+                Log.err("[Metrum] load report failed", t);
+            }
+        });
     }
 
     /** Writes saves/metrum-load.txt: content counts, missing sprites, content errors. Used for testing. */
