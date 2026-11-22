@@ -113,24 +113,13 @@ public class MetrumUnits {
     private static void armT3c(UnitType u) {
         u.weapons.clear();
 
-        // fire laser: the hit plants charges that burst into flames 2 s later
-        mindustry.entities.bullet.BasicBulletType charge = new mindustry.entities.bullet.BasicBulletType(0f, 0f) {{
-            lifetime = 120f; // 2 s delay
-            collides = false; hittable = false; absorbable = false;
-            width = height = 0.01f;
-            splashDamage = 70f; splashDamageRadius = 28f;
-            status = StatusEffects.burning; statusDuration = 300f;
-            despawnEffect = Fx.massiveExplosion; hitEffect = Fx.fireballsmoke;
-            makeFire = true;
-            incendAmount = 3; incendChance = 1f; incendSpread = 12f;
-        }};
+        // fire laser (Victor-style death ray): 2 s later an aftershock runs along the beam, 30% damage, burning ground
         Weapon laser = new Weapon(P + "fire-laser");
         laser.x = 0f; laser.y = 4f; laser.mirror = false; laser.reload = 150f; laser.shake = 3f;
         laser.shootSound = Sounds.shootLaser;
-        laser.bullet = new mindustry.entities.bullet.LaserBulletType(140f) {{
+        laser.bullet = new metrum.entities.AftershockLaserBulletType(140f) {{
             length = 200f; width = 14f;
             colors = new Color[]{Color.valueOf("ff8a3c55"), Color.valueOf("ff8a3c"), Color.white};
-            fragBullet = charge; fragBullets = 3; fragRandomSpread = 40f; fragVelocityMin = 0f;
             status = StatusEffects.burning; statusDuration = 120f;
         }};
 
