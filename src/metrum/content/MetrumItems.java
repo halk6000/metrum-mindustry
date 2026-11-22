@@ -7,7 +7,7 @@ import mindustry.type.Item;
 public class MetrumItems {
     public static Item atomicCarbon, atomicSilicon, atomicBeryllium, atomicIron, atomicTungsten, atomicThorium;
     public static Item carborundum, tungstenCarbide, berylliumBronze, ferrotungsten, quarkMatter;
-    public static Item ammoCrate;
+    public static Item ammoCrate, hullLight, hullMedium, hullHeavy;
     public static Item pieceRock, iron, steel, weaponPart, advancedWeaponPart;
 
     public static void load() {
@@ -47,6 +47,11 @@ public class MetrumItems {
             cost = 1.5f;
             explosiveness = 0.3f;
         }};
+
+        // drone hulls (Hull Printer)
+        hullLight = new Item("hull-light", Color.valueOf("96a0af")) {{ cost = 2f; }};
+        hullMedium = new Item("hull-medium", Color.valueOf("7d8796")) {{ cost = 3f; }};
+        hullHeavy = new Item("hull-heavy", Color.valueOf("646c7a")) {{ cost = 4f; }};
 
         // hadron collider products
         carborundum = product("carborundum", "3c8c8c", 0f);

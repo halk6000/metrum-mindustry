@@ -17,6 +17,7 @@ import static mindustry.type.ItemStack.with;
 public class MetrumUnitBlocks {
     public static Block airMinerDock, airMinerRebuilder;
     public static WarReconstructor warReconstructor;
+    public static metrum.world.HullPrinter hullPrinter;
     public static FuelStation fuelStation;
 
     public static void load() {
@@ -67,6 +68,17 @@ public class MetrumUnitBlocks {
             .upgrade(MetrumUnits.monoMetT2c, MetrumUnits.monoMetT2d, 2)
             .upgrade(MetrumUnits.monoMetT3c, MetrumUnits.monoMetT3d, 2);
         warReconstructor.setupConsumers();
+
+        // modular drones, step 1: hulls
+        hullPrinter = new metrum.world.HullPrinter("hull-printer");
+        hullPrinter.requirements(Category.units, with(MetrumItems.steel, 80, Items.silicon, 80, Items.graphite, 60, Items.beryllium, 100));
+        hullPrinter.size = 3;
+        hullPrinter.consumePower(1.5f);
+        hullPrinter.craftTime = metrum.Balance.f("hull.printSeconds", 20f) * 60f;
+        hullPrinter
+            .hull(MetrumItems.hullLight, with(MetrumItems.iron, 20, Items.silicon, 10))
+            .hull(MetrumItems.hullMedium, with(MetrumItems.steel, 25, Items.silicon, 20, Items.beryllium, 20))
+            .hull(MetrumItems.hullHeavy, with(MetrumItems.steel, 40, Items.tungsten, 25, MetrumItems.berylliumBronze, 10));
 
         fuelStation = new FuelStation("fuel-station");
         fuelStation.requirements(Category.units, with(MetrumItems.steel, 60, Items.silicon, 50, Items.graphite, 40, Items.beryllium, 80));
