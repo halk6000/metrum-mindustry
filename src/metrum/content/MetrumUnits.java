@@ -103,26 +103,44 @@ public class MetrumUnits {
         monoMetT3d = booster("monomet-t3d", monoMetT3c, 15f, 1.35f, 450f);
     }
 
+    /**
+     * Each upgrade (B -> C -> D) is bigger, slower, tougher and carries one more weapon,
+     * keeping the line's role (T1 scout/miner/repair, T2 healer, T3 missile crusher).
+     * C and above also carry boost material: mined ore counts, so they keep mining.
+     */
     private static UnitType booster(String name, UnitType from, float rangeTiles, float healthMul, float reload) {
         ErekirUnitType u = new ErekirUnitType(name);
         u.constructor = UnitEntity::create;
+        u.controller = from.controller;
+        u.defaultCommand = from.defaultCommand;
         u.flying = true;
         u.drag = from.drag;
-        u.hitSize = from.hitSize;
-        u.speed = from.speed * 0.9f;
-        u.accel = from.accel;
+        u.hitSize = from.hitSize * 1.25f;
+        u.speed = from.speed * 0.8f;
+        u.accel = from.accel * 0.9f;
         u.health = from.health * healthMul;
         u.armor = from.armor + 2f;
-        u.engineSize = from.engineSize;
-        u.engineOffset = from.engineOffset;
-        u.itemCapacity = Math.max(from.itemCapacity, 60);
-        u.range = u.maxRange = from.range;
-        u.buildSpeed = from.buildSpeed;
-        // no mining: the cargo hold is reserved for boost material
-        u.mineTier = -1;
+        u.engineSize = from.engineSize * 1.2f;
+        u.engineOffset = from.engineOffset * 1.2f;
+        u.itemCapacity = (int) (from.itemCapacity * 1.25f);
+        u.range = u.maxRange = from.range * 1.1f;
+        u.buildSpeed = from.buildSpeed * 1.2f;
+        u.mineTier = from.mineTier;
+        u.mineSpeed = from.mineSpeed * 1.2f;
+        u.mineWalls = from.mineWalls;
+        u.mineFloor = from.mineFloor;
+        u.mineItems = from.mineItems;
         u.drawCell = false;
         u.researchCostMultiplier = 0f;
         for (Weapon w : from.weapons) u.weapons.add(w.copy());
+        // one extra weapon: a further-out copy of the line's main gun
+        if (from.weapons.any()) {
+            Weapon extra = from.weapons.first().copy();
+            extra.x = Math.abs(extra.x) + u.hitSize * 0.3f;
+            extra.y -= u.hitSize * 0.15f;
+            extra.reload *= 1.15f;
+            u.weapons.add(extra);
+        }
         metrum.boost.BoostAbility boost = new metrum.boost.BoostAbility();
         boost.range = rangeTiles * mindustry.Vars.tilesize;
         boost.reload = reload;

@@ -1,5 +1,6 @@
 package metrum;
 
+import arc.struct.Seq;
 import arc.util.Log;
 import metrum.ai.BaseExpander;
 import metrum.boost.BoostSystem;
@@ -54,5 +55,32 @@ public class MetrumMod extends Mod {
         BoostSystem.init();
         BaseExpander.planets.add(MetrumPlanets.ferrox);
         BaseExpander.init();
+        arc.Events.on(mindustry.game.EventType.ClientLoadEvent.class, e -> writeLoadReport());
+    }
+
+    /** Writes saves/metrum-load.txt: content counts, missing sprites, content errors. Used for testing. */
+    static void writeLoadReport() {
+        StringBuilder sb = new StringBuilder("Metrum load report\n");
+        int count = 0, missing = 0, errors = 0;
+        for (Seq<mindustry.ctype.Content> list : mindustry.Vars.content.getContentMap()) {
+            for (mindustry.ctype.Content c : list) {
+                if (c.minfo.mod == null || !"metrum".equals(c.minfo.mod.name)) continue;
+                count++;
+                if (c.hasErrored()) {
+                    errors++;
+                    sb.append("ERROR ").append(c).append(": ").append(c.minfo.error).append("\n");
+                }
+                if (c instanceof mindustry.ctype.UnlockableContent) {
+                    mindustry.ctype.UnlockableContent u = (mindustry.ctype.UnlockableContent) c;
+                    if (u.uiIcon == null || !arc.Core.atlas.isFound(u.uiIcon)) {
+                        missing++;
+                        sb.append("NO SPRITE ").append(u.name).append("\n");
+                    }
+                }
+            }
+        }
+        sb.append("content=").append(count).append(" missingSprites=").append(missing).append(" errors=").append(errors).append("\n");
+        mindustry.Vars.dataDirectory.child("metrum-load.txt").writeString(sb.toString());
+        Log.info("[Metrum] " + sb.toString().trim().replace("\n", " | "));
     }
 }
