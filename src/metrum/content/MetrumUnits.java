@@ -128,13 +128,31 @@ public class MetrumUnits {
         pods.x = 9f; pods.y = -2f; pods.mirror = true; pods.alternate = true; pods.reload = 80f;
         pods.shoot = shots(5, 4f); pods.inaccuracy = 10f; pods.shake = 1.5f;
         pods.shootSound = Sounds.shootMissile;
-        pods.bullet = missileBullet(6f, 30f, 25f, 20f, 10f, "ffff00", "dc3c3c", 80f, 50f);
+        // range 150 + 30 = 180 (lifetime 30 at speed 6); blast ring at 50% of the old T3B ring (24 -> 12)
+        MissileBulletType pb = missileBullet(6f, 30f, 30f, 20f, 10f, "ffff00", "dc3c3c", 80f, 50f);
+        WaveEffect podRing = new WaveEffect();
+        podRing.lifetime = 40f;
+        podRing.sizeFrom = podRing.sizeTo = 12f;
+        podRing.strokeFrom = 3f;
+        podRing.strokeTo = 0f;
+        podRing.colorFrom = podRing.colorTo = Color.valueOf("e3a76a");
+        pb.hitEffect = new MultiEffect(Fx.blastExplosion, podRing);
+        pods.bullet = pb;
 
         // side torpedoes: slow, homing, 300 dmg, range 800, once per 30 s
         Weapon torpedo = new Weapon(P + "torpedo-launcher");
         torpedo.x = 14f; torpedo.y = -6f; torpedo.mirror = true; torpedo.alternate = false; torpedo.reload = 1800f;
         torpedo.shootSound = Sounds.shootMissileLarge;
-        MissileBulletType tb = missileBullet(2f, 300f, 400f, 32f, 60f, "ffe08a", "e6be28", 200f, 200f);
+        // full 300 on a direct hit; area blast at 75% of the old radius (32 -> 24) dealing only 20% (60)
+        MissileBulletType tb = missileBullet(2f, 300f, 400f, 24f, 60f, "ffe08a", "e6be28", 200f, 200f);
+        WaveEffect torpRing = new WaveEffect();
+        torpRing.lifetime = 45f;
+        torpRing.sizeFrom = 4f;
+        torpRing.sizeTo = 24f;
+        torpRing.strokeFrom = 4f;
+        torpRing.strokeTo = 0f;
+        torpRing.colorFrom = torpRing.colorTo = Color.valueOf("e6be28");
+        tb.hitEffect = new MultiEffect(Fx.massiveExplosion, torpRing);
         tb.homingPower = 0.05f; tb.width = 9f; tb.height = 16f; tb.trailLength = 12; tb.trailColor = Color.valueOf("e6be28");
         torpedo.bullet = tb;
 
