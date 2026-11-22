@@ -33,6 +33,7 @@
 - [x] AI wroga na Ferrox: vanilla buildAi + rtsAi + BaseExpander (co 20 s fortyfikacja przy rdzeniu z zasobów rdzenia, tier obrony rośnie co 10 fal)
 - [x] BaseExpander: tylko wieżyczki na amunicję (breach/diffuse/titan/disperse/scathe/smite), co 5 s dosypuje amunicję z rdzenia
 - [x] tools/check.py (sprite + EN/PL dla każdej zawartości) wpięty w gradlew jar
+- [x] Wróg na Ferrox: od fali 15 co 10 s 25% jednostek (40% od fali 30) dostaje wzmocnienie +20%
 - [ ] Test kampanii Ferrox
 
 ## Blokady / uwagi

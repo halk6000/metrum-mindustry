@@ -26,7 +26,9 @@ public class BaseExpander {
     public static float minRadius = 6f, maxRadius = 22f;
     public static final Seq<Planet> planets = new Seq<>();
 
-    private static float timer, supplyTimer;
+    private static float timer, supplyTimer, boostTimer;
+    /** from this wave on, the enemy's own "booster craft" empower a share of its army */
+    public static int boostFromWave = 15;
     /** buildings placed by the expander, restocked from the nearest core */
     private static final Seq<Building> placed = new Seq<>();
 
@@ -57,6 +59,11 @@ public class BaseExpander {
         if (supplyTimer >= 60f * 5f) {
             supplyTimer = 0f;
             supply();
+        }
+        boostTimer += Time.delta;
+        if (boostTimer >= 600f) {
+            boostTimer = 0f;
+            boostEnemies();
         }
         timer += Time.delta;
         if (timer < interval) return;
@@ -113,5 +120,15 @@ public class BaseExpander {
                 t.handleItem(core, pick);
             }
         }
+    }
+
+    /** late waves: 25% of enemy units (40% after wave 30) get Metrum's boost for 10 s */
+    static void boostEnemies() {
+        int wave = Vars.state.wave;
+        if (wave < boostFromWave || metrum.boost.BoostSystem.boosted == null) return;
+        float share = wave >= 30 ? 0.4f : 0.25f;
+        Vars.state.rules.waveTeam.data().units.each(u -> {
+            if (Mathf.chance(share)) u.apply(metrum.boost.BoostSystem.boosted, 600f);
+        });
     }
 }
