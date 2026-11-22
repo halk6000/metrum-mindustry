@@ -90,6 +90,13 @@ public class MetrumTechTree {
         node(partPrinter, partWings);
         node(partPrinter, partLegs);
         node(partPrinter, partsMagazine);
+        node(partPrinter, weaponPrinter);
+        node(weaponPrinter, weaponsMagazine);
+        node(weaponPrinter, weaponMiningLaser);
+        node(weaponPrinter, weaponMissiles);
+        node(weaponPrinter, weaponExplosives);
+        node(weaponPrinter, weaponFuelTank);
+        node(weaponPrinter, weaponMachineGun);
         node(fuelStation, magmaForge);
         node(magmaForge, MetrumLiquids.magma);
         node(magmaForge, plasmaIonizer);

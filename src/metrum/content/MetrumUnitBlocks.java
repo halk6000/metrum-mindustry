@@ -17,8 +17,8 @@ import static mindustry.type.ItemStack.with;
 public class MetrumUnitBlocks {
     public static Block airMinerDock, airMinerRebuilder;
     public static WarReconstructor warReconstructor;
-    public static metrum.world.HullPrinter hullPrinter, partPrinter;
-    public static Block partsMagazine;
+    public static metrum.world.HullPrinter hullPrinter, partPrinter, weaponPrinter;
+    public static Block partsMagazine, weaponsMagazine;
     public static FuelStation fuelStation;
 
     public static void load() {
@@ -98,6 +98,26 @@ public class MetrumUnitBlocks {
         partsMagazine.requirements(Category.effect, with(MetrumItems.steel, 60, Items.beryllium, 60));
         partsMagazine.size = 2;
         partsMagazine.itemCapacity = 100;
+
+        // modular drones, step 3: weapons & modules + their storage
+        weaponPrinter = new metrum.world.HullPrinter("weapon-printer");
+        weaponPrinter.requirements(Category.units, with(MetrumItems.steel, 80, Items.silicon, 100, Items.tungsten, 40));
+        weaponPrinter.size = 3;
+        weaponPrinter.consumePower(2f);
+        weaponPrinter.craftTime = metrum.Balance.f("weapon.printSeconds", 15f) * 60f;
+        weaponPrinter
+            .hull(MetrumItems.weaponMiningLaser, with(Items.silicon, 15, Items.graphite, 10, MetrumItems.iron, 5))
+            .hull(MetrumItems.weaponMissiles, with(MetrumItems.steel, 10, Items.silicon, 10, MetrumItems.ammoCrate, 2))
+            .hull(MetrumItems.weaponExplosives, with(MetrumItems.ammoCrate, 3, Items.graphite, 10))
+            .hull(MetrumItems.weaponFuelTank, with(MetrumItems.steel, 15, Items.beryllium, 10))
+            .hull(MetrumItems.weaponMachineGun, with(MetrumItems.steel, 12, MetrumItems.iron, 10, MetrumItems.ammoCrate, 1));
+
+        weaponsMagazine = new metrum.world.FilteredStorage("weapons-magazine",
+            MetrumItems.weaponMiningLaser, MetrumItems.weaponMissiles, MetrumItems.weaponExplosives,
+            MetrumItems.weaponFuelTank, MetrumItems.weaponMachineGun, MetrumItems.ammoCrate);
+        weaponsMagazine.requirements(Category.effect, with(MetrumItems.steel, 60, Items.tungsten, 30));
+        weaponsMagazine.size = 2;
+        weaponsMagazine.itemCapacity = 100;
 
         fuelStation = new FuelStation("fuel-station");
         fuelStation.requirements(Category.units, with(MetrumItems.steel, 60, Items.silicon, 50, Items.graphite, 40, Items.beryllium, 80));

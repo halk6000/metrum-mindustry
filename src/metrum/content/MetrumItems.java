@@ -7,7 +7,7 @@ import mindustry.type.Item;
 public class MetrumItems {
     public static Item atomicCarbon, atomicSilicon, atomicBeryllium, atomicIron, atomicTungsten, atomicThorium;
     public static Item carborundum, tungstenCarbide, berylliumBronze, ferrotungsten, quarkMatter;
-    public static Item ammoCrate, hullLight, hullMedium, hullHeavy, partEngine, partWings, partLegs;
+    public static Item ammoCrate, hullLight, hullMedium, hullHeavy, partEngine, partWings, partLegs, weaponMiningLaser, weaponMissiles, weaponExplosives, weaponFuelTank, weaponMachineGun;
     public static Item pieceRock, iron, steel, weaponPart, advancedWeaponPart;
 
     public static void load() {
@@ -57,6 +57,13 @@ public class MetrumItems {
         partEngine = new Item("part-engine", Color.valueOf("ff963c")) {{ cost = 2f; }};
         partWings = new Item("part-wings", Color.valueOf("8c96a5")) {{ cost = 1.5f; }};
         partLegs = new Item("part-legs", Color.valueOf("787d8c")) {{ cost = 1.5f; }};
+
+        // drone weapons & modules (Weapon Printer)
+        weaponMiningLaser = new Item("weapon-mining-laser", Color.valueOf("78dcff")) {{ cost = 2f; }};
+        weaponMissiles = new Item("weapon-missiles", Color.valueOf("dc3c3c")) {{ cost = 2f; }};
+        weaponExplosives = new Item("weapon-explosives", Color.valueOf("46464f")) {{ cost = 2f; }};
+        weaponFuelTank = new Item("weapon-fuel-tank", Color.valueOf("ff9a2e")) {{ cost = 2f; }};
+        weaponMachineGun = new Item("weapon-machine-gun", Color.valueOf("5f6473")) {{ cost = 2f; }};
 
         // hadron collider products
         carborundum = product("carborundum", "3c8c8c", 0f);
