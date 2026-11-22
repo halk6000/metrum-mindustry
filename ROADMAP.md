@@ -9,7 +9,8 @@
 - [x] Szkielet Java (Gradle 8.10 wrapper, Mindustry v146 compileOnly) — `gradlew jar` → build/libs/Metrum.jar
 - [x] Port: itemy (5) + płyn steam
 - [x] Port: wiertła (5), produkcja (6)
-- [ ] Port: turbine, MonoMet units, docks
+- [x] Port: turbina zaawansowana
+- [ ] Port: MonoMet units, docks
 - [ ] Falownik cieplny (heat in → woda → para)
 - [ ] Drony-wzmacniacze (+20% zasięg/obrażenia, koszt 20 mat. najsłabszego, -2 na kolejny tier)
 - [ ] Stacja paliw 2x2, zasięg 8, paliwo żużel/magma/plazma (+10/30/50% prędkości)
