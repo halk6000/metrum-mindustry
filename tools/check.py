@@ -13,7 +13,7 @@ kinds = {  # constructor / helper -> bundle prefix
 found = []
 for m in re.finditer(r'(?:new\s+)?(\w+)\("([a-z0-9-]+)"', src):
     cls, name = m.groups()
-    if cls in ("Weapon",) or name.startswith(("-", "metrum-", "heal-")):
+    if cls in ("Weapon", "ModuleWeapon") or name.startswith(("-", "metrum-", "heal-")) or name.endswith("-"):
         continue
     if cls in ("product", "atomic", "miner", "booster", "streamDrill", "decompressor") or m.group(0).startswith("new"):
         prefix = kinds.get(cls, "block")

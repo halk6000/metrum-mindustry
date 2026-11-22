@@ -22,12 +22,14 @@ public class MetrumMod extends Mod {
     public void loadContent() {
         FuelSystem.load();
         BoostSystem.load();
+        metrum.modular.Loadouts.load();
         MetrumItems.load();
         MetrumLiquids.load();
         MetrumBlocks.load();
         MetrumProduction.load();
         MetrumPower.load();
         MetrumUnits.load();
+        metrum.modular.MetrumModular.load();
         MetrumUnitBlocks.load();
         MetrumPhysics.load();
         MetrumTechTree.load();
@@ -88,6 +90,7 @@ public class MetrumMod extends Mod {
         BoostSystem.init();
         BaseExpander.planets.add(MetrumPlanets.ferrox);
         BaseExpander.init();
+        metrum.modular.Loadouts.init();
         metrum.ai.SmartMining.init(MetrumUnits.monoMetT1, MetrumUnits.monoMetT2, MetrumUnits.monoMetT3,
             MetrumUnits.monoMetT1b, MetrumUnits.monoMetT2b, MetrumUnits.monoMetT3b,
             MetrumUnits.monoMetT1c, MetrumUnits.monoMetT2c, MetrumUnits.monoMetT3c,
