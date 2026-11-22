@@ -101,7 +101,7 @@ public class MetrumMod extends Mod {
                     errors++;
                     sb.append("ERROR ").append(c).append(": ").append(c.minfo.error).append("\n");
                 }
-                if (c instanceof mindustry.ctype.UnlockableContent) {
+                if (c instanceof mindustry.ctype.UnlockableContent && !(c instanceof mindustry.type.Planet)) {
                     mindustry.ctype.UnlockableContent u = (mindustry.ctype.UnlockableContent) c;
                     if (u.uiIcon == null || !arc.Core.atlas.isFound(u.uiIcon)) {
                         missing++;

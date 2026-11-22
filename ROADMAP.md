@@ -35,7 +35,9 @@
 - [x] tools/check.py (sprite + EN/PL dla każdej zawartości) wpięty w gradlew jar
 - [x] Wróg na Ferrox: od fali 15 co 10 s 25% jednostek (40% od fali 30) dostaje wzmocnienie +20%
 - [x] Fabryka amunicji 3x3 (2 Fe + 1 stal + 3 Be + woda -> 2 skrzynki, para uboczna); Rekonstruktor Wojenny B->C (1 skrzynka + 2 stal + para 0.09/s), wersja D też wymaga skrzynki+stali+pary
-- [ ] Test kampanii Ferrox
+- [x] Mod potwierdzony w grze 160.8: 63 elementy, 0 błędów, init OK (metrum-trace.txt)
+- [x] Ikony statusów (paliwo, wzmocnienie)
+- [ ] Test kampanii Ferrox (TEST.md)
 
 ## Repo
 - GitHub (prywatne): https://github.com/halk6000/metrum-mindustry
