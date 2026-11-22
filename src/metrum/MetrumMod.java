@@ -35,14 +35,16 @@ public class MetrumMod extends Mod {
 
     @Override
     public void init() {
-        // Metrum MonoMets all come from one dock, so set their tiers explicitly.
-        FuelSystem.setTier(MetrumUnits.monoMetT1, 1);
-        FuelSystem.setTier(MetrumUnits.monoMetT2, 2);
-        FuelSystem.setTier(MetrumUnits.monoMetT3, 3);
-        FuelSystem.setTier(MetrumUnits.monoMetT1b, 2);
-        FuelSystem.setTier(MetrumUnits.monoMetT2b, 3);
-        FuelSystem.setTier(MetrumUnits.monoMetT3b, 4);
-        FuelSystem.setTier(MetrumUnits.boosterDrone, 3);
+        // Metrum tiers: T1-T3, upgrades B / C / D. Fuel tanks start at C.
+        // level: 0 = base, 1 = B, 2 = C, 3 = D
+        FuelSystem.register(MetrumUnits.monoMetT1, 1, 0);
+        FuelSystem.register(MetrumUnits.monoMetT2, 2, 0);
+        FuelSystem.register(MetrumUnits.monoMetT3, 3, 0);
+        FuelSystem.register(MetrumUnits.monoMetT1b, 1, 1);
+        FuelSystem.register(MetrumUnits.monoMetT2b, 2, 1);
+        FuelSystem.register(MetrumUnits.monoMetT3b, 3, 1);
+        // booster drone acts as a C-level support craft (T2 base) until proper C variants exist
+        FuelSystem.register(MetrumUnits.boosterDrone, 2, 2);
         FuelSystem.init();
         BoostSystem.init();
     }

@@ -19,7 +19,7 @@
 - [x] Dron wzmacniający (T3, z Air Miner Dock): co 10 s +20% obrażeń i zasięgu w promieniu 10; koszt 20 berylu, -2 za każdy wyższy materiał (min 2); bierze najsłabszy materiał z rdzenia
 - [x] Stacja paliw 2x2, zasięg 8, żużel/magma/plazma (+10/30/50%)
 - [x] Kuźnia magmy (ciepło + odłamki) i jonizator plazmy (magma + atomowy węgiel + prąd)
-- [x] Bak paliwa T3/T4/T5 = 100/200/250, 1 na 0.6 s, pomarańczowy pasek, -90% przy 0 (tylko drużyny gracza; paliwo nie zapisuje się w save)
+- [x] Bak paliwa wg systemu Metrum: T1–T3 + warianty B/C/D; bak od wariantu C, pojemność T1=100 / T2=200 / T3=250; vanilla bez paliwa
 - [x] Drzewko tech: cała zawartość podpięta pod drzewo Erekiru
 - [x] Zderzacz cz.1: 6 atomowych itemów + Atomizer (2 minerały -> 1 atom)
 - [x] Zderzacz cz.2: Hadron Collider 3x3, 5 receptur (karborund, węglik wolframu, brąz berylowy, żelazowolfram, materia kwarkowa) + drzewko
@@ -27,6 +27,7 @@
 - [x] Lokalizacja: EN domyślny + PL (assets/bundles)
 - [x] Planeta Ferrox (orbita słońca, teren z generatora Erekiru, rdzeń Bastion, wspólne drzewko z Erekirem)
 - [ ] Własny generator terenu Ferrox
+- [ ] Warianty C i D dronów MonoMet (C = drony wzmacniające?) + rekonstruktory
 - [ ] AI wroga z auto-rozbudową bazy
 
 ## Blokady / uwagi
