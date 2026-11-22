@@ -27,7 +27,7 @@ Install: copy `Metrum.jar` to `saves/mods/` of the game.
 | Fuel | C/D variants have a tank (T1 100 / T2 200 / T3 250), burn 1 per 0.6 s, orange bar, -90% speed when empty |
 | Fuel station | 2x2, refuels within 8 tiles. Slag +10% / magma +30% / plasma +50% speed. Magma forge, plasma ionizer |
 | Physics | Atomizer (2 minerals -> 1 atom), **Hadron Collider** (atom pair decides product): carborundum, tungsten carbide, beryllium bronze, ferrotungsten, quark matter |
-| Planet | **Ferrox**: rusty re-skin of Erekir terrain, extra steam vents, iron ore. Enemy: buildAi + rtsAi + BaseExpander (fortifies cores, restocks turrets), boosts its army from wave 15 |
+| Planet | **Ferrox**: rusty re-skin of Erekir terrain, extra steam vents, iron ore. Enemy: buildAi + rtsAi + BaseExpander (fortifies cores, restocks turrets), fields booster craft (T2C, T3C from wave 30) from wave 15 |
 
 ## Known limits
 - Fuel tanks are saved (custom save chunk); units are re-matched by type + position on load.

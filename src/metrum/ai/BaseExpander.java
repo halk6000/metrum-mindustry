@@ -61,7 +61,7 @@ public class BaseExpander {
             supply();
         }
         boostTimer += Time.delta;
-        if (boostTimer >= 600f) {
+        if (boostTimer >= 60f * 30f) {
             boostTimer = 0f;
             boostEnemies();
         }
@@ -122,13 +122,20 @@ public class BaseExpander {
         }
     }
 
-    /** late waves: 25% of enemy units (40% after wave 30) get Metrum's boost for 10 s */
+    /**
+     * Late waves: the enemy fields real booster craft (MonoMet T2C/T3C) that follow its army
+     * and boost it with material from its core. Shoot them down to stop the boosts.
+     */
     static void boostEnemies() {
         int wave = Vars.state.wave;
-        if (wave < boostFromWave || metrum.boost.BoostSystem.boosted == null) return;
-        float share = wave >= 30 ? 0.4f : 0.25f;
-        Vars.state.rules.waveTeam.data().units.each(u -> {
-            if (Mathf.chance(share)) u.apply(metrum.boost.BoostSystem.boosted, 600f);
-        });
+        if (wave < boostFromWave) return;
+        Team team = Vars.state.rules.waveTeam;
+        mindustry.type.UnitType type = wave >= 30 ? metrum.content.MetrumUnits.monoMetT3c : metrum.content.MetrumUnits.monoMetT2c;
+        int max = 1 + (wave - boostFromWave) / 10;
+        int have = team.data().countType(metrum.content.MetrumUnits.monoMetT2c) + team.data().countType(metrum.content.MetrumUnits.monoMetT3c);
+        if (have >= max || team.cores().isEmpty() || !type.supportsEnv(Vars.state.rules.env)) return;
+        CoreBuild core = team.cores().random();
+        mindustry.gen.Unit u = type.spawn(team, core.x + Mathf.range(16f), core.y + Mathf.range(16f));
+        u.controller(new mindustry.ai.types.FlyingFollowAI());
     }
 }
