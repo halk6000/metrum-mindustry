@@ -97,6 +97,7 @@ public class MetrumUnits {
         monoMetT1c = booster("monomet-t1c", monoMetT1b, metrum.Balance.f("boost.c.rangeT1", 8f), metrum.Balance.f("upgrade.c.healthT1", 1.5f), metrum.Balance.f("boost.c.seconds", 10f) * 60f);
         monoMetT2c = booster("monomet-t2c", monoMetT2b, metrum.Balance.f("boost.c.rangeT2", 10f), metrum.Balance.f("upgrade.c.healthT2", 1.5f), metrum.Balance.f("boost.c.seconds", 10f) * 60f);
         monoMetT3c = booster("monomet-t3c", monoMetT3b, metrum.Balance.f("boost.c.rangeT3", 12f), metrum.Balance.f("upgrade.c.healthT3", 1.4f), metrum.Balance.f("boost.c.seconds", 10f) * 60f);
+        armT3c(monoMetT3c);
         // D: wider field, boosts every 7.5 s instead of 10 s
         monoMetT1d = booster("monomet-t1d", monoMetT1c, metrum.Balance.f("boost.d.rangeT1", 11f), metrum.Balance.f("upgrade.d.healthT1", 1.4f), metrum.Balance.f("boost.d.seconds", 7.5f) * 60f);
         monoMetT2d = booster("monomet-t2d", monoMetT2c, metrum.Balance.f("boost.d.rangeT2", 13f), metrum.Balance.f("upgrade.d.healthT2", 1.4f), metrum.Balance.f("boost.d.seconds", 7.5f) * 60f);
@@ -108,6 +109,49 @@ public class MetrumUnits {
      * keeping the line's role (T1 scout/miner/repair, T2 healer, T3 missile crusher).
      * C and above also carry boost material: mined ore counts, so they keep mining.
      */
+    /** T3C/T3D loadout: fire laser + heavy 2x5 missile pods + slow homing torpedoes */
+    private static void armT3c(UnitType u) {
+        u.weapons.clear();
+
+        // fire laser: the hit plants charges that burst into flames 2 s later
+        mindustry.entities.bullet.BasicBulletType charge = new mindustry.entities.bullet.BasicBulletType(0f, 0f) {{
+            lifetime = 120f; // 2 s delay
+            collides = false; hittable = false; absorbable = false;
+            width = height = 0.01f;
+            splashDamage = 70f; splashDamageRadius = 28f;
+            status = StatusEffects.burning; statusDuration = 300f;
+            despawnEffect = Fx.massiveExplosion; hitEffect = Fx.fireballsmoke;
+            makeFire = true;
+            incendAmount = 3; incendChance = 1f; incendSpread = 12f;
+        }};
+        Weapon laser = new Weapon(P + "fire-laser");
+        laser.x = 0f; laser.y = 4f; laser.mirror = false; laser.reload = 150f; laser.shake = 3f;
+        laser.shootSound = Sounds.shootLaser;
+        laser.bullet = new mindustry.entities.bullet.LaserBulletType(140f) {{
+            length = 200f; width = 14f;
+            colors = new Color[]{Color.valueOf("ff8a3c55"), Color.valueOf("ff8a3c"), Color.white};
+            fragBullet = charge; fragBullets = 3; fragRandomSpread = 40f; fragVelocityMin = 0f;
+            status = StatusEffects.burning; statusDuration = 120f;
+        }};
+
+        // heavy pods: 2 x 5 missiles, 30 dmg, range 150 shorter than the old pods (300 -> 150)
+        Weapon pods = new Weapon(P + "missile-pod-heavy");
+        pods.x = 9f; pods.y = -2f; pods.mirror = true; pods.alternate = true; pods.reload = 80f;
+        pods.shoot = shots(5, 4f); pods.inaccuracy = 10f; pods.shake = 1.5f;
+        pods.shootSound = Sounds.shootMissile;
+        pods.bullet = missileBullet(6f, 30f, 25f, 20f, 10f, "ffff00", "dc3c3c", 80f, 50f);
+
+        // side torpedoes: slow, homing, 300 dmg, range 800, once per 30 s
+        Weapon torpedo = new Weapon(P + "torpedo-launcher");
+        torpedo.x = 14f; torpedo.y = -6f; torpedo.mirror = true; torpedo.alternate = false; torpedo.reload = 1800f;
+        torpedo.shootSound = Sounds.shootMissileLarge;
+        MissileBulletType tb = missileBullet(2f, 300f, 400f, 32f, 60f, "ffe08a", "e6be28", 200f, 200f);
+        tb.homingPower = 0.05f; tb.width = 9f; tb.height = 16f; tb.trailLength = 12; tb.trailColor = Color.valueOf("e6be28");
+        torpedo.bullet = tb;
+
+        u.weapons.addAll(laser, pods, torpedo);
+    }
+
     private static UnitType booster(String name, UnitType from, float rangeTiles, float healthMul, float reload) {
         ErekirUnitType u = new ErekirUnitType(name);
         // C and above can lift and place hull turrets (2x2 payloads)
