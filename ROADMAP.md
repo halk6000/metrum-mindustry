@@ -8,7 +8,7 @@
 - [x] Edytor balansu (suwaki z limitami) + eksport do jar: `Edytor balansu.bat`
 
 ## Pozostałe
-- [ ] Panel wydobycia: komenda "wydobywaj" -> okno: najbliższa ruda / najmniej w magazynie / konkretna ruda
+- [x] Panel wydobycia (komenda „Inteligentne wydobycie”): komenda "wydobywaj" -> okno: najbliższa ruda / najmniej w magazynie / konkretna ruda
 - [ ] Modułowe drony: Hull Printer (wybór kadłuba, podgląd), Part Printer + Magazyn części (silniki, skrzydła, nogi),
       Weapon Printer + Magazyn broni (laser wydobywczy, rakiety, ładunki wybuchowe, zbiornik paliwa, karabiny...),
       sloty montażu na kadłubie, 60 s konstrukcji, nadanie nazwy statkowi

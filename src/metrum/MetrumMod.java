@@ -88,6 +88,10 @@ public class MetrumMod extends Mod {
         BoostSystem.init();
         BaseExpander.planets.add(MetrumPlanets.ferrox);
         BaseExpander.init();
+        metrum.ai.SmartMining.init(MetrumUnits.monoMetT1, MetrumUnits.monoMetT2, MetrumUnits.monoMetT3,
+            MetrumUnits.monoMetT1b, MetrumUnits.monoMetT2b, MetrumUnits.monoMetT3b,
+            MetrumUnits.monoMetT1c, MetrumUnits.monoMetT2c, MetrumUnits.monoMetT3c,
+            MetrumUnits.monoMetT1d, MetrumUnits.monoMetT2d, MetrumUnits.monoMetT3d);
         Log.info("[Metrum] init done");
         // ClientLoadEvent can fire before mod init on some builds; post to the next frame instead
         arc.Core.app.post(() -> {
