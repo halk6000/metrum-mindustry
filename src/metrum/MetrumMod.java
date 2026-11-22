@@ -120,6 +120,17 @@ public class MetrumMod extends Mod {
                 }
             }
         }
+        // reconstructor sanity: every upgrade target must be unlocked and not banned, or the block refuses the unit
+        for (mindustry.world.Block b : mindustry.Vars.content.blocks()) {
+            if (!(b instanceof mindustry.world.blocks.units.Reconstructor) || b.minfo.mod == null) continue;
+            for (mindustry.type.UnitType[] up : ((mindustry.world.blocks.units.Reconstructor) b).upgrades) {
+                if (!up[1].unlockedNowHost() || up[1].isBanned()) {
+                    sb.append("UPGRADE BLOCKED ").append(b.name).append(": ").append(up[0].name).append(" -> ").append(up[1].name)
+                        .append(" unlocked=").append(up[1].unlockedNowHost()).append(" banned=").append(up[1].isBanned()).append(System.lineSeparator());
+                    errors++;
+                }
+            }
+        }
         sb.append("content=").append(count).append(" missingSprites=").append(missing).append(" errors=").append(errors).append("\n");
         mindustry.Vars.dataDirectory.child("metrum-load.txt").writeString(sb.toString());
         Log.info("[Metrum] " + sb.toString().trim().replace("\n", " | "));
