@@ -102,6 +102,11 @@ public class MetrumUnits {
         monoMetT1d = booster("monomet-t1d", monoMetT1c, metrum.Balance.f("boost.d.rangeT1", 11f), metrum.Balance.f("upgrade.d.healthT1", 1.4f), metrum.Balance.f("boost.d.seconds", 7.5f) * 60f);
         monoMetT2d = booster("monomet-t2d", monoMetT2c, metrum.Balance.f("boost.d.rangeT2", 13f), metrum.Balance.f("upgrade.d.healthT2", 1.4f), metrum.Balance.f("boost.d.seconds", 7.5f) * 60f);
         monoMetT3d = booster("monomet-t3d", monoMetT3c, metrum.Balance.f("boost.d.rangeT3", 15f), metrum.Balance.f("upgrade.d.healthT3", 1.35f), metrum.Balance.f("boost.d.seconds", 7.5f) * 60f);
+        // 3D: shield generator - blocks 100% explosions, 60% physical; lasers/flames/slag/poison pass through
+        metrum.shields.ResistShieldAbility gen = new metrum.shields.ResistShieldAbility();
+        gen.maxHealth = 500f; gen.regenPerSecond = 2f; gen.breakTime = 60f * 60f; gen.restoreHealth = 100f;
+        gen.explosiveResist = 1f; gen.physicalResist = 0.6f; gen.radius = monoMetT3d.hitSize * 1.1f;
+        monoMetT3d.abilities.add(gen);
     }
 
     /**
