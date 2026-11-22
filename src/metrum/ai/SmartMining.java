@@ -119,6 +119,10 @@ public class SmartMining {
                     bestAmount = amount;
                 }
             }
+            // hysteresis: keep the current ore unless another one is clearly scarcer,
+            // so drones don't flip-flop every 2 s when stocks are close
+            if (targetItem != null && best != null && targetItem != best && core != null
+                && unit.canMine(targetItem) && core.items.get(targetItem) <= bestAmount + 20) return targetItem;
             return best;
         }
 
