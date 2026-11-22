@@ -34,4 +34,12 @@ tasks.register('deploy', Copy) {
     from jar.archiveFile
     into 'C:/Program Files (x86)/Steam/steamapps/common/Mindustry/saves/mods'
     rename { 'Metrum.zip' }
+    // Steam Cloud can restore extra copies (e.g. Metrum1.zip from an in-game import): overwrite them too,
+    // so whichever one the game picks is the current build.
+    doLast {
+        def mods = file('C:/Program Files (x86)/Steam/steamapps/common/Mindustry/saves/mods')
+        mods.listFiles({ f -> f.name ==~ /Metrum\d*\.zip/ && f.name != 'Metrum.zip' } as FileFilter)?.each { f ->
+            java.nio.file.Files.copy(jar.archiveFile.get().asFile.toPath(), f.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+        }
+    }
 }

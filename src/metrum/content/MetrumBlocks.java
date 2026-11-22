@@ -140,18 +140,20 @@ public class MetrumBlocks {
         return w;
     }
 
-    private static BeamDrill streamDrill(String name, int tier, float drillTime, float power,
+    // NOTE: no anonymous {{ }} block here - inside it, parameters named like fields (tier, drillTime)
+    // are shadowed by the inherited fields, so "this.tier = tier" assigned the field to itself (tier stayed 1).
+    private static BeamDrill streamDrill(String name, int drillTier, float time, float power,
                                          float steamUse, float boost, ItemStack[] req) {
-        return new BeamDrill(name) {{
-            requirements(Category.production, req);
-            this.tier = tier;
-            this.drillTime = drillTime;
-            size = 2;
-            range = 6;
-            optionalBoostIntensity = boost;
-            itemCapacity = 20;
-            consumePower(power);
-            consumeLiquid(MetrumLiquids.steam, steamUse).boost();
-        }};
+        BeamDrill d = new BeamDrill(name);
+        d.requirements(Category.production, req);
+        d.tier = drillTier;
+        d.drillTime = time;
+        d.size = 2;
+        d.range = 6;
+        d.optionalBoostIntensity = boost;
+        d.itemCapacity = 20;
+        d.consumePower(power);
+        d.consumeLiquid(MetrumLiquids.steam, steamUse).boost();
+        return d;
     }
 }
