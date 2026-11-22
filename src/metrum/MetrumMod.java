@@ -44,8 +44,9 @@ public class MetrumMod extends Mod {
         FuelSystem.register(MetrumUnits.monoMetT1b, 1, 1);
         FuelSystem.register(MetrumUnits.monoMetT2b, 2, 1);
         FuelSystem.register(MetrumUnits.monoMetT3b, 3, 1);
-        // booster drone acts as a C-level support craft (T2 base) until proper C variants exist
-        FuelSystem.register(MetrumUnits.boosterDrone, 2, 2);
+        FuelSystem.register(MetrumUnits.monoMetT1c, 1, 2);
+        FuelSystem.register(MetrumUnits.monoMetT2c, 2, 2);
+        FuelSystem.register(MetrumUnits.monoMetT3c, 3, 2);
         FuelSystem.init();
         BoostSystem.init();
         BaseExpander.planets.add(MetrumPlanets.ferrox);

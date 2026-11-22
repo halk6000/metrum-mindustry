@@ -20,7 +20,7 @@ import mindustry.type.unit.ErekirUnitType;
 
 /** MonoMet mining drones ported from the original Metrum JSON mod. */
 public class MetrumUnits {
-    public static UnitType monoMetT1, monoMetT1b, monoMetT2, monoMetT2b, monoMetT3, monoMetT3b, boosterDrone;
+    public static UnitType monoMetT1, monoMetT1b, monoMetT2, monoMetT2b, monoMetT3, monoMetT3b, monoMetT1c, monoMetT2c, monoMetT3c;
 
     private static final String P = "metrum-";
 
@@ -86,26 +86,43 @@ public class MetrumUnits {
             missile(false, 30f, 6, 35f, wave),
             missile(true, 140f, 1, 25f, missileBullet(8f, 300f, 60f, 30f, 60f, "e00600", "e0c706", 160f, 80f)));
 
-        loadBooster();
+        loadBoosters();
     }
 
-    private static void loadBooster() {
-        ErekirUnitType u = new ErekirUnitType("booster-drone");
+    /**
+     * C variants (and every later upgrade) are booster craft: they carry material and spend it
+     * to give nearby allies +20% damage and range. Built from the B variant, keeping its weapons.
+     */
+    private static void loadBoosters() {
+        monoMetT1c = booster("monomet-t1c", monoMetT1b, 8f, 1.5f);
+        monoMetT2c = booster("monomet-t2c", monoMetT2b, 10f, 1.5f);
+        monoMetT3c = booster("monomet-t3c", monoMetT3b, 12f, 1.4f);
+    }
+
+    private static UnitType booster(String name, UnitType from, float rangeTiles, float healthMul) {
+        ErekirUnitType u = new ErekirUnitType(name);
         u.constructor = UnitEntity::create;
         u.flying = true;
-        u.drag = 0.06f;
-        u.hitSize = 12f;
-        u.speed = 3.6f;
-        u.accel = 0.2f;
-        u.health = 420f;
-        u.engineSize = 2.2f;
-        u.engineOffset = 5.7f;
-        u.itemCapacity = 60;
+        u.drag = from.drag;
+        u.hitSize = from.hitSize;
+        u.speed = from.speed * 0.9f;
+        u.accel = from.accel;
+        u.health = from.health * healthMul;
+        u.armor = from.armor + 2f;
+        u.engineSize = from.engineSize;
+        u.engineOffset = from.engineOffset;
+        u.itemCapacity = Math.max(from.itemCapacity, 60);
+        u.range = u.maxRange = from.range;
+        u.buildSpeed = from.buildSpeed;
+        // no mining: the cargo hold is reserved for boost material
         u.mineTier = -1;
         u.drawCell = false;
-        u.range = u.maxRange = 80f;
-        u.abilities.add(new metrum.boost.BoostAbility());
-        boosterDrone = u;
+        u.researchCostMultiplier = 0f;
+        for (Weapon w : from.weapons) u.weapons.add(w.copy());
+        metrum.boost.BoostAbility boost = new metrum.boost.BoostAbility();
+        boost.range = rangeTiles * mindustry.Vars.tilesize;
+        u.abilities.add(boost);
+        return u;
     }
 
     private static UnitType miner(String name, float hitSize, float speed, float accel, float health, float engineSize,

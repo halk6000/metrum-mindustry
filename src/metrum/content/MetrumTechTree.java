@@ -74,7 +74,10 @@ public class MetrumTechTree {
         node(monoMetT2, monoMetT2b);
         node(monoMetT2, monoMetT3);
         node(monoMetT3, monoMetT3b);
-        node(monoMetT2, boosterDrone);
+        node(airMinerRebuilder, boosterRebuilder);
+        node(monoMetT1b, monoMetT1c);
+        node(monoMetT2b, monoMetT2c);
+        node(monoMetT3b, monoMetT3c);
     }
 
     /** Attaches {@code content} under {@code parent}'s node; skips silently if the parent has no node. */
