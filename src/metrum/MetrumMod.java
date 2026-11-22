@@ -3,6 +3,7 @@ package metrum;
 import arc.util.Log;
 import metrum.content.MetrumBlocks;
 import metrum.content.MetrumItems;
+import metrum.content.MetrumProduction;
 import metrum.content.MetrumLiquids;
 import mindustry.mod.Mod;
 
@@ -12,6 +13,7 @@ public class MetrumMod extends Mod {
         MetrumItems.load();
         MetrumLiquids.load();
         MetrumBlocks.load();
+        MetrumProduction.load();
         Log.info("[Metrum] content loaded");
     }
 }
