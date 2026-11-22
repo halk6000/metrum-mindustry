@@ -45,6 +45,9 @@ public class ResistShieldAbility extends Ability {
     /** while the shield holds: bonus armour, and the fraction of burning that is shrugged off */
     public float bonusArmor = 0f, burnResist = 0f;
     public boolean visible = true;
+    /** armour-plating mode: the shield loses HP as the unit takes damage (instead of catching bullets) */
+    public boolean drainOnDamage = false;
+    private float lastHealth = -1f;
     public Color color = Color.valueOf("7fe3ff");
 
     public float health = -1f, broken, hitFlash;
@@ -75,6 +78,19 @@ public class ResistShieldAbility extends Ability {
             if (broken <= 0f) health = restoreHealth;
         } else {
             health = Math.min(health + regenPerSecond / 60f * Time.delta, maxHealth);
+        }
+
+        if (drainOnDamage) {
+            if (lastHealth >= 0f && unit.health < lastHealth && active()) {
+                health -= lastHealth - unit.health;
+                hitFlash = 1f;
+                if (health <= 0f) {
+                    health = 0f;
+                    broken = breakTime;
+                    Fx.shieldBreak.at(unit.x, unit.y, radius, color);
+                }
+            }
+            lastHealth = unit.health;
         }
 
         boolean on = active();
@@ -112,7 +128,17 @@ public class ResistShieldAbility extends Ability {
 
     @Override
     public void draw(Unit unit) {
-        if (!visible || !active()) return;
+        if (!active()) return;
+        if (drainOnDamage) {
+            // plating: thin glowing outline instead of a bubble
+            Draw.z(Layer.flyingUnit + 0.5f);
+            Draw.color(color, 0.35f + hitFlash * 0.5f);
+            Lines.stroke(1f);
+            Lines.poly(unit.x, unit.y, 6, unit.hitSize * 0.7f, unit.rotation);
+            Draw.reset();
+            return;
+        }
+        if (!visible) return;
         Draw.z(Layer.shields);
         Draw.color(color, 0.15f + hitFlash * 0.35f);
         Fill.circle(unit.x, unit.y, radius);

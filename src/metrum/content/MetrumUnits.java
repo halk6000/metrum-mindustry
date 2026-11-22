@@ -110,6 +110,13 @@ public class MetrumUnits {
 
         // 1C and 1D: mini shield generator (same resistances, smaller)
         for (UnitType t : new UnitType[]{monoMetT1c, monoMetT1d}) t.abilities.add(shield(150f, 0.5f, 30f, 50f, 1f, 0.6f, t.hitSize * 1.1f, 0f, 0f));
+        // 2C and 2D: armour-plating shield - while it holds: +15 armour, 50% burning resistance
+        for (UnitType t : new UnitType[]{monoMetT2c, monoMetT2d}) {
+            metrum.shields.ResistShieldAbility plate = shield(100f, 0.5f, 30f, 50f, 0f, 0f, t.hitSize, 15f, 0.5f);
+            plate.drainOnDamage = true;
+            plate.color = Color.valueOf("c8a050");
+            t.abilities.add(plate);
+        }
         // 1D also gets the heavy missile pods of the 3D
         for (Weapon w : monoMetT3c.weapons) if (w.name.endsWith("missile-pod-heavy")) {
             Weapon pod = w.copy();
