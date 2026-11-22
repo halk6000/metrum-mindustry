@@ -94,6 +94,7 @@ public class MetrumMod extends Mod {
             try {
                 writeLoadReport();
                 SelfTest.runIfRequested();
+                WelcomeDialog.showIfNew();
             } catch (Throwable t) {
                 Log.err("[Metrum] load report failed", t);
             }
