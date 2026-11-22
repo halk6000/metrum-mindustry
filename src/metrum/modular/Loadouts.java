@@ -20,6 +20,8 @@ public class Loadouts {
     static final IntMap<Seq<Item>> modules = new IntMap<>();
     static final IntMap<String> names = new IntMap<>();
     public static final StatusEffect[] engineBoost = new StatusEffect[5];
+    /** wings: agile (+10% speed, faster turning); legs: landing gear / plating (+armour, +health regen) */
+    public static StatusEffect wings, legs;
 
     public static void load() {
         for (int i = 1; i < engineBoost.length; i++) {
@@ -28,6 +30,13 @@ public class Loadouts {
             e.show = false;
             engineBoost[i] = e;
         }
+        wings = new StatusEffect("module-wings");
+        wings.speedMultiplier = 1.1f;
+        wings.show = false;
+        legs = new StatusEffect("module-legs");
+        legs.healthMultiplier = 1.25f;
+        legs.damage = -0.05f; // slow self-repair
+        legs.show = false;
     }
 
     public static void init() {
@@ -134,6 +143,8 @@ public class Loadouts {
             if (!isModular(u)) return;
             int engines = Math.min(count(u, MetrumItems.partEngine), engineBoost.length - 1);
             if (engines > 0) u.apply(engineBoost[engines], 20f);
+            if (has(u, MetrumItems.partWings)) u.apply(wings, 20f);
+            if (has(u, MetrumItems.partLegs)) u.apply(legs, 20f);
             if (!has(u, MetrumItems.weaponMiningLaser)) u.mineTile = null;
         });
     }
