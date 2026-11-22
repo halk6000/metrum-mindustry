@@ -22,7 +22,8 @@ public class MetrumBlocks {
         oreIron = new mindustry.world.blocks.environment.OreBlock("ore-iron", MetrumItems.iron);
 
         // carborundum-tipped beam drill: mines everything Erekir has, carborundum bits triple its speed
-        carborundumBore = new BeamDrill("carborundum-bore") {{
+        carborundumBore = new metrum.world.BoostedBeamDrill("carborundum-bore") {{
+            boostItem = MetrumItems.carborundum;
             requirements(Category.production, with(MetrumItems.ferrotungsten, 60, MetrumItems.steel, 80, Items.silicon, 80, Items.tungsten, 60));
             size = 3;
             tier = 6;

@@ -45,6 +45,10 @@ public class WarReconstructor extends Reconstructor {
 
     /** call after setting baseItems / liquid */
     public void setupConsumers() {
+        if (liquid != null) {
+            hasLiquids = true;
+            liquidCapacity = Math.max(liquidCapacity, 30f);
+        }
         consume(new ConsumeItemDynamic((WarReconstructorBuild b) -> b.itemCost()));
         if (liquid != null) {
             consume(new ConsumeLiquidsDynamic((WarReconstructorBuild b) -> b.liquidCost()));
@@ -79,6 +83,12 @@ public class WarReconstructor extends Reconstructor {
                 if (s.item == item) return (int) Math.ceil(s.amount * multiplier(maxLevel)) * 2;
             }
             return 0;
+        }
+
+        /** dynamic liquid consumers don't register a liquid filter, so accept the configured liquid explicitly */
+        @Override
+        public boolean acceptLiquid(Building source, Liquid l) {
+            return l == liquid && liquids.get(l) < liquidCapacity;
         }
 
         @Override
