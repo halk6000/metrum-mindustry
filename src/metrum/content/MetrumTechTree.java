@@ -85,6 +85,11 @@ public class MetrumTechTree {
         node(hullPrinter, hullLight);
         node(hullPrinter, hullMedium);
         node(hullPrinter, hullHeavy);
+        node(hullPrinter, partPrinter);
+        node(partPrinter, partEngine);
+        node(partPrinter, partWings);
+        node(partPrinter, partLegs);
+        node(partPrinter, partsMagazine);
         node(fuelStation, magmaForge);
         node(magmaForge, MetrumLiquids.magma);
         node(magmaForge, plasmaIonizer);

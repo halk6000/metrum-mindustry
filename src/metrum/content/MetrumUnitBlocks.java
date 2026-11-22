@@ -17,7 +17,8 @@ import static mindustry.type.ItemStack.with;
 public class MetrumUnitBlocks {
     public static Block airMinerDock, airMinerRebuilder;
     public static WarReconstructor warReconstructor;
-    public static metrum.world.HullPrinter hullPrinter;
+    public static metrum.world.HullPrinter hullPrinter, partPrinter;
+    public static Block partsMagazine;
     public static FuelStation fuelStation;
 
     public static void load() {
@@ -79,6 +80,24 @@ public class MetrumUnitBlocks {
             .hull(MetrumItems.hullLight, with(MetrumItems.iron, 20, Items.silicon, 10))
             .hull(MetrumItems.hullMedium, with(MetrumItems.steel, 25, Items.silicon, 20, Items.beryllium, 20))
             .hull(MetrumItems.hullHeavy, with(MetrumItems.steel, 40, Items.tungsten, 25, MetrumItems.berylliumBronze, 10));
+
+        // modular drones, step 2: parts + their storage
+        partPrinter = new metrum.world.HullPrinter("part-printer");
+        partPrinter.requirements(Category.units, with(MetrumItems.steel, 60, Items.silicon, 80, Items.graphite, 60));
+        partPrinter.size = 3;
+        partPrinter.consumePower(1.2f);
+        partPrinter.craftTime = metrum.Balance.f("part.printSeconds", 12f) * 60f;
+        partPrinter
+            .hull(MetrumItems.partEngine, with(MetrumItems.steel, 10, Items.silicon, 10, Items.graphite, 5))
+            .hull(MetrumItems.partWings, with(MetrumItems.iron, 15, Items.silicon, 5))
+            .hull(MetrumItems.partLegs, with(MetrumItems.steel, 12, MetrumItems.iron, 8));
+
+        partsMagazine = new metrum.world.FilteredStorage("parts-magazine",
+            MetrumItems.hullLight, MetrumItems.hullMedium, MetrumItems.hullHeavy,
+            MetrumItems.partEngine, MetrumItems.partWings, MetrumItems.partLegs);
+        partsMagazine.requirements(Category.effect, with(MetrumItems.steel, 60, Items.beryllium, 60));
+        partsMagazine.size = 2;
+        partsMagazine.itemCapacity = 100;
 
         fuelStation = new FuelStation("fuel-station");
         fuelStation.requirements(Category.units, with(MetrumItems.steel, 60, Items.silicon, 50, Items.graphite, 40, Items.beryllium, 80));
