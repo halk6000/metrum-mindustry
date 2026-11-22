@@ -3,6 +3,7 @@ package metrum.content;
 import mindustry.content.Items;
 import mindustry.type.Category;
 import metrum.world.Atomizer;
+import metrum.world.HadronCollider;
 
 import static mindustry.type.ItemStack.with;
 import static metrum.content.MetrumItems.*;
@@ -10,6 +11,7 @@ import static metrum.content.MetrumItems.*;
 /** Particle physics line: atomizer -> hadron collider. */
 public class MetrumPhysics {
     public static Atomizer atomizer;
+    public static HadronCollider hadronCollider;
 
     public static void load() {
         atomizer = new Atomizer("atomizer");
@@ -24,5 +26,17 @@ public class MetrumPhysics {
             .convert(iron, atomicIron)
             .convert(Items.tungsten, atomicTungsten)
             .convert(Items.thorium, atomicThorium);
+    
+        hadronCollider = new HadronCollider("hadron-collider");
+        hadronCollider.requirements(Category.crafting,
+            with(steel, 200, Items.tungsten, 150, Items.silicon, 200, Items.surgeAlloy, 60, Items.oxide, 80));
+        hadronCollider.size = 3;
+        hadronCollider.craftTime = 90f;
+        hadronCollider.consumePower(8f);
+        hadronCollider.recipe(atomicCarbon, atomicSilicon, carborundum, 1)
+            .recipe(atomicTungsten, atomicCarbon, tungstenCarbide, 1)
+            .recipe(atomicBeryllium, atomicIron, berylliumBronze, 2)
+            .recipe(atomicIron, atomicTungsten, ferrotungsten, 1)
+            .recipe(atomicThorium, atomicThorium, quarkMatter, 1);
     }
 }
