@@ -73,7 +73,7 @@ public class MetrumTechTree {
         node(MetrumPhysics.hadronCollider, berylliumBronze);
         node(MetrumPhysics.hadronCollider, ferrotungsten);
         node(MetrumPhysics.hadronCollider, quarkMatter);
-        node(quarkMatter, infusionReactor);
+        node(quarkMatter, fusionReactor);
 
         // power
         node(Blocks.turbineCondenser, turbineAdvanced);

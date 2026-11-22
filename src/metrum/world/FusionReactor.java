@@ -20,11 +20,11 @@ import mindustry.world.meta.Stat;
 import mindustry.world.meta.StatUnit;
 
 /**
- * Infusion Reactor: burns quark matter, needs heavy cooling.
+ * Fusion Reactor: burns quark matter, needs heavy cooling.
  * Warms up to 100%; at full power: {@link #coolantPerSecond} coolant/s, produces power, heat and steam.
  * Without coolant for {@link #heatupDelay} it starts glowing red; after {@link #meltdownTime} it explodes.
  */
-public class InfusionReactor extends PowerGenerator {
+public class FusionReactor extends PowerGenerator {
     public Item fuel;
     public float fuelTime = 60f * 10f;
     public Liquid coolant;
@@ -39,7 +39,7 @@ public class InfusionReactor extends PowerGenerator {
     public final arc.struct.ObjectMap<Item, Item> transmute = new arc.struct.ObjectMap<>();
     public float transmuteTime = 120f;
 
-    public InfusionReactor(String name) {
+    public FusionReactor(String name) {
         super(name);
         hasItems = true;
         hasLiquids = true;
@@ -61,13 +61,13 @@ public class InfusionReactor extends PowerGenerator {
     @Override
     public void setBars() {
         super.setBars();
-        addBar("metrum-warmup", (InfusionReactorBuild b) -> new mindustry.ui.Bar(
+        addBar("metrum-warmup", (FusionReactorBuild b) -> new mindustry.ui.Bar(
             () -> arc.Core.bundle.format("metrum.reactor.output", (int) (b.warmup * 100)), () -> Color.valueOf("ff50c8"), () -> b.warmup));
-        addBar("metrum-meltdown", (InfusionReactorBuild b) -> new mindustry.ui.Bar(
+        addBar("metrum-meltdown", (FusionReactorBuild b) -> new mindustry.ui.Bar(
             () -> arc.Core.bundle.get("metrum.reactor.meltdown"), () -> Color.scarlet, () -> b.dryTime / (heatupDelay + meltdownTime)));
     }
 
-    public class InfusionReactorBuild extends GeneratorBuild implements HeatBlock {
+    public class FusionReactorBuild extends GeneratorBuild implements HeatBlock {
         public float warmup, fuelProgress, dryTime;
 
         public float transmuteProgress;
