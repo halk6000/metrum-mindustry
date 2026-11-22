@@ -20,7 +20,7 @@ import mindustry.type.unit.ErekirUnitType;
 
 /** MonoMet mining drones ported from the original Metrum JSON mod. */
 public class MetrumUnits {
-    public static UnitType monoMetT1, monoMetT1b, monoMetT2, monoMetT2b, monoMetT3, monoMetT3b;
+    public static UnitType monoMetT1, monoMetT1b, monoMetT2, monoMetT2b, monoMetT3, monoMetT3b, boosterDrone;
 
     private static final String P = "metrum-";
 
@@ -85,6 +85,27 @@ public class MetrumUnits {
             massWeapon(true, 12f, shrapnel(15f, 5f, 120f, 5f, 3, "91aaed", "5e7ccb", 10f)),
             missile(false, 30f, 6, 35f, wave),
             missile(true, 140f, 1, 25f, missileBullet(8f, 300f, 60f, 30f, 60f, "e00600", "e0c706", 160f, 80f)));
+
+        loadBooster();
+    }
+
+    private static void loadBooster() {
+        ErekirUnitType u = new ErekirUnitType("booster-drone");
+        u.constructor = UnitEntity::create;
+        u.flying = true;
+        u.drag = 0.06f;
+        u.hitSize = 12f;
+        u.speed = 3.6f;
+        u.accel = 0.2f;
+        u.health = 420f;
+        u.engineSize = 2.2f;
+        u.engineOffset = 5.7f;
+        u.itemCapacity = 60;
+        u.mineTier = -1;
+        u.drawCell = false;
+        u.range = u.maxRange = 80f;
+        u.abilities.add(new metrum.boost.BoostAbility());
+        boosterDrone = u;
     }
 
     private static UnitType miner(String name, float hitSize, float speed, float accel, float health, float engineSize,

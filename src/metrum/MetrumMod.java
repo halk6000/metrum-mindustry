@@ -1,6 +1,7 @@
 package metrum;
 
 import arc.util.Log;
+import metrum.boost.BoostSystem;
 import metrum.fuel.FuelSystem;
 import metrum.content.MetrumBlocks;
 import metrum.content.MetrumItems;
@@ -17,6 +18,7 @@ public class MetrumMod extends Mod {
     @Override
     public void loadContent() {
         FuelSystem.load();
+        BoostSystem.load();
         MetrumItems.load();
         MetrumLiquids.load();
         MetrumBlocks.load();
@@ -38,6 +40,8 @@ public class MetrumMod extends Mod {
         FuelSystem.setTier(MetrumUnits.monoMetT1b, 2);
         FuelSystem.setTier(MetrumUnits.monoMetT2b, 3);
         FuelSystem.setTier(MetrumUnits.monoMetT3b, 4);
+        FuelSystem.setTier(MetrumUnits.boosterDrone, 3);
         FuelSystem.init();
+        BoostSystem.init();
     }
 }

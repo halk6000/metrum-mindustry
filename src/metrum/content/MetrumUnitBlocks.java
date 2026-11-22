@@ -27,7 +27,8 @@ public class MetrumUnitBlocks {
             plans = Seq.with(
                 new UnitPlan(MetrumUnits.monoMetT1, 200f, with(Items.beryllium, 15)),
                 new UnitPlan(MetrumUnits.monoMetT2, 800f, with(Items.graphite, 20, Items.beryllium, 80)),
-                new UnitPlan(MetrumUnits.monoMetT3, 1000f, with(Items.beryllium, 100, Items.silicon, 30, Items.graphite, 60)));
+                new UnitPlan(MetrumUnits.monoMetT3, 1000f, with(Items.beryllium, 100, Items.silicon, 30, Items.graphite, 60)),
+                new UnitPlan(MetrumUnits.boosterDrone, 1200f, with(Items.silicon, 60, MetrumItems.steel, 40, Items.tungsten, 30)));
         }};
 
         airMinerRebuilder = new Reconstructor("air-miner-rebuilder") {{

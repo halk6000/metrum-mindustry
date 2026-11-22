@@ -16,7 +16,7 @@
 - [x] Turbina: bez pary 75% mocy; duży piec parowy 3x3
 - [ ] Test w grze (wczytanie jar, brak błędów sprite/crash)
 - [x] Falownik cieplny 2x2 (HeatCrafter: ciepło 6, woda 0.25 → para 0.5, przegrzanie do 300%)
-- [ ] Drony-wzmacniacze (+20% zasięg/obrażenia, koszt 20 mat. najsłabszego, -2 na kolejny tier)
+- [x] Dron wzmacniający (T3, z Air Miner Dock): co 10 s +20% obrażeń i zasięgu w promieniu 10; koszt 20 berylu, -2 za każdy wyższy materiał (min 2); bierze najsłabszy materiał z rdzenia
 - [x] Stacja paliw 2x2, zasięg 8, żużel/magma/plazma (+10/30/50%)
 - [x] Kuźnia magmy (ciepło + odłamki) i jonizator plazmy (magma + atomowy węgiel + prąd)
 - [x] Bak paliwa T3/T4/T5 = 100/200/250, 1 na 0.6 s, pomarańczowy pasek, -90% przy 0 (tylko drużyny gracza; paliwo nie zapisuje się w save)
