@@ -21,3 +21,9 @@ jar {
     from(rootDir) { include 'mod.hjson', 'icon.png' }
     from('assets/') { include '**' }
 }
+
+// Static check: every content name has a sprite and EN/PL bundle entries
+tasks.register('contentCheck', Exec) {
+    commandLine 'python', 'tools/check.py'
+}
+jar.dependsOn contentCheck

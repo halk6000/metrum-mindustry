@@ -32,6 +32,7 @@
 - [x] Warianty D (zasięg 11/13/15, co 7.5 s), Advanced Booster Rebuilder 5x5 na plazmie (C -> D)
 - [x] AI wroga na Ferrox: vanilla buildAi + rtsAi + BaseExpander (co 20 s fortyfikacja przy rdzeniu z zasobów rdzenia, tier obrony rośnie co 10 fal)
 - [x] BaseExpander: tylko wieżyczki na amunicję (breach/diffuse/titan/disperse/scathe/smite), co 5 s dosypuje amunicję z rdzenia
+- [x] tools/check.py (sprite + EN/PL dla każdej zawartości) wpięty w gradlew jar
 - [ ] Test kampanii Ferrox
 
 ## Blokady / uwagi
