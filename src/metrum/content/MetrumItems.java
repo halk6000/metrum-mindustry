@@ -7,6 +7,7 @@ import mindustry.type.Item;
 public class MetrumItems {
     public static Item atomicCarbon, atomicSilicon, atomicBeryllium, atomicIron, atomicTungsten, atomicThorium;
     public static Item carborundum, tungstenCarbide, berylliumBronze, ferrotungsten, quarkMatter;
+    public static Item ammoCrate;
     public static Item pieceRock, iron, steel, weaponPart, advancedWeaponPart;
 
     public static void load() {
@@ -41,6 +42,11 @@ public class MetrumItems {
         atomicIron = atomic("atomic-iron", "bebebe", 0f);
         atomicTungsten = atomic("atomic-tungsten", "788cc8", 0f);
         atomicThorium = atomic("atomic-thorium", "dc6eaa", 1f);
+
+        ammoCrate = new Item("ammo-crate", Color.valueOf("8a7a3a")) {{
+            cost = 1.5f;
+            explosiveness = 0.3f;
+        }};
 
         // hadron collider products
         carborundum = product("carborundum", "3c8c8c", 0f);

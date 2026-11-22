@@ -74,11 +74,13 @@ public class MetrumTechTree {
         node(monoMetT2, monoMetT2b);
         node(monoMetT2, monoMetT3);
         node(monoMetT3, monoMetT3b);
-        node(airMinerRebuilder, boosterRebuilder);
+        node(airMinerRebuilder, warReconstructor);
+        node(infusionSmelter, ammoFactory);
+        node(ammoFactory, ammoCrate);
         node(monoMetT1b, monoMetT1c);
         node(monoMetT2b, monoMetT2c);
         node(monoMetT3b, monoMetT3c);
-        node(boosterRebuilder, boosterRebuilderD);
+        node(warReconstructor, warReconstructorD);
         node(monoMetT1c, monoMetT1d);
         node(monoMetT2c, monoMetT2d);
         node(monoMetT3c, monoMetT3d);

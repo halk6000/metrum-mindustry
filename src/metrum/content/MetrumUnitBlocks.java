@@ -14,7 +14,7 @@ import static mindustry.type.ItemStack.with;
 
 /** Drone factory and reconstructor ported from the original Metrum JSON mod. */
 public class MetrumUnitBlocks {
-    public static Block airMinerDock, airMinerRebuilder, boosterRebuilder, boosterRebuilderD;
+    public static Block airMinerDock, airMinerRebuilder, warReconstructor, warReconstructorD;
     public static FuelStation fuelStation;
 
     public static void load() {
@@ -45,16 +45,17 @@ public class MetrumUnitBlocks {
                 new UnitType[]{MetrumUnits.monoMetT3, MetrumUnits.monoMetT3b});
         }};
     
-        // B -> C: booster variants
-        boosterRebuilder = new Reconstructor("booster-rebuilder") {{
+        // B -> C: War Reconstructor (booster variants)
+        warReconstructor = new Reconstructor("war-reconstructor") {{
             requirements(Category.units, with(MetrumItems.steel, 120, Items.silicon, 100, Items.tungsten, 80, MetrumItems.berylliumBronze, 40));
             size = 3;
             health = 1500;
             regionSuffix = "-dark";
             constructTime = 1200f;
             consumePower(3f);
-            consumeItems(with(MetrumItems.steel, 10, MetrumItems.berylliumBronze, 4));
-            consumeLiquid(MetrumLiquids.steam, 0.15f);
+            // C+ cost: 1 ammo crate + 2 steel, steam 0.09/s
+            consumeItems(with(MetrumItems.ammoCrate, 1, MetrumItems.steel, 2));
+            consumeLiquid(MetrumLiquids.steam, 0.09f / 60f);
             upgrades.addAll(
                 new UnitType[]{MetrumUnits.monoMetT1b, MetrumUnits.monoMetT1c},
                 new UnitType[]{MetrumUnits.monoMetT2b, MetrumUnits.monoMetT2c},
@@ -62,15 +63,15 @@ public class MetrumUnitBlocks {
         }};
 
         // C -> D: advanced boosters
-        boosterRebuilderD = new Reconstructor("booster-rebuilder-d") {{
+        warReconstructorD = new Reconstructor("war-reconstructor-d") {{
             requirements(Category.units, with(MetrumItems.steel, 200, Items.silicon, 200, MetrumItems.tungstenCarbide, 80, MetrumItems.ferrotungsten, 60));
             size = 5;
             health = 2600;
             regionSuffix = "-dark";
             constructTime = 1800f;
             consumePower(6f);
-            consumeItems(with(MetrumItems.tungstenCarbide, 6, MetrumItems.ferrotungsten, 4));
-            consumeLiquid(MetrumLiquids.plasma, 0.1f);
+            consumeItems(with(MetrumItems.ammoCrate, 1, MetrumItems.steel, 2, MetrumItems.tungstenCarbide, 6, MetrumItems.ferrotungsten, 4));
+            consumeLiquids(mindustry.type.LiquidStack.with(MetrumLiquids.steam, 0.09f / 60f, MetrumLiquids.plasma, 0.1f));
             upgrades.addAll(
                 new UnitType[]{MetrumUnits.monoMetT1c, MetrumUnits.monoMetT1d},
                 new UnitType[]{MetrumUnits.monoMetT2c, MetrumUnits.monoMetT2d},

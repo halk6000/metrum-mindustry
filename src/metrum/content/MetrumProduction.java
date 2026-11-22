@@ -18,7 +18,7 @@ import static mindustry.type.ItemStack.with;
 /** Crafting blocks ported from the original Metrum JSON mod. */
 public class MetrumProduction {
     public static Block graphiteDecompressor, graphiteDecompressorOverclocked,
-        steamFurnace, largeSteamFurnace, heatInverter, magmaForge, plasmaIonizer, stoneCrusher, infusionSmelter, salvager;
+        ammoFactory, steamFurnace, largeSteamFurnace, heatInverter, magmaForge, plasmaIonizer, stoneCrusher, infusionSmelter, salvager;
 
     private static final Color flame = Color.valueOf("fdb380");
 
@@ -65,6 +65,22 @@ public class MetrumProduction {
             outputLiquid = new LiquidStack(MetrumLiquids.steam, 0.5f);
             updateEffect = Fx.steam;
             updateEffectChance = 0.04f;
+        }};
+
+        // 2 iron + 1 steel + 3 beryllium + water -> 2 ammo crates, steam as by-product
+        ammoFactory = new GenericCrafter("ammo-factory") {{
+            requirements(Category.crafting, with(MetrumItems.steel, 80, MetrumItems.iron, 100, Items.silicon, 60, Items.beryllium, 120));
+            size = 3;
+            craftTime = 90f;
+            itemCapacity = 30;
+            liquidCapacity = 60f;
+            consumePower(1.2f);
+            consumeItems(with(MetrumItems.iron, 2, MetrumItems.steel, 1, Items.beryllium, 3));
+            consumeLiquid(Liquids.water, 0.15f);
+            outputItem = new ItemStack(MetrumItems.ammoCrate, 2);
+            outputLiquid = new LiquidStack(MetrumLiquids.steam, 0.1f);
+            updateEffect = Fx.steam;
+            updateEffectChance = 0.03f;
         }};
 
         // fuel liquids for the fuel station

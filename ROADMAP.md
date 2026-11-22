@@ -34,6 +34,7 @@
 - [x] BaseExpander: tylko wieżyczki na amunicję (breach/diffuse/titan/disperse/scathe/smite), co 5 s dosypuje amunicję z rdzenia
 - [x] tools/check.py (sprite + EN/PL dla każdej zawartości) wpięty w gradlew jar
 - [x] Wróg na Ferrox: od fali 15 co 10 s 25% jednostek (40% od fali 30) dostaje wzmocnienie +20%
+- [x] Fabryka amunicji 3x3 (2 Fe + 1 stal + 3 Be + woda -> 2 skrzynki, para uboczna); Rekonstruktor Wojenny B->C (1 skrzynka + 2 stal + para 0.09/s), wersja D też wymaga skrzynki+stali+pary
 - [ ] Test kampanii Ferrox
 
 ## Blokady / uwagi
