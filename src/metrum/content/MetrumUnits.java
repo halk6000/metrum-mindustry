@@ -25,9 +25,9 @@ public class MetrumUnits {
     private static final String P = "metrum-";
 
     public static void load() {
-        monoMetT1 = miner("monomet-t1", 8f, 3.8f, 0.12f, 120f, 1.8f, 90, 60f, 0.5f, 3, 6.2f, true, Items.beryllium);
+        monoMetT1 = miner("monomet-t1", 8f, 3.8f, 0.12f, 120f, 1.8f, 90, 60f, 0.5f, 3, 6.2f, true, Items.beryllium, MetrumItems.iron);
 
-        monoMetT1b = miner("monomet-t1b", 8f, 7.8f, 0.32f, 140f, 1.8f, 120, 120f, 2.1f, 4, 6.2f, false, Items.beryllium);
+        monoMetT1b = miner("monomet-t1b", 8f, 7.8f, 0.32f, 140f, 1.8f, 120, 120f, 2.1f, 4, 6.2f, false, Items.beryllium, MetrumItems.iron);
         LightningBulletType heal = new LightningBulletType();
         heal.lightningColor = heal.hitColor = Color.valueOf("2feb79");
         heal.damage = 25f;
@@ -55,10 +55,10 @@ public class MetrumUnits {
         shotgun.bullet = heal;
         monoMetT1b.weapons.add(shotgun);
 
-        monoMetT2 = miner("monomet-t2", 12f, 4.2f, 0.3f, 250f, 2.2f, 250, 150f, 0.5f, 4, 12.2f, true, Items.beryllium, Items.thorium);
+        monoMetT2 = miner("monomet-t2", 12f, 4.2f, 0.3f, 250f, 2.2f, 250, 150f, 0.5f, 4, 12.2f, true, Items.beryllium, Items.thorium, MetrumItems.iron);
         monoMetT2.weapons.add(massWeapon(true, 12f, shrapnel(15f, 15f, 120f, 5f, 3, "91aaed", "5e7ccb", 10f)));
 
-        monoMetT2b = miner("monomet-t2b", 12f, 7.2f, 0.3f, 600f, 2.2f, 150, 175f, 0.5f, 4, 12.2f, false, Items.beryllium, Items.thorium);
+        monoMetT2b = miner("monomet-t2b", 12f, 7.2f, 0.3f, 600f, 2.2f, 150, 175f, 0.5f, 4, 12.2f, false, Items.beryllium, Items.thorium, MetrumItems.iron);
         monoMetT2b.weapons.add(
             massWeapon(true, 12f, shrapnel(15f, 5f, 120f, 5f, 3, "91aaed", "5e7ccb", 10f)),
             massWeapon(false, 3f, shrapnel(6f, 5f, 40f, 12f, 5, "79dee0", "80e184", 15f)));
