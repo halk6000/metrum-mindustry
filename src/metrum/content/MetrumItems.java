@@ -5,6 +5,7 @@ import mindustry.type.Item;
 
 /** Items ported from the original Metrum JSON mod. */
 public class MetrumItems {
+    public static Item atomicCarbon, atomicSilicon, atomicBeryllium, atomicIron, atomicTungsten, atomicThorium;
     public static Item pieceRock, iron, steel, weaponPart, advancedWeaponPart;
 
     public static void load() {
@@ -32,5 +33,21 @@ public class MetrumItems {
             charge = 0.6f;
             cost = 2.5f;
         }};
+    
+        atomicCarbon = atomic("atomic-carbon", "50505a", 0f);
+        atomicSilicon = atomic("atomic-silicon", "78829a", 0f);
+        atomicBeryllium = atomic("atomic-beryllium", "5ac896", 0f);
+        atomicIron = atomic("atomic-iron", "bebebe", 0f);
+        atomicTungsten = atomic("atomic-tungsten", "788cc8", 0f);
+        atomicThorium = atomic("atomic-thorium", "dc6eaa", 1f);
+    }
+
+    /** Atomic form of a mineral - collider feedstock. */
+    private static Item atomic(String name, String color, float radioactivity) {
+        Item i = new Item(name, Color.valueOf(color));
+        i.charge = 0.3f;
+        i.radioactivity = radioactivity;
+        i.cost = 2f;
+        return i;
     }
 }

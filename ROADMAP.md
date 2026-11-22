@@ -20,7 +20,8 @@
 - [ ] Stacja paliw 2x2, zasięg 8, paliwo żużel/magma/plazma (+10/30/50% prędkości)
 - [ ] Bak paliwa jednostek ≥ tier C (100/200/250), zużycie 1/0.6 s, pomarańczowy pasek, -90% prędkości przy 0
 - [x] Drzewko tech: cała zawartość podpięta pod drzewo Erekiru
-- [ ] Zderzacz hadronów + drzewko tech
+- [x] Zderzacz cz.1: 6 atomowych itemów + Atomizer (2 minerały -> 1 atom)
+- [ ] Zderzacz cz.2: blok zderzacza (pary atomów -> nowe materiały) + drzewko
 - [x] Lokalizacja: EN domyślny + PL (assets/bundles)
 - [ ] Nowa planeta + AI wroga z auto-rozbudową
 

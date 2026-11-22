@@ -42,6 +42,15 @@ public class MetrumTechTree {
         node(steamFurnace, infusionSmelter);
         node(steamFurnace, salvager);
 
+        // particle physics
+        node(steel, MetrumPhysics.atomizer);
+        node(MetrumPhysics.atomizer, atomicCarbon);
+        node(MetrumPhysics.atomizer, atomicSilicon);
+        node(MetrumPhysics.atomizer, atomicBeryllium);
+        node(MetrumPhysics.atomizer, atomicIron);
+        node(MetrumPhysics.atomizer, atomicTungsten);
+        node(MetrumPhysics.atomizer, atomicThorium);
+
         // power
         node(Blocks.turbineCondenser, turbineAdvanced);
 

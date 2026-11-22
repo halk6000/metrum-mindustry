@@ -5,6 +5,7 @@ import metrum.content.MetrumBlocks;
 import metrum.content.MetrumItems;
 import metrum.content.MetrumPower;
 import metrum.content.MetrumProduction;
+import metrum.content.MetrumPhysics;
 import metrum.content.MetrumTechTree;
 import metrum.content.MetrumUnitBlocks;
 import metrum.content.MetrumUnits;
@@ -21,6 +22,7 @@ public class MetrumMod extends Mod {
         MetrumPower.load();
         MetrumUnits.load();
         MetrumUnitBlocks.load();
+        MetrumPhysics.load();
         MetrumTechTree.load();
         Log.info("[Metrum] content loaded");
     }
