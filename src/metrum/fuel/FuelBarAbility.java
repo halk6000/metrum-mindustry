@@ -18,11 +18,11 @@ public class FuelBarAbility extends mindustry.entities.abilities.Ability {
         bars.add(new Bar(
             () -> {
                 int q = FuelSystem.quality(unit);
-                String fuel = Core.bundle.format("metrum.fuel", (int) FuelSystem.fuel(unit), (int) FuelSystem.capacity(unit.type));
+                String fuel = Core.bundle.format("metrum.fuel", (int) FuelSystem.fuel(unit), (int) FuelSystem.capacity(unit));
                 return q > 0 ? fuel + " [" + Core.bundle.get("metrum.fuel." + grade[q]) + " +" + (q == 1 ? 10 : q == 2 ? 30 : 50) + "%]" : fuel;
             },
             () -> FuelSystem.barColor,
-            () -> FuelSystem.capacity(unit.type) <= 0f ? 0f : FuelSystem.fuel(unit) / FuelSystem.capacity(unit.type)
+            () -> FuelSystem.capacity(unit) <= 0f ? 0f : FuelSystem.fuel(unit) / FuelSystem.capacity(unit)
         )).growX();
         bars.row();
     }

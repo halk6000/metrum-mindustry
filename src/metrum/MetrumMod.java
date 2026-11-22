@@ -86,6 +86,10 @@ public class MetrumMod extends Mod {
         FuelSystem.register(MetrumUnits.monoMetT1d, 1, 3);
         FuelSystem.register(MetrumUnits.monoMetT2d, 2, 3);
         FuelSystem.register(MetrumUnits.monoMetT3d, 3, 3);
+        // modular drones: light/medium/heavy hulls use the T1/T2/T3 tanks (C-level and above)
+        FuelSystem.register(metrum.modular.MetrumModular.droneLight, 1, 2);
+        FuelSystem.register(metrum.modular.MetrumModular.droneMedium, 2, 2);
+        FuelSystem.register(metrum.modular.MetrumModular.droneHeavy, 3, 2);
         FuelSystem.init();
         BoostSystem.init();
         BaseExpander.planets.add(MetrumPlanets.ferrox);

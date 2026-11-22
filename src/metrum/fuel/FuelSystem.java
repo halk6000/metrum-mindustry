@@ -88,13 +88,20 @@ public class FuelSystem {
         return capacities.get(type, 0f);
     }
 
+    /** per-unit capacity: modular drones with an extra fuel tank module get +50% */
+    public static float capacity(Unit unit) {
+        float c = capacity(unit.type);
+        if (c > 0f && metrum.modular.Loadouts.has(unit, metrum.content.MetrumItems.weaponFuelTank)) c *= 1.5f;
+        return c;
+    }
+
     public static boolean usesFuel(Unit unit) {
-        if (capacity(unit.type) <= 0f) return false;
+        if (capacity(unit) <= 0f) return false;
         return affectWaveTeam || Vars.state.rules.waveTeam != unit.team;
     }
 
     public static float fuel(Unit unit) {
-        return fuel.get(unit.id, capacity(unit.type));
+        return fuel.get(unit.id, capacity(unit));
     }
 
     public static int quality(Unit unit) {
@@ -103,7 +110,7 @@ public class FuelSystem {
 
     /** Adds fuel of the given quality (1-3); returns the amount actually accepted. */
     public static float refuel(Unit unit, float amount, int fuelQuality) {
-        float cap = capacity(unit.type), cur = fuel(unit);
+        float cap = capacity(unit), cur = fuel(unit);
         float added = Math.min(amount, cap - cur);
         if (added > 0f) {
             fuel.put(unit.id, cur + added);
@@ -121,7 +128,7 @@ public class FuelSystem {
         @Override
         public void write(java.io.DataOutput out) throws java.io.IOException {
             arc.struct.Seq<Unit> list = new arc.struct.Seq<>();
-            Groups.unit.each(u -> { if (capacity(u.type) > 0f) list.add(u); });
+            Groups.unit.each(u -> { if (capacity(u) > 0f) list.add(u); });
             out.writeInt(list.size);
             for (Unit u : list) {
                 out.writeFloat(u.x);
@@ -158,7 +165,7 @@ public class FuelSystem {
                 }
             }
             if (best != null) {
-                fuel.put(best.id, Math.min(f, capacity(best.type)));
+                fuel.put(best.id, Math.min(f, capacity(best)));
                 if (q > 0) quality.put(best.id, q);
             }
         }
@@ -198,7 +205,7 @@ public class FuelSystem {
         Draw.z(Layer.flyingUnit + 1f);
         Groups.unit.each(u -> {
             if (!usesFuel(u) || !inView(u)) return;
-            float frac = fuel(u) / capacity(u.type);
+            float frac = fuel(u) / capacity(u);
             float w = u.hitSize * 1.1f, h = 1.6f;
             float x = u.x - w / 2f, y = u.y - u.hitSize * 0.75f - 2f;
             Draw.color(Color.black, 0.6f);
