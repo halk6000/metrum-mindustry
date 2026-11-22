@@ -136,6 +136,6 @@ public class BaseExpander {
         if (have >= max || team.cores().isEmpty() || !type.supportsEnv(Vars.state.rules.env)) return;
         CoreBuild core = team.cores().random();
         mindustry.gen.Unit u = type.spawn(team, core.x + Mathf.range(16f), core.y + Mathf.range(16f));
-        u.controller(new mindustry.ai.types.FlyingFollowAI());
+        u.controller(new BoosterAI());
     }
 }
