@@ -22,6 +22,17 @@ Najszybciej w **Edytorze / Sandbox (Erekir)** z nieskończonymi zasobami.
 | 13 | Mapa planet → Ferrox | Rdzawa planeta, da się wylądować, teren czerwony z kominami i rudą żelaza | |
 | 14 | Zapisz grę z T1C o niepełnym baku, wczytaj | Bak ma tyle samo co przed zapisem | |
 
+## Nowe w 2.2.0
+| # | Co zrobić | Oczekiwane | OK? |
+|---|---|---|---|
+| 15 | Zaznacz drony MonoMet, shift+klik w teren | Lecą tam (komendy RTS działają) | |
+| 16 | Komenda „Inteligentne wydobycie” | Okno: najbliższa / najmniej w magazynie / konkretna ruda | |
+| 17 | Drukarka kadłubów → wybierz średni | Kadłub widać w środku, po 20 s wychodzi | |
+| 18 | Montownia: kadłub + kliknij sloty (karabin, silnik) | Kwadraty slotów, po 60 s dron + okno nazwy | |
+| 19 | Dron modułowy | Nazwa nad dronem, strzela tylko z zamontowanej broni, ma pasek paliwa | |
+| 20 | Wieżyczka kadłubowa + skrzynki amunicji | Strzela, 1 skrzynka na strzał | |
+| 21 | Dron C podlatuje do wieżyczki kadłubowej | Może ją podnieść i postawić gdzie indziej | |
+
 ## Ustawienie linii dronów
 ```
 [Dok 3x3] -> [Air Miner Rebuilder 3x3] -> [Rekonstruktor Wojenny 3x3] -> [Zaawansowany Rek. Wojenny 5x5]
