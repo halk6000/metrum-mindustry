@@ -60,6 +60,15 @@ public class MetrumMod extends Mod {
     }
 
     void initInner() {
+        // Reconstructors only accept units whose *upgrade* is researched (unlockedNowHost).
+        // The reconstructor block itself is the research gate, so upgraded variants are always unlocked.
+        for (mindustry.type.UnitType t : new mindustry.type.UnitType[]{
+            MetrumUnits.monoMetT1b, MetrumUnits.monoMetT2b, MetrumUnits.monoMetT3b,
+            MetrumUnits.monoMetT1c, MetrumUnits.monoMetT2c, MetrumUnits.monoMetT3c,
+            MetrumUnits.monoMetT1d, MetrumUnits.monoMetT2d, MetrumUnits.monoMetT3d}) {
+            t.alwaysUnlocked = true;
+        }
+
         // Metrum tiers: T1-T3, upgrades B / C / D. Fuel tanks start at C.
         // level: 0 = base, 1 = B, 2 = C, 3 = D
         FuelSystem.register(MetrumUnits.monoMetT1, 1, 0);
