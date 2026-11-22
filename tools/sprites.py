@@ -97,7 +97,33 @@ def product_item(name, c):
     d.line([(8, 11), (14, 8)], fill=(255, 255, 255, 200), width=1)
     im.save(ITEMS / f"{name}.png")
 
+UNITS = pathlib.Path(__file__).resolve().parent.parent / "assets/sprites/units"
+
+def upgraded_unit(src, dst, accent, pods):
+    """bigger copy of the previous variant + armour pods + booster emitter ring in the accent colour"""
+    base = Image.open(UNITS / src).convert("RGBA")
+    im = base.resize((round(base.width * 1.25), round(base.height * 1.25)), Image.NEAREST)
+    W, H = im.size
+    # subtle accent tint on the hull so variants read apart at a glance
+    px = im.load()
+    for x in range(W):
+        for y in range(H):
+            r, g, b, a = px[x, y]
+            if a:
+                px[x, y] = (int(r * 0.8 + accent[0] * 0.2), int(g * 0.8 + accent[1] * 0.2), int(b * 0.8 + accent[2] * 0.2), a)
+    canvas = im
+    cx, cy = W // 2, H // 2
+    d = ImageDraw.Draw(canvas)
+    r = max(3, W // 9)
+    d.ellipse([cx - r - 1, cy - r - 1, cx + r + 1, cy + r + 1], outline=EDGE + (255,), width=2)
+    d.ellipse([cx - r, cy - r, cx + r, cy + r], outline=accent + (255,), width=1)
+    d.point((cx, cy), fill=(255, 255, 255, 255))
+    canvas.save(UNITS / dst)
+
 if __name__ == "__main__":
+    for t in (1, 2, 3):
+        upgraded_unit(f"monomet-t{t}b.png", f"monomet-t{t}c.png", PHYS, 1)
+        upgraded_unit(f"monomet-t{t}c.png", f"monomet-t{t}d.png", (200, 120, 255), 2)
     for n, c in ATOMS.items(): atomic_item(n, c)
     for n, c in PRODUCTS.items(): product_item(n, c)
     fuel_station(OUT / "units/fuel-station.png")
