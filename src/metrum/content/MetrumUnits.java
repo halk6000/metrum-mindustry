@@ -117,6 +117,24 @@ public class MetrumUnits {
             plate.color = Color.valueOf("c8a050");
             t.abilities.add(plate);
         }
+        // every D: red gigalaser - continuous beam, 250 dmg every 0.33 s for 2.5 s
+        for (UnitType t : new UnitType[]{monoMetT1d, monoMetT2d, monoMetT3d}) {
+            Weapon giga = new Weapon(P + "gigalaser");
+            giga.x = 0f; giga.y = -2f; giga.mirror = false; giga.top = true;
+            giga.reload = 60f * 8f; giga.shake = 2f; giga.recoil = 0f;
+            giga.continuous = true; giga.alwaysContinuous = false;
+            giga.shootSound = Sounds.beamMeltdown;
+            giga.bullet = new mindustry.entities.bullet.ContinuousLaserBulletType(250f) {{
+                damageInterval = 20f;     // 0.33 s
+                lifetime = 150f;          // 2.5 s
+                length = 220f;
+                width = 7f;
+                colors = new Color[]{Color.valueOf("ff1e1e55"), Color.valueOf("ff3c3caa"), Color.valueOf("ff8080"), Color.white};
+                hitEffect = Fx.hitMeltdown;
+                shake = 1f;
+            }};
+            t.weapons.add(giga);
+        }
         // 1D also gets the heavy missile pods of the 3D
         for (Weapon w : monoMetT3c.weapons) if (w.name.endsWith("missile-pod-heavy")) {
             Weapon pod = w.copy();
