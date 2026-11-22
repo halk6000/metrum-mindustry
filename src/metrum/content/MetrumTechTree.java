@@ -64,6 +64,7 @@ public class MetrumTechTree {
         node(MetrumPhysics.atomizer, MetrumPhysics.hadronCollider);
         node(MetrumPhysics.hadronCollider, carborundum);
         node(carborundum, carborundumWall);
+        node(carborundum, carborundumBore);
         node(carborundumWall, carborundumWallLarge);
         node(MetrumPhysics.hadronCollider, tungstenCarbide);
         node(tungstenCarbide, tungstenCarbideWall);

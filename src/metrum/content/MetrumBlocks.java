@@ -13,13 +13,26 @@ import static mindustry.type.ItemStack.with;
 /** Blocks ported from the original Metrum JSON mod. */
 public class MetrumBlocks {
     public static Block oreIron;
-    public static Block quarkCannon;
+    public static Block quarkCannon, carborundumBore;
     public static Block carborundumWall, carborundumWallLarge, tungstenCarbideWall, tungstenCarbideWallLarge;
     public static Block streamDrillT1, streamDrillT1Adv, streamDrillT2, streamDrillT2Adv, rockScraper;
 
     public static void load() {
         // iron ore: generated on Ferrox, mineable by drills and MonoMet drones
         oreIron = new mindustry.world.blocks.environment.OreBlock("ore-iron", MetrumItems.iron);
+
+        // carborundum-tipped beam drill: mines everything Erekir has, carborundum bits triple its speed
+        carborundumBore = new BeamDrill("carborundum-bore") {{
+            requirements(Category.production, with(MetrumItems.ferrotungsten, 60, MetrumItems.steel, 80, Items.silicon, 80, Items.tungsten, 60));
+            size = 3;
+            tier = 6;
+            drillTime = 90f;
+            range = 8;
+            optionalBoostIntensity = 3f;
+            itemCapacity = 30;
+            consumePower(2f);
+            consumeItem(MetrumItems.carborundum).boost();
+        }};
 
         // endgame turret fed with collider products
         quarkCannon = new mindustry.world.blocks.defense.turrets.ItemTurret("quark-cannon") {{
