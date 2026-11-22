@@ -94,13 +94,13 @@ public class MetrumUnits {
      * to give nearby allies +20% damage and range. Built from the B variant, keeping its weapons.
      */
     private static void loadBoosters() {
-        monoMetT1c = booster("monomet-t1c", monoMetT1b, 8f, 1.5f, 600f);
-        monoMetT2c = booster("monomet-t2c", monoMetT2b, 10f, 1.5f, 600f);
-        monoMetT3c = booster("monomet-t3c", monoMetT3b, 12f, 1.4f, 600f);
+        monoMetT1c = booster("monomet-t1c", monoMetT1b, metrum.Balance.f("boost.c.rangeT1", 8f), metrum.Balance.f("upgrade.c.healthT1", 1.5f), metrum.Balance.f("boost.c.seconds", 10f) * 60f);
+        monoMetT2c = booster("monomet-t2c", monoMetT2b, metrum.Balance.f("boost.c.rangeT2", 10f), metrum.Balance.f("upgrade.c.healthT2", 1.5f), metrum.Balance.f("boost.c.seconds", 10f) * 60f);
+        monoMetT3c = booster("monomet-t3c", monoMetT3b, metrum.Balance.f("boost.c.rangeT3", 12f), metrum.Balance.f("upgrade.c.healthT3", 1.4f), metrum.Balance.f("boost.c.seconds", 10f) * 60f);
         // D: wider field, boosts every 7.5 s instead of 10 s
-        monoMetT1d = booster("monomet-t1d", monoMetT1c, 11f, 1.4f, 450f);
-        monoMetT2d = booster("monomet-t2d", monoMetT2c, 13f, 1.4f, 450f);
-        monoMetT3d = booster("monomet-t3d", monoMetT3c, 15f, 1.35f, 450f);
+        monoMetT1d = booster("monomet-t1d", monoMetT1c, metrum.Balance.f("boost.d.rangeT1", 11f), metrum.Balance.f("upgrade.d.healthT1", 1.4f), metrum.Balance.f("boost.d.seconds", 7.5f) * 60f);
+        monoMetT2d = booster("monomet-t2d", monoMetT2c, metrum.Balance.f("boost.d.rangeT2", 13f), metrum.Balance.f("upgrade.d.healthT2", 1.4f), metrum.Balance.f("boost.d.seconds", 7.5f) * 60f);
+        monoMetT3d = booster("monomet-t3d", monoMetT3c, metrum.Balance.f("boost.d.rangeT3", 15f), metrum.Balance.f("upgrade.d.healthT3", 1.35f), metrum.Balance.f("boost.d.seconds", 7.5f) * 60f);
     }
 
     /**
@@ -116,8 +116,8 @@ public class MetrumUnits {
         u.defaultCommand = UnitCommand.assistCommand;
         u.flying = true;
         u.drag = from.drag;
-        u.hitSize = from.hitSize * 1.25f;
-        u.speed = from.speed * 0.8f;
+        u.hitSize = from.hitSize * metrum.Balance.f("upgrade.sizeMul", 1.25f);
+        u.speed = from.speed * metrum.Balance.f("upgrade.speedMul", 0.8f);
         u.accel = from.accel * 0.9f;
         u.health = from.health * healthMul;
         u.armor = from.armor + 2f;
@@ -139,7 +139,7 @@ public class MetrumUnits {
             Weapon extra = from.weapons.first().copy();
             extra.x = Math.abs(extra.x) + u.hitSize * 0.3f;
             extra.y -= u.hitSize * 0.15f;
-            extra.reload *= 1.15f;
+            extra.reload *= metrum.Balance.f("upgrade.extraWeaponReloadMul", 1.15f);
             u.weapons.add(extra);
         }
         metrum.boost.BoostAbility boost = new metrum.boost.BoostAbility();
