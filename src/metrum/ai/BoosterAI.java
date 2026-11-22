@@ -9,8 +9,9 @@ import metrum.boost.BoostSystem;
 public class BoosterAI extends FlyingFollowAI {
     @Override
     public void updateMovement() {
-        int cost = unit.stack.amount > 0 ? BoostSystem.cost(unit.item()) : -1;
-        if (cost < 0 || unit.stack.amount < cost) {
+        metrum.boost.BoostAbility tank = null;
+        for (mindustry.entities.abilities.Ability a : unit.abilities) if (a instanceof metrum.boost.BoostAbility) tank = (metrum.boost.BoostAbility) a;
+        if (tank != null && !tank.hasCharge()) {
             Building core = unit.closestCore();
             if (core != null) {
                 moveTo(core, Vars.tilesize * 6f);

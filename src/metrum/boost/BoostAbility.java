@@ -27,6 +27,11 @@ public class BoostAbility extends mindustry.entities.abilities.Ability {
     public float depotRange = 8f * Vars.tilesize;
     public Color color = Color.valueOf("7fe3ff");
 
+    /** separate boost-material tank: never mixed with the unit's mining cargo */
+    public Item boostItem;
+    public int boostAmount;
+    public int tankCapacity = 60;
+
     protected float timer;
     protected float flash;
 
@@ -37,9 +42,8 @@ public class BoostAbility extends mindustry.entities.abilities.Ability {
         timer += Time.delta;
         if (timer < reload) return;
 
-        Item item = unit.item();
-        int cost = unit.stack.amount > 0 ? BoostSystem.cost(item) : -1;
-        if (cost < 0 || unit.stack.amount < cost) return;
+        int cost = boostAmount > 0 ? BoostSystem.cost(boostItem) : -1;
+        if (cost < 0 || boostAmount < cost) return;
 
         boolean[] any = {false};
         Units.nearby(unit.team, unit.x, unit.y, range, other -> {
@@ -48,32 +52,60 @@ public class BoostAbility extends mindustry.entities.abilities.Ability {
         if (!any[0]) return;
 
         timer = 0f;
-        unit.stack.amount -= cost;
-        if (unit.stack.amount <= 0) unit.clearItem();
+        boostAmount -= cost;
+        if (boostAmount <= 0) {
+            boostAmount = 0;
+            boostItem = null;
+        }
         Units.nearby(unit.team, unit.x, unit.y, range, other -> other.apply(BoostSystem.boosted, duration));
         Fx.healWaveDynamic.at(unit.x, unit.y, range, color);
         flash = 1f;
     }
 
-    /** take the weakest boost material the core has (keeps rare items), if nearby and empty-handed */
+    public boolean hasCharge() {
+        return boostItem != null && boostAmount >= BoostSystem.cost(boostItem);
+    }
+
+    /**
+     * Refill the boost tank (weakest material first, keeps rare items):
+     * 1) from mined cargo if it is boost material, 2) from the core within coreRange, 3) from a container/vault depot.
+     */
     void refill(Unit unit) {
-        if (unit.stack.amount > 0 || Vars.net.client()) return;
+        if (hasCharge() || Vars.net.client()) return;
+        if (unit.stack.amount > 0 && BoostSystem.cost(unit.item()) > 0 && (boostItem == null || boostItem == unit.item())) {
+            int take = Math.min(unit.stack.amount, tankCapacity - boostAmount);
+            boostItem = unit.item();
+            boostAmount += take;
+            unit.stack.amount -= take;
+            if (unit.stack.amount <= 0) unit.clearItem();
+            if (hasCharge()) return;
+        }
         Building core = unit.closestCore();
         if (core == null || !unit.within(core, coreRange)) {
-            // field depots: any friendly container/vault within depotRange holding boost material
             core = Vars.indexer.findTile(unit.team, unit.x, unit.y, depotRange,
                 b -> b instanceof mindustry.world.blocks.storage.StorageBlock.StorageBuild && hasBoostMaterial(b));
             if (core == null) return;
         }
         for (int i = 0; i < BoostSystem.ladder.size; i++) {
             Item it = BoostSystem.ladder.get(i);
-            int take = Math.min(core.items.get(it), unit.type.itemCapacity);
-            if (take >= BoostSystem.cost(it)) {
+            if (boostItem != null && boostItem != it) continue;
+            int take = Math.min(core.items.get(it), tankCapacity - boostAmount);
+            if (boostAmount + take >= BoostSystem.cost(it)) {
                 core.items.remove(it, take);
-                unit.addItem(it, take);
+                boostItem = it;
+                boostAmount += take;
                 return;
             }
         }
+    }
+
+    @Override
+    public void displayBars(Unit unit, Table bars) {
+        bars.add(new mindustry.ui.Bar(
+            () -> arc.Core.bundle.format("metrum.boosttank", boostItem == null ? "-" : boostItem.localizedName, boostAmount, tankCapacity),
+            () -> color,
+            () -> boostAmount / (float) tankCapacity)).growX();
+        bars.row();
     }
 
     static boolean hasBoostMaterial(Building b) {

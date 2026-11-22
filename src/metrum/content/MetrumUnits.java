@@ -149,6 +149,7 @@ public class MetrumUnits {
         boost.range = rangeTiles * mindustry.Vars.tilesize;
         boost.reload = reload;
         boost.duration = reload;
+        boost.tankCapacity = Math.max(40, u.itemCapacity / 2);
         u.abilities.add(boost);
         return u;
     }
