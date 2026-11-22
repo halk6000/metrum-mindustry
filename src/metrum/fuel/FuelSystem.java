@@ -68,6 +68,7 @@ public class FuelSystem {
             quality.clear();
         });
         Events.run(Trigger.update, FuelSystem::update);
+        mindustry.io.SaveVersion.addCustomChunk("metrum-fuel", new FuelChunk());
         Events.run(Trigger.draw, FuelSystem::draw);
     }
 
@@ -109,8 +110,61 @@ public class FuelSystem {
         return Math.max(added, 0f);
     }
 
+    /** saved tanks waiting to be matched to units after a load: x, y, typeId, fuel, quality */
+    private static final arc.struct.FloatSeq pending = new arc.struct.FloatSeq();
+
+    /** Persists tanks in the save. Unit ids change on load, so units are matched by type + position. */
+    static class FuelChunk implements mindustry.io.SaveFileReader.CustomChunk {
+        @Override
+        public void write(java.io.DataOutput out) throws java.io.IOException {
+            arc.struct.Seq<Unit> list = new arc.struct.Seq<>();
+            Groups.unit.each(u -> { if (capacity(u.type) > 0f) list.add(u); });
+            out.writeInt(list.size);
+            for (Unit u : list) {
+                out.writeFloat(u.x);
+                out.writeFloat(u.y);
+                out.writeShort(u.type.id);
+                out.writeFloat(fuel(u));
+                out.writeByte(quality.get(u.id, 0));
+            }
+        }
+
+        @Override
+        public void read(java.io.DataInput in) throws java.io.IOException {
+            pending.clear();
+            int n = in.readInt();
+            for (int i = 0; i < n; i++) {
+                pending.add(in.readFloat(), in.readFloat(), in.readShort(), in.readFloat());
+                pending.add(in.readByte());
+            }
+        }
+    }
+
+    static void resolvePending() {
+        for (int i = 0; i + 4 < pending.size; i += 5) {
+            float x = pending.get(i), y = pending.get(i + 1), f = pending.get(i + 3);
+            int type = (int) pending.get(i + 2), q = (int) pending.get(i + 4);
+            Unit best = null;
+            float bestDst = Vars.tilesize * 2f;
+            for (Unit u : Groups.unit) {
+                if (u.type.id != type || fuel.containsKey(u.id)) continue;
+                float d = u.dst(x, y);
+                if (d < bestDst) {
+                    bestDst = d;
+                    best = u;
+                }
+            }
+            if (best != null) {
+                fuel.put(best.id, Math.min(f, capacity(best.type)));
+                if (q > 0) quality.put(best.id, q);
+            }
+        }
+        pending.clear();
+    }
+
     static void update() {
         if (!Vars.state.isPlaying() || Vars.net.client()) return;
+        if (!pending.isEmpty()) resolvePending();
         float burn = Time.delta / ticksPerFuel;
         Groups.unit.each(u -> {
             if (!usesFuel(u)) return;

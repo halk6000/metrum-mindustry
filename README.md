@@ -30,7 +30,7 @@ Install: copy `Metrum.jar` to `saves/mods/` of the game.
 | Planet | **Ferrox**: rusty re-skin of Erekir terrain, extra steam vents, iron ore. Enemy: buildAi + rtsAi + BaseExpander (fortifies cores, restocks turrets), boosts its army from wave 15 |
 
 ## Known limits
-- Fuel state is not saved with the map (tanks refill on load).
+- Fuel tanks are saved (custom save chunk); units are re-matched by type + position on load.
 - Range boost stretches bullet lifetime; AI targeting still uses base range.
 - Not yet tested in a full campaign.
 
