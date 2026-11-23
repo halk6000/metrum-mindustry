@@ -105,6 +105,7 @@ public class DroneAssembler extends Block {
             if (hull == null) return Core.bundle.get("metrum.assembler.nohull");
             if (items.get(hull.hull) < 1) return Core.bundle.format("metrum.assembler.missing", hull.hull.localizedName);
             for (Item s : slots) if (s != null && items.get(s) < needed(s)) return Core.bundle.format("metrum.assembler.missing", s.localizedName);
+            if (!mindustry.entities.Units.canCreate(team, hull)) return Core.bundle.get("metrum.assembler.unitcap");
             if (efficiency <= 0f) return Core.bundle.get("metrum.assembler.nopower");
             return Core.bundle.format("metrum.assembler.building", (int) (progress * 100));
         }
@@ -127,12 +128,12 @@ public class DroneAssembler extends Block {
 
         @Override
         public boolean shouldConsume() {
-            return ready() && enabled;
+            return ready() && enabled && mindustry.entities.Units.canCreate(team, hull);
         }
 
         @Override
         public void updateTile() {
-            if (!ready() || efficiency <= 0f) return;
+            if (!ready() || efficiency <= 0f || !mindustry.entities.Units.canCreate(team, hull)) return;
             progress = Math.min(1f, progress + getProgressIncrease(buildTime));
             if (progress < 1f || Vars.net.client()) return;
             progress = 0f;
