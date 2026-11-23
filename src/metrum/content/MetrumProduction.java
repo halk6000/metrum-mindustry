@@ -134,7 +134,6 @@ public class MetrumProduction {
             consumeItems(with(MetrumItems.iron, 2, Items.coal, 1));
             consumeLiquid(MetrumLiquids.steam, 0.33f);
             outputItem = new ItemStack(MetrumItems.steel, 2);
-            outputLiquid = new LiquidStack(Liquids.water, 0.2f);
         }};
 
         salvager = new Separator("salvager") {{

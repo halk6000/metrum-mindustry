@@ -51,9 +51,12 @@ public class SteamEngine extends PowerGenerator {
             if (warmup > 0.5f && Mathf.chance(0.03 * Time.delta)) Fx.steam.at(x + Mathf.range(size * 3f), y + Mathf.range(size * 3f));
         }
 
+        /** heat ramps up in steps: 3 -> 6 -> 9 -> 12 as the engine spins up */
         @Override
         public float heat() {
-            return heatOutput * warmup;
+            if (warmup < 0.05f) return 0f;
+            int stage = Math.min(4, 1 + (int) (warmup * 4f));
+            return heatOutput / 4f * stage;
         }
 
         @Override

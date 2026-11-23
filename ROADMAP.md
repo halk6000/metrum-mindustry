@@ -7,7 +7,19 @@
 
 - [x] Edytor balansu (suwaki z limitami) + eksport do jar: `Edytor balansu.bat`
 
-## Pozostałe
+## Pozostałe (lista z 23.11)
+- [ ] Atom dla każdego pierwiastka + blok „Panel kontrolny reakcji” obok reaktora (cel fuzji, przechwytuje produkt)
+- [ ] De-atomizer: atomy -> z powrotem surowiec
+- [x] Maszyna parowa rozpędza ciepło 3 -> 6 -> 9 -> 12
+- [x] Huta Infuzyjna bez wody jako produktu ubocznego
+- [ ] Inteligentne mosty: kolory obiegów (most łączy się tylko z mostem tego samego koloru)
+- [ ] Kapsuły lądownicze (badanie: atomizer + 2 atomy każdego rodzaju + 100 stali + 250 krzemu): zrzut jednostek w pobliże rdzenia na innej planecie, 1500 energii przez 15 s; boty w późnej fazie też ich używają (posiłki z innych sektorów)
+- [ ] B/C/D: coraz lepsze kopanie (kolejne rudy); po wyprodukowaniu domyślnie „inteligentne wydobycie – najmniej w magazynie”
+- [ ] Komenda „Opiekuj się”: odbudowa + naprawa struktur
+- [ ] Podkręcony krzemowy piec łukowy 3x3: 1 grafit + 2 piasek, 450 prądu, 6 krzemu, 95% czasu; booster atomowy węgiel -> 12 krzemu
+- [ ] Zaawansowany Salvager 3x3: żelazo 60% / piasek 20% / beryl 15% / wolfram 5%
+- [ ] Podkręcony Salvager 2x2: 80% 2 żelaza / 20% 1 piasek
+- [ ] Planer AI krok 6: mury z przejściem w miejscu największego ognia
 - [x] Panel wydobycia (komenda „Inteligentne wydobycie”): komenda "wydobywaj" -> okno: najbliższa ruda / najmniej w magazynie / konkretna ruda
 - [x] Drukarka kadłubów 3x3 (lekki / średni / ciężki, podgląd w środku, 20 s)
 - [x] Drukarka części (silnik, skrzydła, nogi) + Magazyn części (tylko kadłuby i części)
