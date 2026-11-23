@@ -53,6 +53,8 @@ public class MetrumTechTree {
         node(steamFurnace, heatInverter);
         node(steamFurnace, infusionSmelter);
         node(steamFurnace, salvager);
+        node(salvager, salvagerOverclocked);
+        node(salvager, salvagerAdvanced);
 
         // particle physics
         node(steel, MetrumPhysics.atomizer);

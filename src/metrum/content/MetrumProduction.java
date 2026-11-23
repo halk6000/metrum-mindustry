@@ -18,7 +18,7 @@ import static mindustry.type.ItemStack.with;
 /** Crafting blocks ported from the original Metrum JSON mod. */
 public class MetrumProduction {
     public static Block graphiteDecompressor, graphiteDecompressorOverclocked,
-        ammoFactory, steamFurnace, largeSteamFurnace, heatInverter, magmaForge, plasmaIonizer, stoneCrusher, infusionSmelter, salvager;
+        ammoFactory, steamFurnace, largeSteamFurnace, salvagerOverclocked, salvagerAdvanced, heatInverter, magmaForge, plasmaIonizer, stoneCrusher, infusionSmelter, salvager;
 
     private static final Color flame = Color.valueOf("fdb380");
 
@@ -134,6 +134,32 @@ public class MetrumProduction {
             consumeItems(with(MetrumItems.iron, 2, Items.coal, 1));
             consumeLiquid(MetrumLiquids.steam, 0.33f);
             outputItem = new ItemStack(MetrumItems.steel, 2);
+        }};
+
+        // overclocked 2x2: twice as fast as the Salvager; 80% iron / 20% sand (~2 iron per Salvager cycle)
+        salvagerOverclocked = new Separator("salvager-overclocked") {{
+            requirements(Category.crafting, with(MetrumItems.pieceRock, 40, Items.graphite, 80, Items.silicon, 40, MetrumItems.steel, 20));
+            size = 2;
+            craftTime = 10f;
+            itemCapacity = 20;
+            liquidCapacity = 40f;
+            consumePower(3f);
+            consumeItem(MetrumItems.pieceRock);
+            consumeLiquid(MetrumLiquids.steam, 0.15f);
+            results = with(MetrumItems.iron, 80, Items.sand, 20);
+        }};
+
+        // advanced 3x3: also recovers beryllium and tungsten - iron 60% / sand 20% / beryllium 15% / tungsten 5%
+        salvagerAdvanced = new Separator("salvager-advanced") {{
+            requirements(Category.crafting, with(MetrumItems.steel, 80, Items.graphite, 100, Items.silicon, 80, Items.tungsten, 40));
+            size = 3;
+            craftTime = 12f;
+            itemCapacity = 30;
+            liquidCapacity = 60f;
+            consumePower(4f);
+            consumeItem(MetrumItems.pieceRock);
+            consumeLiquid(MetrumLiquids.steam, 0.2f);
+            results = with(MetrumItems.iron, 60, Items.sand, 20, Items.beryllium, 15, Items.tungsten, 5);
         }};
 
         salvager = new Separator("salvager") {{
