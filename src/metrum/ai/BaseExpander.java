@@ -113,7 +113,8 @@ public class BaseExpander {
 
     /** tops up ammo of expander-built item turrets from their team's closest core */
     static void supply() {
-        placed.removeAll(b -> !b.isValid());
+        // Captured defences must leave the enemy supply system immediately.
+        placed.removeAll(b -> !b.isValid() || b.team != Vars.state.rules.waveTeam);
         for (Building b : placed) {
             if (!(b instanceof mindustry.world.blocks.defense.turrets.ItemTurret.ItemTurretBuild)) continue;
             mindustry.world.blocks.defense.turrets.ItemTurret turret = (mindustry.world.blocks.defense.turrets.ItemTurret) b.block;
