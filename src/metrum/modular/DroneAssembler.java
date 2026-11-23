@@ -154,7 +154,11 @@ public class DroneAssembler extends Block {
             // hull choice
             table.table(t -> {
                 for (ModularUnitType h : hulls) {
-                    t.button(b -> b.image(h.hull.uiIcon).size(32f), () -> configure(encode(h, new Item[h.slots])))
+                    t.button(b -> b.image(h.hull.uiIcon).size(32f), () -> {
+                        configure(encode(h, new Item[h.slots]));
+                        // slot count changed: rebuild the panel so it shows the new number of slots
+                        if (!Vars.headless) Vars.control.input.config.showConfig(this);
+                    })
                         .size(48f).checked(b -> hull == h);
                 }
             }).row();
@@ -164,7 +168,8 @@ public class DroneAssembler extends Block {
             table.table(t -> {
                 for (int i = 0; i < slots.length; i++) {
                     int idx = i;
-                    t.button(b -> b.image(() -> slots[idx] == null ? Icon.add.getRegion() : slots[idx].uiIcon).size(32f), () -> {
+                    t.button(b -> b.image(() -> idx >= slots.length || slots[idx] == null ? Icon.add.getRegion() : slots[idx].uiIcon).size(32f), () -> {
+                        if (idx >= slots.length) return;
                         Item[] next = slots.clone();
                         int cur = next[idx] == null ? -1 : modules.indexOf(next[idx]);
                         next[idx] = cur + 1 >= modules.size ? null : modules.get(cur + 1);
