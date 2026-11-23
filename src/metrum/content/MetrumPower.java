@@ -19,6 +19,7 @@ public class MetrumPower {
     public static metrum.world.SteamEngine steamEngine;
     public static metrum.world.FusionReactor fusionReactor;
     public static metrum.world.DecayReactor decayReactor;
+    public static metrum.world.ReactionControl reactionControl;
 
     public static void load() {
         turbineAdvanced = new SteamTurbine("turbine-advanced") {{
@@ -63,6 +64,11 @@ public class MetrumPower {
             MetrumItems.atomicTitanium, MetrumItems.atomicIron, MetrumItems.atomicCopper, MetrumItems.atomicTungsten,
             MetrumItems.atomicLead, MetrumItems.atomicThorium};
         for (int i = 0; i < chain.length - 1; i++) fusionReactor.transmute.put(chain[i], chain[i + 1]);
+
+        reactionControl = new metrum.world.ReactionControl("reaction-control");
+        reactionControl.requirements(Category.power, with(Items.silicon, 60, MetrumItems.steel, 40, Items.graphite, 30));
+        reactionControl.size = 1;
+        reactionControl.targets.addAll(chain);
 
         // safe sibling: steady power, no meltdown, random resources from each decay
         decayReactor = new metrum.world.DecayReactor("decay-reactor");

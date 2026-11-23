@@ -79,6 +79,7 @@ public class MetrumTechTree {
         node(MetrumPhysics.hadronCollider, ferrotungsten);
         node(MetrumPhysics.hadronCollider, quarkMatter);
         node(quarkMatter, fusionReactor);
+        node(fusionReactor, reactionControl);
         node(quarkMatter, decayReactor);
 
         // power

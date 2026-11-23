@@ -82,10 +82,24 @@ public class FusionReactor extends PowerGenerator {
             return transmute.containsKey(item) && items.get(item) < itemCapacity;
         }
 
+        /** reaction control panel next to the reactor (null = free fusion, one step at a time) */
+        ReactionControl.ReactionControlBuild panel() {
+            for (mindustry.gen.Building b : proximity) if (b instanceof ReactionControl.ReactionControlBuild) return (ReactionControl.ReactionControlBuild) b;
+            return null;
+        }
+
         void updateTransmute() {
+            ReactionControl.ReactionControlBuild panel = panel();
+            Item target = panel == null ? null : panel.target;
+            // the panel intercepts finished target atoms
+            if (target != null && items.get(target) > 0 && panel.acceptItem(this, target)) {
+                items.remove(target, 1);
+                panel.handleItem(this, target);
+            }
             if (warmup < 0.99f) return;
             for (arc.struct.ObjectMap.Entry<Item, Item> e : transmute) {
                 if (items.get(e.key) <= 0) continue;
+                if (e.key == target) continue; // reached the reaction target: stop fusing it
                 transmuteProgress += Time.delta / transmuteTime;
                 if (transmuteProgress >= 1f) {
                     transmuteProgress = 0f;
