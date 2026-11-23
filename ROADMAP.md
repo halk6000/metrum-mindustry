@@ -68,12 +68,12 @@
 | Trudność | Głupi | Łatwy | Trudny | Szachista | Taktyczny | Taktyk bitewny | Nierozstrzygnięte |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | 1. Swobodny | 40% | 60% | 0% | 0% | 0% | 0% | — |
-| 2. Łatwy | 20% | 60% | 10% | 6% | 2% | 1% | 1% |
+| 2. Łatwy | 20% | 60% | 10% | 6% | 2% | 2% (1% + 1%) | — |
 | 3. Normalny | 10% | 40% | 26%* | 16%* | 5%* | 3%* | — |
 | 4. Trudny | 0% | 10% | 40% | 33%* | 11%* | 6%* | — |
 | 5. Eksterminacja | 0% | 0% | 50% | 30%* | 10%* | 10%* | — |
 
-- [ ] **Doprecyzować 1% na Łatwym**: podane przez użytkownika wagi to 60% łatwy / 20% głupi / 10% trudny / 6% szachista / 2% taktyk / 1% oraz TB 1% (łącznie 100%). W aktualnym enumie jest sześć poziomów AI: DUMB, EASY, HARD, TACTICAL, CHESS, BATTLE_TACTICIAN. Jedno 1% nie ma jednoznacznej kategorii — nie dopisywać wymyślonego siódmego poziomu.
+- [x] **Łatwy — suma 100%**: 60% EASY + 20% DUMB + 10% HARD + 6% CHESS + 2% TACTICAL + 1% BATTLE_TACTICIAN + 1% BATTLE_TACTICIAN = 100%. Oba udziały po 1% należą do Taktyka bitewnego (razem 2%); nie ma brakującego poziomu AI.
 - [ ] **Proporcje z gwiazdką są propozycją podziału reszty**, a nie wartościami wprost od użytkownika: Normalny: pozostałe 50% = 26% trudny / 16% szachista / 5% taktyczny / 3% bitewny; Trudny: pozostałe 50% = 33% szachista / 11% taktyczny / 6% bitewny; Eksterminacja: pozostałe 50% = 30% szachista / 10% taktyczny / 10% bitewny. Do zatwierdzenia przed implementacją.
 - [ ] **Eksterminacja — minimum 7 Taktyków bitewnych na planecie**, wliczając główny sektor; po losowaniu skorygować przydziały, jeśli jest ich mniej niż 7 (jeżeli planeta ma mniej niż 7 sektorów, ograniczyć do liczby dostępnych). Dla każdego poziomu zaokrąglać przydziały do całkowitych liczebności sektorów z zachowaniem sumy.
 - [ ] **Rozdzielić pojęcia**: pięć poziomów trudności planety i sześć poziomów AI w kodzie to różne skale. Poziom rozwoju bazy pozostaje od nich niezależny.
