@@ -549,12 +549,17 @@ public class BasePlanner {
     static boolean buildDrillLine(CoreBuild core, AiLevel level) {
         Block chosen = Blocks.plasmaBore, duct = Blocks.duct;
         Tile ore = findOreSpot(core, chosen, 30);
-        if (ore == null) {
+        ItemStack demand = miningDemand.get(core);
+        if (ore == null || demand != null) {
             for (Block candidate : Vars.content.blocks()) {
                 if (!(candidate instanceof mindustry.world.blocks.production.Drill) || !candidate.environmentBuildable()) continue;
                 if (!canSupportDrill(core, candidate)) continue;
                 Tile floorOre = findFloorOreSpot(core, (mindustry.world.blocks.production.Drill) candidate, 30);
-                if (floorOre != null) { chosen = candidate; ore = floorOre; break; }
+                if (floorOre == null) continue;
+                boolean meetsDemand = demand != null
+                    && ((mindustry.world.blocks.production.Drill) candidate).getDrop(floorOre) == demand.item;
+                if (ore == null || meetsDemand) { chosen = candidate; ore = floorOre; }
+                if (meetsDemand || demand == null) break;
             }
         }
         if (ore == null) return stalled("brak dostępnej rudy dla wiertnicy");
@@ -620,6 +625,8 @@ public class BasePlanner {
     }
     static Tile findFloorOreSpot(CoreBuild core, mindustry.world.blocks.production.Drill drill, int radius) {
         Tile best = null;
+        ItemStack demand = miningDemand.get(core);
+        boolean bestMeetsDemand = false;
         int least = Integer.MAX_VALUE;
         float nearest = Float.MAX_VALUE;
         for (int dx = -radius; dx <= radius; dx++) for (int dy = -radius; dy <= radius; dy++) {
@@ -630,8 +637,11 @@ public class BasePlanner {
             if (item == null) continue;
             int amount = core.items.get(item);
             float distance = core.dst2(t);
-            if (best == null || amount < least || (amount == least && distance < nearest)) {
+            boolean meetsDemand = demand != null && demand.item == item;
+            if (best == null || (meetsDemand && !bestMeetsDemand)
+                || (meetsDemand == bestMeetsDemand && (amount < least || (amount == least && distance < nearest)))) {
                 best = t; least = amount; nearest = distance;
+                bestMeetsDemand = meetsDemand;
             }
         }
         return best;
