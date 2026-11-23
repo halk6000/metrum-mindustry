@@ -61,6 +61,32 @@ public class MetrumPlanets {
             addStartingItems = true;
             difficulty = 2;
             captureWave = 20;
+            rules = r -> {
+                r.waves = true;
+                r.waveTimer = true;
+                r.attackMode = false;
+            };
         }};
+        // the hand-made map has no enemy core: give the AI one on load, as far from the player as possible
+        arc.Events.on(mindustry.game.EventType.WorldLoadEvent.class, e -> {
+            if (mindustry.Vars.state.rules.sector == null || mindustry.Vars.state.rules.sector.preset != oldRavine || mindustry.Vars.net.client()) return;
+            mindustry.game.Team ai = mindustry.Vars.state.rules.waveTeam;
+            if (!ai.cores().isEmpty()) return;
+            mindustry.gen.Building player = mindustry.Vars.state.rules.defaultTeam.core();
+            if (player == null) return;
+            mindustry.world.Block core = mindustry.content.Blocks.coreBastion;
+            mindustry.world.Tile best = null;
+            float bestDst = 0f;
+            for (mindustry.world.Tile t : mindustry.Vars.world.tiles) {
+                if (t.x % 3 != 0 || t.y % 3 != 0) continue;
+                if (!mindustry.world.Build.validPlace(core, ai, t.x, t.y, 0, false)) continue;
+                float d = player.dst(t);
+                if (d > bestDst) { bestDst = d; best = t; }
+            }
+            if (best != null) {
+                best.setNet(core, ai, 0);
+                if (best.build != null) best.build.items.add(mindustry.content.Items.beryllium, 2000);
+            }
+        });
     }
 }
