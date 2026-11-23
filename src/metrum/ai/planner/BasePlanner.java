@@ -39,6 +39,11 @@ public class BasePlanner {
             java.util.Arrays.fill(fire, 0f);
             firstBuilder = true;
             builderTimer = 0f;
+            // hand-made maps may lack geothermal spots: guarantee steam vents near every core on Metrum planets
+            if (active()) {
+                for (CoreBuild c : Vars.state.rules.waveTeam.cores()) ensureVents(c, 2);
+                for (CoreBuild c : Vars.state.rules.defaultTeam.cores()) ensureVents(c, 2);
+            }
         });
         Events.on(mindustry.game.EventType.BuildDamageEvent.class, e -> {
             if (e.build == null || e.source == null || e.build.team != Vars.state.rules.waveTeam) return;
@@ -122,6 +127,30 @@ public class BasePlanner {
     }
 
     // ---------- step 2: power - geothermal (turbine condenser on steam vents) + beam-node grid ----------
+
+    /** adds steam vents (3x3 rhyolite vent pattern) near a core if there are fewer than {@code wanted} within 25 tiles */
+    static void ensureVents(CoreBuild core, int wanted) {
+        int have = 0;
+        for (int dx = -25; dx <= 25; dx++) for (int dy = -25; dy <= 25; dy++) {
+            Tile t = Vars.world.tile(core.tileX() + dx, core.tileY() + dy);
+            if (t != null && t.floor() instanceof mindustry.world.blocks.environment.SteamVent
+                && ((mindustry.world.blocks.environment.SteamVent) t.floor()).isCenterVent(t)) have++;
+        }
+        arc.math.Rand r = new arc.math.Rand(core.pos());
+        for (int attempt = 0; attempt < 400 && have < wanted; attempt++) {
+            float a = r.random(360f), d = r.random(7f, 18f);
+            int x = core.tileX() + (int) arc.math.Angles.trnsx(a, d), y = core.tileY() + (int) arc.math.Angles.trnsy(a, d);
+            boolean ok = true;
+            for (arc.math.geom.Point2 p : mindustry.world.blocks.environment.SteamVent.offsets) {
+                Tile t = Vars.world.tile(x + p.x, y + p.y);
+                if (t == null || t.block() != Blocks.air || t.floor().isLiquid || t.overlay() == Blocks.spawn) { ok = false; break; }
+            }
+            if (!ok) continue;
+            for (arc.math.geom.Point2 p : mindustry.world.blocks.environment.SteamVent.offsets)
+                Vars.world.tile(x + p.x, y + p.y).setFloorNet(Blocks.rhyoliteVent, Blocks.air);
+            have++;
+        }
+    }
 
     static boolean hasGenerator(CoreBuild core) {
         return count(core, b -> b.block instanceof mindustry.world.blocks.power.PowerGenerator) > 0;
