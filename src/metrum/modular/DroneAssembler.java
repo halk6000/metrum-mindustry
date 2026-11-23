@@ -63,6 +63,8 @@ public class DroneAssembler extends Block {
         public float progress;
 
         void parse(String s) {
+            // Reapplying the same plan (e.g. configuration paste) must not restart assembly.
+            if (s != null && s.equals(encode(hull, slots))) return;
             hull = null;
             slots = new Item[0];
             progress = 0f;
