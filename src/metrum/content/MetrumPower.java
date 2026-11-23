@@ -16,6 +16,7 @@ import static mindustry.type.ItemStack.with;
 /** Power blocks ported from the original Metrum JSON mod. */
 public class MetrumPower {
     public static Block turbineAdvanced;
+    public static metrum.world.SteamEngine steamEngine;
     public static metrum.world.FusionReactor fusionReactor;
     public static metrum.world.DecayReactor decayReactor;
 
@@ -40,6 +41,14 @@ public class MetrumPower {
     }
 
     public static void loadReactors() {
+        // steam engine: 600 power/s from steam, heats every neighbour that needs heat
+        steamEngine = new metrum.world.SteamEngine("steam-engine");
+        steamEngine.requirements(Category.power, with(MetrumItems.iron, 60, Items.graphite, 40, Items.beryllium, 50));
+        steamEngine.size = 2;
+        steamEngine.powerProduction = metrum.Balance.f("steamEngine.powerPerSecond", 600f) / 60f;
+        steamEngine.heatOutput = metrum.Balance.f("steamEngine.heat", 6f);
+        steamEngine.consumeLiquid(MetrumLiquids.steam, metrum.Balance.f("steamEngine.steamPerSecond", 12f) / 60f);
+
         fusionReactor = new metrum.world.FusionReactor("fusion-reactor");
         fusionReactor.requirements(Category.power, with(MetrumItems.tungstenCarbide, 300, MetrumItems.ferrotungsten, 200, Items.surgeAlloy, 200, Items.silicon, 400, MetrumItems.steel, 400));
         fusionReactor.size = 5;

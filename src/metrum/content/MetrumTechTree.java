@@ -49,6 +49,7 @@ public class MetrumTechTree {
         node(rockScraper, steamFurnace);
         node(rockScraper, stoneCrusher);
         node(steamFurnace, largeSteamFurnace);
+        node(steamFurnace, steamEngine);
         node(steamFurnace, heatInverter);
         node(steamFurnace, infusionSmelter);
         node(steamFurnace, salvager);
