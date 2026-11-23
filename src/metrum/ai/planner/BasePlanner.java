@@ -94,6 +94,7 @@ public class BasePlanner {
 
     /** each enemy core keeps one builder drone (MonoMet T1); respawned 30 s after it dies */
     static float builderRespawn = 60f * 30f;
+    static final double builderFlag = -7346281d; // saved by the standard unit serializer
     static final java.util.Map<CoreBuild, Float> builderTimers = new java.util.HashMap<>();
 
     static boolean hasBuilder(CoreBuild core) {
@@ -103,6 +104,13 @@ public class BasePlanner {
     }
 
     static void keepBuilder(Team team) {
+        mindustry.gen.Groups.unit.each(u -> {
+            if (u.team != team || u.type != metrum.content.MetrumUnits.monoMetT1 || u.dead() || u.isPlayer()) return;
+            if (u.controller() instanceof mindustry.ai.types.BuilderAI && u.flag == 0d) u.flag = builderFlag;
+            if (u.flag == builderFlag && !(u.controller() instanceof mindustry.ai.types.BuilderAI)) {
+                u.controller(new mindustry.ai.types.BuilderAI(true, 600f));
+            }
+        });
         builderTimers.keySet().removeIf(core -> !core.isValid() || core.team != team);
         for (CoreBuild core : team.cores()) {
             if (hasBuilder(core)) {
