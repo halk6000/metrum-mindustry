@@ -60,11 +60,12 @@ public class MetrumPlanets {
             alwaysUnlocked = true;
             addStartingItems = true;
             difficulty = 2;
-            captureWave = 20;
+            captureWave = 0; // captured by destroying the enemy core, not by surviving waves
             rules = r -> {
                 r.waves = true;
                 r.waveTimer = true;
-                r.attackMode = false;
+                // the goal of Old Ravine is to destroy the enemy core
+                r.attackMode = true;
             };
         }};
         // the hand-made map has no enemy core: give the AI one on load, as far from the player as possible
