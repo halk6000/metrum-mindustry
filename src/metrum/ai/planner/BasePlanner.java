@@ -298,7 +298,8 @@ public class BasePlanner {
         Block conduit = Blocks.reinforcedConduit;
         Building from = src[0], to = dst[0];
         Seq<Tile> path = Astar.pathfind(from.tile, to.tile, tile -> 1f,
-            t -> t.block() == Blocks.air || t.build == from || t.build == to);
+            t -> t.build == from || t.build == to ||
+                (t.block() == Blocks.air && Build.validPlace(conduit, core.team, t.x, t.y, 0, false)));
         if (path == null || path.size < 3) return false;
         int pipeCount = 0;
         for (int i = 0; i < path.size - 1; i++) if (path.get(i).build == null) pipeCount++;
