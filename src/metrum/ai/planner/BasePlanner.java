@@ -413,6 +413,12 @@ public class BasePlanner {
         Seq<Building> pipes = new Seq<>();
         Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
             b -> b.block == Blocks.reinforcedConduit, pipes::add);
+        Seq<Building> unused = unusedWaterPipes(pipes, core.team);
+        for (Building pipe : unused) pipe.tile.setNet(Blocks.air, core.team, 0);
+        return !unused.isEmpty();
+    }
+
+    static Seq<Building> unusedWaterPipes(Seq<Building> pipes, Team team) {
         java.util.Set<Building> seen = new java.util.HashSet<>();
         for (Building seed : pipes) {
             if (seen.contains(seed)) continue;
@@ -424,21 +430,20 @@ public class BasePlanner {
                 Building pipe = queue.removeFirst();
                 if (!seen.add(pipe)) continue;
                 component.add(pipe);
-                if (component.size > 512) return false; // leave large networks for a fuller analysis
+                if (component.size > 512) return new Seq<>(); // leave large networks for a fuller analysis
                 if (pipe.liquids == null || pipe.liquids.sum((liquid, amount) -> amount) > 0.001f) needed = true;
                 for (Building neighbour : pipe.proximity) {
-                    if (neighbour.team == core.team && neighbour.block == Blocks.reinforcedConduit) {
+                    if (neighbour.team == team && neighbour.block == Blocks.reinforcedConduit) {
                         if (!seen.contains(neighbour)) queue.add(neighbour);
                     } else if (neighbour.block.hasLiquids) needed = true;
                 }
             }
             if (needed) continue;
-            for (int i = 0; i < Math.min(6, component.size); i++) {
-                component.get(i).tile.setNet(Blocks.air, core.team, 0);
-            }
-            return true;
+            Seq<Building> selected = new Seq<>();
+            for (int i = 0; i < Math.min(6, component.size); i++) selected.add(component.get(i));
+            return selected;
         }
-        return false;
+        return new Seq<>();
     }
     static boolean waterLineConnected(Building from, Building to) {
         Block conduit = Blocks.reinforcedConduit;
