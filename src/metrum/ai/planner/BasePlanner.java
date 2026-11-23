@@ -119,7 +119,7 @@ public class BasePlanner {
             || b.block instanceof mindustry.world.blocks.production.Drill);
         int wantDrills = 2 + level.ordinal();
         if (drills < 2) return buildDrillLine(core, level);
-        if ((!hasGenerator(core) || hasPowerDeficit(core)) && buildPower(core)) return true;
+        if ((!hasGenerator(core) || (hasPowerDeficit(core) && !hasIdleGenerator(core))) && buildPower(core)) return true;
         if (!powerGridDone(core) && extendPowerGrid(core)) return true;
         if (pipeWater(core)) return true;
         int factories = count(core, b -> b.block == metrum.content.MetrumPhysics.atomizer);
@@ -177,6 +177,12 @@ public class BasePlanner {
 
     static boolean hasGenerator(CoreBuild core) {
         return count(core, b -> b.block instanceof mindustry.world.blocks.power.PowerGenerator) > 0;
+    }
+
+    /** Connect available generation before paying for another isolated generator. */
+    static boolean hasIdleGenerator(CoreBuild core) {
+        return count(core, b -> b.block instanceof mindustry.world.blocks.power.PowerGenerator
+            && b.power != null && b.power.graph.getLastPowerNeeded() <= 0.001f) > 0;
     }
 
     /** A working grid with exhausted storage needs more generation, not just more nodes. */
