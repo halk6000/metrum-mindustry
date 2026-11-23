@@ -62,6 +62,8 @@ public class BasePlanner {
         if (!hasGenerator(core) && buildPower(core)) return true;
         if (!powerGridDone(core) && extendPowerGrid(core)) return true;
         if (pipeWater(core)) return true;
+        int factories = count(core, b -> b.block == metrum.content.MetrumPhysics.atomizer);
+        if (factories < 1 + level.ordinal() / 2 && buildFactory(core)) return true;
         if (drills < wantDrills) return buildDrillLine(core, level);
         return false; // next steps (water, factories, turrets, walls) come later
     }
@@ -147,6 +149,34 @@ public class BasePlanner {
             placed++;
         }
         return placed > 0;
+    }
+
+    // ---------- step 4: splitter on a resource line + a factory fed from it ----------
+
+    /** swaps one duct of a mining line for a router and puts a factory (atomizer: any mineral in) next to it */
+    static boolean buildFactory(CoreBuild core) {
+        Block router = Blocks.ductRouter, factory = metrum.content.MetrumPhysics.atomizer;
+        Building[] pick = {null};
+        mindustry.Vars.indexer.eachBlock(core.team, core.x, core.y, 30f * Vars.tilesize,
+            b -> b.block == Blocks.duct && b.dst(core) > 4f * Vars.tilesize, b -> { if (pick[0] == null) pick[0] = b; });
+        if (pick[0] == null) return false;
+        Tile duct = pick[0].tile;
+        int rot = pick[0].rotation;
+        // factory goes beside the line (left or right of the flow), touching the router
+        for (int side : new int[]{1, 3}) {
+            int dir = (rot + side) % 4;
+            Tile spot = duct.nearby(dir);
+            if (spot == null) continue;
+            int off = factory.sizeOffset;
+            Tile origin = Vars.world.tile(spot.x + arc.math.geom.Geometry.d4x(dir) * (factory.size / 2) - off * 0,
+                spot.y + arc.math.geom.Geometry.d4y(dir) * (factory.size / 2));
+            if (origin == null || !Build.validPlace(factory, core.team, origin.x, origin.y, 0, false)) continue;
+            if (!pay(core, factory.requirements) || !pay(core, router.requirements)) return false;
+            duct.setNet(router, core.team, rot);
+            origin.setNet(factory, core.team, 0);
+            return true;
+        }
+        return false;
     }
 
     // ---------- step 1: drill + path to core ----------
