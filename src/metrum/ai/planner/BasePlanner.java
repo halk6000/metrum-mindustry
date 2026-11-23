@@ -349,7 +349,7 @@ public class BasePlanner {
             Tile origin = Vars.world.tile(spot.x + arc.math.geom.Geometry.d4x(dir) * (factory.size / 2) - off * 0,
                 spot.y + arc.math.geom.Geometry.d4y(dir) * (factory.size / 2));
             if (origin == null || !Build.validPlace(factory, core.team, origin.x, origin.y, 0, false)) continue;
-            if (!pay(core, factory.requirements) || !pay(core, router.requirements)) return false;
+            if (!payTogether(core, factory.requirements, router.requirements)) return false;
             duct.setNet(router, core.team, rot);
             origin.setNet(factory, core.team, 0);
             return true;
@@ -491,6 +491,20 @@ public class BasePlanner {
             if (n != null && n.wallDrop() != null) return r;
         }
         return 0;
+    }
+
+    /** Reserve shared resources for the entire construction before removing any items. */
+    static boolean payTogether(Building core, ItemStack[]... costs) {
+        java.util.Map<Item, Integer> total = new java.util.HashMap<>();
+        float mult = Vars.state.rules.buildCostMultiplier;
+        for (ItemStack[] group : costs) for (ItemStack cost : group) {
+            total.put(cost.item, total.getOrDefault(cost.item, 0) + Math.round(cost.amount * mult));
+        }
+        for (java.util.Map.Entry<Item, Integer> cost : total.entrySet()) {
+            if (core.items.get(cost.getKey()) < cost.getValue()) return false;
+        }
+        for (java.util.Map.Entry<Item, Integer> cost : total.entrySet()) core.items.remove(cost.getKey(), cost.getValue());
+        return true;
     }
 
     static boolean pay(Building core, ItemStack[] cost) {
