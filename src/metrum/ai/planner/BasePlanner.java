@@ -39,6 +39,10 @@ public class BasePlanner {
             java.util.Arrays.fill(fire, 0f);
             firstBuilder = true;
             builderTimer = 0f;
+            // the enemy fields Metrum drones: swap the wave units for MonoMets of a similar strength
+            if (active()) {
+                for (mindustry.game.SpawnGroup g : Vars.state.rules.spawns) g.type = metrumEquivalent(g.type);
+            }
             // hand-made maps may lack geothermal spots: guarantee steam vents near every core on Metrum planets
             if (active()) {
                 for (CoreBuild c : Vars.state.rules.waveTeam.cores()) ensureVents(c, 2);
@@ -54,9 +58,14 @@ public class BasePlanner {
         });
     }
 
+    /** setting: run the Metrum AI in custom games / editor playtests too (not only the Ferrox campaign) */
+    public static final String everywhereSetting = "metrum-ai-everywhere";
+
     static boolean active() {
-        return Vars.state.isCampaign() && Vars.state.rules.sector != null
-            && planets.contains(Vars.state.rules.sector.planet) && Vars.state.rules.waveTeam.cores().size > 0;
+        if (Vars.state.rules.pvp || Vars.state.rules.waveTeam.cores().size == 0) return false;
+        boolean ferroxCampaign = Vars.state.isCampaign() && Vars.state.rules.sector != null && planets.contains(Vars.state.rules.sector.planet);
+        boolean custom = !Vars.state.isCampaign() && arc.Core.settings.getBool(everywhereSetting, true);
+        return ferroxCampaign || custom;
     }
 
     /** each enemy core keeps one builder drone (MonoMet T1); respawned 30 s after it dies */
@@ -87,6 +96,8 @@ public class BasePlanner {
     static void update() {
         if (!Vars.state.isPlaying() || Vars.net.client() || !active()) return;
         Team aiTeam = Vars.state.rules.waveTeam;
+        // the Metrum planner replaces the vanilla base builder (otherwise both would build)
+        Vars.state.rules.teams.get(aiTeam).buildAi = false;
         keepBuilder(aiTeam);
         // no builder drone -> no construction
         if (!hasBuilder(aiTeam)) return;
@@ -127,6 +138,18 @@ public class BasePlanner {
     }
 
     // ---------- step 2: power - geothermal (turbine condenser on steam vents) + beam-node grid ----------
+
+    static mindustry.type.UnitType metrumEquivalent(mindustry.type.UnitType t) {
+        if (t == null || t.name.startsWith("metrum-")) return t;
+        float hp = t.health;
+        if (hp < 300f) return metrum.content.MetrumUnits.monoMetT1;
+        if (hp < 600f) return metrum.content.MetrumUnits.monoMetT1b;
+        if (hp < 1000f) return metrum.content.MetrumUnits.monoMetT2;
+        if (hp < 2000f) return metrum.content.MetrumUnits.monoMetT2b;
+        if (hp < 5000f) return metrum.content.MetrumUnits.monoMetT3;
+        if (hp < 9000f) return metrum.content.MetrumUnits.monoMetT3b;
+        return metrum.content.MetrumUnits.monoMetT3c;
+    }
 
     /** adds steam vents (3x3 rhyolite vent pattern) near a core if there are fewer than {@code wanted} within 25 tiles */
     static void ensureVents(CoreBuild core, int wanted) {

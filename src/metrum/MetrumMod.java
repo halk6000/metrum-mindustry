@@ -101,9 +101,11 @@ public class MetrumMod extends Mod {
         metrum.ai.planner.BasePlanner.init();
         // Settings -> Metrum: enemy AI level (separate AI mode)
         if (!mindustry.Vars.headless) {
-            mindustry.Vars.ui.settings.addCategory(arc.Core.bundle.get("metrum.settings"), mindustry.gen.Icon.terrain, t ->
+            mindustry.Vars.ui.settings.addCategory(arc.Core.bundle.get("metrum.settings"), mindustry.gen.Icon.terrain, t -> {
                 t.sliderPref(metrum.ai.planner.AiLevel.setting, 2, 0, metrum.ai.planner.AiLevel.values().length - 1, 1,
-                    i -> metrum.ai.planner.AiLevel.values()[i].localized()));
+                    i -> metrum.ai.planner.AiLevel.values()[i].localized());
+                t.checkPref(metrum.ai.planner.BasePlanner.everywhereSetting, true);
+            });
         }
         metrum.modular.Loadouts.init();
         metrum.ai.SmartMining.init(MetrumUnits.monoMetT1, MetrumUnits.monoMetT2, MetrumUnits.monoMetT3,
