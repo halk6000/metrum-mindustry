@@ -300,6 +300,13 @@ public class BasePlanner {
         Seq<Tile> path = Astar.pathfind(from.tile, to.tile, tile -> 1f,
             t -> t.block() == Blocks.air || t.build == from || t.build == to);
         if (path == null || path.size < 3) return false;
+        int pipeCount = 0;
+        for (int i = 0; i < path.size - 1; i++) if (path.get(i).build == null) pipeCount++;
+        // Check the complete line before spending anything; partial pipes obstruct later retries.
+        float costMultiplier = Vars.state.rules.buildCostMultiplier;
+        for (ItemStack cost : conduit.requirements) {
+            if (core.items.get(cost.item) < (long) Math.round(cost.amount * costMultiplier) * pipeCount) return false;
+        }
         int placed = 0;
         for (int i = 0; i < path.size - 1; i++) {
             Tile t = path.get(i), next = path.get(i + 1);
