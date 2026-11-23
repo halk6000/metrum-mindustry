@@ -224,6 +224,26 @@ public class BasePlanner {
 
     static boolean extendPowerGrid(CoreBuild core) {
         Block node = Blocks.beamNode;
+        // Give off-lattice buildings an adjacent connection point before filling the regular grid.
+        Seq<Building> endpoints = new Seq<>();
+        Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
+            b -> b.power != null && (b.block.consPower != null
+                || b.block instanceof mindustry.world.blocks.power.PowerGenerator)
+                && !b.proximity.contains(other -> other.team == core.team && other.block == node),
+            endpoints::add);
+        for (Building endpoint : endpoints) {
+            int min = -(endpoint.block.size - 1) / 2, max = endpoint.block.size / 2;
+            for (int dx = min - 1; dx <= max + 1; dx++) for (int dy = min - 1; dy <= max + 1; dy++) {
+                // Edge neighbours only; corner nodes do not touch the building.
+                if (!((dx >= min && dx <= max && (dy == min - 1 || dy == max + 1))
+                    || (dy >= min && dy <= max && (dx == min - 1 || dx == max + 1)))) continue;
+                Tile t = Vars.world.tile(endpoint.tileX() + dx, endpoint.tileY() + dy);
+                if (t == null || t.block() != Blocks.air || !Build.validPlace(node, core.team, t.x, t.y, 0, false)) continue;
+                if (!pay(core, node.requirements)) return false;
+                t.setNet(node, core.team, 0);
+                return true;
+            }
+        }
         int step = 8, placed = 0;
         for (int r = step; r <= 32 && placed < 3; r += step) {
             for (int dx = -r; dx <= r && placed < 3; dx += step) for (int dy = -r; dy <= r && placed < 3; dy += step) {
