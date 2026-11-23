@@ -31,6 +31,7 @@ public class BasePlanner {
     static float timer;
     static float lastPlannerTick = -1000f;
     static int completedSteps;
+    static String plannerAction = "oczekiwanie na pierwszą próbę";
 
     /** fire map: damage taken by the AI team's buildings, per 30-degree sector around each core */
     static final float[] fire = new float[12];
@@ -48,6 +49,8 @@ public class BasePlanner {
             java.util.Arrays.fill(fire, 0f);
             lastPlannerTick = -1000f;
             completedSteps = 0;
+            timer = 0f;
+            plannerAction = "oczekiwanie na pierwszą próbę";
             firstBuilder = true;
             builderTimer = 0f;
             // the enemy fields Metrum drones: swap the wave units for MonoMets of a similar strength
@@ -73,7 +76,7 @@ public class BasePlanner {
         if (Vars.net.client()) return "[lightgray]AI: status serwera niedostępny[]";
         mindustry.game.Rules.TeamRule rules = Vars.state.rules.teams.get(Vars.state.rules.waveTeam);
         boolean heartbeat = active() && Time.time - lastPlannerTick < 120f;
-        String base = heartbeat ? "[green]Metrum (kroki: " + completedSteps + ")[]"
+        String base = heartbeat ? "[green]Metrum[] — " + plannerAction + " (kroki: " + completedSteps + ")"
             : rules.buildAi ? "[orange]Mindustry[]" : "[lightgray]brak aktywnego planera[]";
         return "AI bazy: " + base + (rules.rtsAi ? "\n[orange]Oddziały: RTS Mindustry[]" : "");
     }
@@ -121,11 +124,15 @@ public class BasePlanner {
         Vars.state.rules.teams.get(aiTeam).buildAi = false;
         keepBuilder(aiTeam);
         // no builder drone -> no construction
-        if (!hasBuilder(aiTeam)) return;
+        if (!hasBuilder(aiTeam)) {
+            plannerAction = "oczekiwanie na konstruktora";
+            return;
+        }
         AiLevel level = AiLevel.current();
         timer += Time.delta;
         if (timer < level.buildInterval * 60f) return;
         timer = 0f;
+        int before = completedSteps;
         Team team = Vars.state.rules.waveTeam;
         for (CoreBuild core : team.cores()) {
             for (int i = 0; i < level.stepsPerTick; i++) {
@@ -133,6 +140,7 @@ public class BasePlanner {
                 completedSteps++;
             }
         }
+        plannerAction = completedSteps > before ? "ostatnia próba: budowa wykonana" : "ostatnia próba: bez postępu";
     }
 
     /** picks the next build step in the planned order */
