@@ -193,10 +193,12 @@ public class BasePlanner {
         int drills = count(core, b -> b.block instanceof mindustry.world.blocks.production.BeamDrill
             || b.block instanceof mindustry.world.blocks.production.Drill);
         int wantDrills = 2 + level.ordinal();
-        if (drills < 2) return buildDrillLine(core, level);
+        // Try mining first, but let its power/water prerequisites resolve a failed attempt.
+        if (drills < 2 && buildDrillLine(core, level)) return true;
         if ((!hasGenerator(core) || (hasPowerDeficit(core) && !hasIdleGenerator(core))) && buildPower(core)) return true;
         if (!powerGridDone(core) && extendPowerGrid(core)) return true;
         if (pipeWater(core)) return true;
+        if (drills < 2) return false; // do not spend the bootstrap budget on factories or defences
         int factories = count(core, b -> b.block == metrum.content.MetrumPhysics.atomizer);
         if (factories < 1 + level.ordinal() / 2 && buildFactory(core)) return true;
         if (drills < wantDrills) return buildDrillLine(core, level);
