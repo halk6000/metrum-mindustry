@@ -203,6 +203,9 @@ public class BasePlanner {
         if (!powerGridDone(core) && extendPowerGrid(core)) return true;
         if (pipeWater(core)) return true;
         if (drills < 2) return false; // do not spend the bootstrap budget on factories or defences
+        ItemStack demand = miningDemand.get(core);
+        if (demand != null && !minedResources(core).contains(demand.item)
+            && buildDrillLine(core, level, true)) return true;
         int factories = count(core, b -> b.block == metrum.content.MetrumPhysics.atomizer);
         if (factories < 1 + level.ordinal() / 2 && buildFactory(core)) return true;
         if (drills < wantDrills) return buildDrillLine(core, level);
@@ -547,6 +550,10 @@ public class BasePlanner {
 
     /** places one drill on the nearest free ore of the scarcest mineable item, then a duct path to the core */
     static boolean buildDrillLine(CoreBuild core, AiLevel level) {
+        return buildDrillLine(core, level, false);
+    }
+
+    static boolean buildDrillLine(CoreBuild core, AiLevel level, boolean demandOnly) {
         Block chosen = Blocks.plasmaBore, duct = Blocks.duct;
         Tile ore = findOreSpot(core, chosen, 30);
         ItemStack demand = miningDemand.get(core);
@@ -567,6 +574,10 @@ public class BasePlanner {
         int rotation = drill instanceof mindustry.world.blocks.production.BeamDrill
             ? faceWall(ore, drill, core, minedResources(core)) : 0;
         if (rotation < 0) return stalled("brak poprawnego kierunku wiercenia");
+        Item output = drill instanceof mindustry.world.blocks.production.BeamDrill
+            ? wallOreInDirection(ore, (mindustry.world.blocks.production.BeamDrill) drill, rotation)
+            : ((mindustry.world.blocks.production.Drill) drill).getDrop(ore);
+        if (demandOnly && (demand == null || output != demand.item)) return false;
         if (!pay(core, drill.requirements)) return stalled("brak surowców na wiertnicę");
 
         // beam drills face the wall they mine: place on the free tile next to the wall, rotated towards it
@@ -655,6 +666,13 @@ public class BasePlanner {
                     (mindustry.world.blocks.production.BeamDrill.BeamDrillBuild) b;
                 // Disabled drills and drills with no mineable wall do not cover the resource.
                 if (beam.enabled && beam.facingAmount > 0 && beam.lastItem != null) mined.add(beam.lastItem);
+            });
+        Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
+            b -> b instanceof mindustry.world.blocks.production.Drill.DrillBuild,
+            b -> {
+                mindustry.world.blocks.production.Drill.DrillBuild floor =
+                    (mindustry.world.blocks.production.Drill.DrillBuild) b;
+                if (floor.enabled && floor.dominantItems > 0 && floor.dominantItem != null) mined.add(floor.dominantItem);
             });
         return mined;
     }
