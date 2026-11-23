@@ -306,7 +306,7 @@ public class BasePlanner {
         return false;
     }
 
-    // ---------- step 6: wall ring; leaves a gap where the fire is heaviest (all levels except DUMB) ----------
+    // ---------- step 6: wall ring; leaves a gap where the fire is heaviest (all AI levels) ----------
 
     static boolean buildWalls(CoreBuild core, AiLevel level) {
         Block wall = Blocks.tungstenWall;
@@ -317,7 +317,7 @@ public class BasePlanner {
         for (int i = 0; i < fire.length; i++) if (fire[i] > max) { max = fire[i]; best = i; }
         Building enemy = Vars.state.rules.defaultTeam.core();
         float gapAngle = best >= 0 ? best * 30f + 15f : (enemy != null ? core.angleTo(enemy) : 0f);
-        float gapHalf = level.wallGaps ? 12f : -1f; // ~3 tiles wide at radius 20
+        float gapHalf = 12f; // ~3 tiles wide at radius 20
         // wall arc facing the threat (+-70 degrees around the gap direction)
         int placed = 0;
         for (float a = gapAngle - 70f; a <= gapAngle + 70f && placed < 6; a += 3f) {
