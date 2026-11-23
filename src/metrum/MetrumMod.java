@@ -108,6 +108,24 @@ public class MetrumMod extends Mod {
             MetrumUnits.monoMetT1b, MetrumUnits.monoMetT2b, MetrumUnits.monoMetT3b,
             MetrumUnits.monoMetT1c, MetrumUnits.monoMetT2c, MetrumUnits.monoMetT3c,
             MetrumUnits.monoMetT1d, MetrumUnits.monoMetT2d, MetrumUnits.monoMetT3d);
+        // mining grows with each upgrade (B: +graphite, C: +tungsten, D: +thorium) and freshly built drones
+        // start in smart mining "least stored" mode
+        mindustry.type.UnitType[][] lines = {
+            {MetrumUnits.monoMetT1, MetrumUnits.monoMetT1b, MetrumUnits.monoMetT1c, MetrumUnits.monoMetT1d},
+            {MetrumUnits.monoMetT2, MetrumUnits.monoMetT2b, MetrumUnits.monoMetT2c, MetrumUnits.monoMetT2d},
+            {MetrumUnits.monoMetT3, MetrumUnits.monoMetT3b, MetrumUnits.monoMetT3c, MetrumUnits.monoMetT3d}};
+        mindustry.type.Item[] extra = {null, mindustry.content.Items.graphite, mindustry.content.Items.tungsten, mindustry.content.Items.thorium};
+        for (mindustry.type.UnitType[] line : lines) {
+            for (int lvl = 0; lvl < line.length; lvl++) {
+                mindustry.type.UnitType t = line[lvl];
+                t.mineItems = new arc.struct.Seq<>(t.mineItems); // C/D shared the list with B - give each its own
+                if (t.mineTier < 0) t.mineTier = 3; // C/D boosters can mine again
+                t.mineTier = Math.max(t.mineTier, 3 + Math.min(lvl, 2));
+                for (int k = 1; k <= lvl; k++) if (!t.mineItems.contains(extra[k])) t.mineItems.add(extra[k]);
+                if (!t.mineItems.contains(MetrumItems.iron)) t.mineItems.add(MetrumItems.iron);
+                t.defaultCommand = metrum.ai.SmartMining.command;
+            }
+        }
         Log.info("[Metrum] init done");
         // ClientLoadEvent can fire before mod init on some builds; post to the next frame instead
         arc.Core.app.post(() -> {
