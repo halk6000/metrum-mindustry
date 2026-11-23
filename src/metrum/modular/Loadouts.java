@@ -51,6 +51,7 @@ public class Loadouts {
     static class Saved {
         float x, y;
         int type;
+        int team = -1; // legacy records did not store ownership
         String name;
         Seq<Item> mods = new Seq<>();
     }
@@ -63,11 +64,13 @@ public class Loadouts {
         public void write(java.io.DataOutput out) throws java.io.IOException {
             Seq<Unit> list = new Seq<>();
             Groups.unit.each(u -> { if (isModular(u) && modules.containsKey(u.id)) list.add(u); });
+            out.writeInt(-1); // version marker; old saves start with the unit count
             out.writeInt(list.size);
             for (Unit u : list) {
                 out.writeFloat(u.x);
                 out.writeFloat(u.y);
                 out.writeShort(u.type.id);
+                out.writeByte(u.team.id);
                 String n = names.get(u.id);
                 out.writeUTF(n == null ? "" : n);
                 Seq<Item> m = modules.get(u.id);
@@ -80,11 +83,14 @@ public class Loadouts {
         public void read(java.io.DataInput in) throws java.io.IOException {
             pending.clear();
             int n = in.readInt();
+            boolean hasTeam = n == -1;
+            if (hasTeam) n = in.readInt();
             for (int i = 0; i < n; i++) {
                 Saved s = new Saved();
                 s.x = in.readFloat();
                 s.y = in.readFloat();
                 s.type = in.readShort();
+                if (hasTeam) s.team = in.readUnsignedByte();
                 s.name = in.readUTF();
                 int c = in.readByte();
                 for (int j = 0; j < c; j++) {
@@ -101,7 +107,7 @@ public class Loadouts {
             Unit best = null;
             float bestDst = Vars.tilesize * 2f;
             for (Unit u : Groups.unit) {
-                if (u.type.id != s.type || modules.containsKey(u.id)) continue;
+                if (u.type.id != s.type || (s.team >= 0 && u.team.id != s.team) || modules.containsKey(u.id)) continue;
                 float d = u.dst(s.x, s.y);
                 if (d < bestDst) {
                     bestDst = d;
