@@ -76,11 +76,13 @@ public class MetrumPower {
         decayReactor.size = 4;
         decayReactor.health = 2500;
         decayReactor.powerProduction = metrum.Balance.f("reactor.decay.powerPerSecond", 3000f) / 60f;
-        decayReactor.fuel = MetrumItems.quarkMatter;
+        decayReactor.fuel = Items.thorium;
+        decayReactor.premiumFuel = MetrumItems.quarkMatter; // 1 quark matter -> 3x the resources
         decayReactor.decayTime = metrum.Balance.f("reactor.decay.seconds", 10f) * 60f;
         decayReactor.product(Items.thorium, 4).product(Items.tungsten, 4).product(Items.beryllium, 5).product(Items.graphite, 5)
             .product(Items.oxide, 2).product(Items.carbide, 1).product(Items.surgeAlloy, 1).product(Items.phaseFabric, 1)
-            .product(MetrumItems.atomicThorium, 1);
+            .product(MetrumItems.atomicThorium, 1)
+            .product(MetrumItems.quarkMatter, 1); // with luck the reaction sustains itself
     }
 
     /** Thermal generator that runs at 75% output when no steam is supplied. */

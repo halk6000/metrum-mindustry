@@ -23,6 +23,9 @@ import mindustry.world.meta.StatUnit;
  */
 public class DecayReactor extends PowerGenerator {
     public Item fuel;
+    /** premium fuel (quark matter): still 1 per decay, but {@link #premiumMultiplier} x the resources */
+    public Item premiumFuel;
+    public int premiumMultiplier = 3;
     public float decayTime = 60f * 10f;
     public final Seq<ItemStack> products = new Seq<>(); // amount = weight
     public int rolls = 3;
@@ -53,7 +56,7 @@ public class DecayReactor extends PowerGenerator {
 
         @Override
         public boolean acceptItem(mindustry.gen.Building source, Item item) {
-            return item == fuel && items.get(fuel) < itemCapacity;
+            return (item == fuel || item == premiumFuel) && items.get(item) < itemCapacity;
         }
 
         Item roll() {
@@ -68,14 +71,16 @@ public class DecayReactor extends PowerGenerator {
 
         @Override
         public void updateTile() {
-            boolean running = items.get(fuel) > 0 && enabled;
+            Item using = premiumFuel != null && items.get(premiumFuel) > 0 ? premiumFuel : fuel;
+            boolean running = items.get(using) > 0 && enabled;
             productionEfficiency = Mathf.approachDelta(productionEfficiency, running ? 1f : 0f, 0.01f);
             if (running) {
                 progress += Time.delta / decayTime;
                 if (progress >= 1f) {
                     progress = 0f;
-                    items.remove(fuel, 1);
-                    for (int i = 0; i < rolls; i++) {
+                    items.remove(using, 1);
+                    int n = using == premiumFuel ? rolls * premiumMultiplier : rolls;
+                    for (int i = 0; i < n; i++) {
                         Item it = roll();
                         if (items.get(it) < itemCapacity) items.add(it, 1);
                     }
@@ -87,7 +92,7 @@ public class DecayReactor extends PowerGenerator {
 
         @Override
         public boolean canDump(mindustry.gen.Building to, Item item) {
-            return item != fuel;
+            return item != fuel && item != premiumFuel;
         }
 
         @Override
