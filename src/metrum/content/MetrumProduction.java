@@ -18,7 +18,7 @@ import static mindustry.type.ItemStack.with;
 /** Crafting blocks ported from the original Metrum JSON mod. */
 public class MetrumProduction {
     public static Block graphiteDecompressor, graphiteDecompressorOverclocked,
-        ammoFactory, steamFurnace, largeSteamFurnace, salvagerOverclocked, salvagerAdvanced, heatInverter, magmaForge, plasmaIonizer, stoneCrusher, infusionSmelter, salvager;
+        ammoFactory, steamFurnace, largeSteamFurnace, salvagerOverclocked, salvagerAdvanced, arcFurnaceOverclocked, heatInverter, magmaForge, plasmaIonizer, stoneCrusher, infusionSmelter, salvager;
 
     private static final Color flame = Color.valueOf("fdb380");
 
@@ -134,6 +134,23 @@ public class MetrumProduction {
             consumeItems(with(MetrumItems.iron, 2, Items.coal, 1));
             consumeLiquid(MetrumLiquids.steam, 0.33f);
             outputItem = new ItemStack(MetrumItems.steel, 2);
+        }};
+
+        // overclocked silicon arc furnace 3x3: 1 graphite + 2 sand -> 6 silicon, 450 power/s, 95% of vanilla time;
+        // atomic carbon as booster -> 12 silicon per cycle
+        arcFurnaceOverclocked = new metrum.world.BoostedCrafter("arc-furnace-overclocked") {{
+            requirements(Category.crafting, with(Items.tungsten, 80, Items.graphite, 100, Items.silicon, 60, MetrumItems.steel, 40));
+            size = 3;
+            craftTime = 50f * 0.95f;
+            itemCapacity = 30;
+            consumePower(450f / 60f);
+            consumeItems(with(Items.graphite, 1, Items.sand, 2));
+            outputItem = new ItemStack(Items.silicon, 6);
+            boostItem = MetrumItems.atomicCarbon;
+            boostMultiplier = 2f;
+            craftEffect = Fx.none;
+            updateEffect = Fx.smeltsmoke;
+            drawer = new DrawMulti(new DrawDefault(), new DrawGlowRegion() {{ color = Color.valueOf("ffc46b"); }});
         }};
 
         // overclocked 2x2: twice as fast as the Salvager; 80% iron / 20% sand (~2 iron per Salvager cycle)

@@ -45,6 +45,7 @@ public class MetrumTechTree {
 
         // crafting
         node(Blocks.siliconArcFurnace, graphiteDecompressor);
+        node(Blocks.siliconArcFurnace, arcFurnaceOverclocked);
         node(graphiteDecompressor, graphiteDecompressorOverclocked);
         node(rockScraper, steamFurnace);
         node(rockScraper, stoneCrusher);
