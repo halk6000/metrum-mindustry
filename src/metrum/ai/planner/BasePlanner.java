@@ -35,7 +35,7 @@ public class BasePlanner {
     static String plannerAction = "oczekiwanie na pierwszą próbę";
 
     /** fire map: damage taken by the AI team's buildings, per 30-degree sector around each core */
-    static final float[] fire = new float[12];
+    static final java.util.Map<CoreBuild, float[]> fireByCore = new java.util.HashMap<>();
 
     public static void init() {
         Events.run(Trigger.update, BasePlanner::update);
@@ -47,7 +47,7 @@ public class BasePlanner {
             });
         });
         Events.on(mindustry.game.EventType.WorldLoadEvent.class, e -> {
-            java.util.Arrays.fill(fire, 0f);
+            fireByCore.clear();
             lastPlannerTick = -1000f;
             completedSteps = 0;
             timer = 0f;
@@ -69,7 +69,7 @@ public class BasePlanner {
             CoreBuild core = e.build.closestCore();
             if (core == null) return;
             int sector = (int) (arc.math.Angles.angle(core.x, core.y, e.source.x, e.source.y) / 30f) % 12;
-            fire[sector] += e.source.damage;
+            fireByCore.computeIfAbsent(core, ignored -> new float[12])[sector] += e.source.damage;
         });
     }
 
@@ -122,7 +122,8 @@ public class BasePlanner {
         lastPlannerTick = Time.time;
         // Recent attacks matter most: halve remembered damage every minute of simulation time.
         float decay = (float) Math.pow(0.5, Time.delta / (60f * 60f));
-        for (int i = 0; i < fire.length; i++) {
+        fireByCore.keySet().removeIf(core -> !core.isValid() || core.team != Vars.state.rules.waveTeam);
+        for (float[] fire : fireByCore.values()) for (int i = 0; i < fire.length; i++) {
             fire[i] *= decay;
             if (fire[i] < 0.01f) fire[i] = 0f;
         }
@@ -451,6 +452,7 @@ public class BasePlanner {
         // where to leave the gap: sector with the most recorded damage, else towards the player's core
         int best = -1;
         float max = 0f;
+        float[] fire = fireByCore.computeIfAbsent(core, ignored -> new float[12]);
         for (int i = 0; i < fire.length; i++) if (fire[i] > max) { max = fire[i]; best = i; }
         Building enemy = Vars.state.rules.defaultTeam.core();
         float gapAngle = best >= 0 ? best * 30f + 15f : (enemy != null ? core.angleTo(enemy) : 0f);
