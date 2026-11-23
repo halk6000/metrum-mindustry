@@ -40,6 +40,11 @@ public class Loadouts {
     }
 
     public static void init() {
+        Events.on(mindustry.game.EventType.ResetEvent.class, e -> {
+            modules.clear();
+            names.clear();
+            pending.clear();
+        });
         Events.on(WorldLoadEvent.class, e -> {
             modules.clear();
             names.clear();
