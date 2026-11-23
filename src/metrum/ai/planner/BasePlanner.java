@@ -451,7 +451,7 @@ public class BasePlanner {
                 Tile origin = Vars.world.tile(duct.x + arc.math.geom.Geometry.d4x(dir) * distance,
                     duct.y + arc.math.geom.Geometry.d4y(dir) * distance);
                 if (origin == null || !Build.validPlace(factory, core.team, origin.x, origin.y, 0, false)) continue;
-                if (!payTogether(core, factory.requirements, router.requirements)) return false;
+                if (!payExpansion(core, factory.requirements, router.requirements)) return false;
                 Item carried = ((mindustry.world.blocks.distribution.Duct.DuctBuild) candidate).current;
                 duct.setNet(router, core.team, rot);
                 // Replacing a live duct must preserve the item currently travelling through it.
@@ -475,7 +475,7 @@ public class BasePlanner {
             float a = ang + arc.math.Mathf.range(55f), d = arc.math.Mathf.random(9f, 16f) * Vars.tilesize;
             Tile t = Vars.world.tileWorld(core.x + arc.math.Angles.trnsx(a, d), core.y + arc.math.Angles.trnsy(a, d));
             if (t == null || !Build.validPlace(turret, core.team, t.x, t.y, 0, false)) continue;
-            if (!pay(core, turret.requirements)) return false;
+            if (!payExpansion(core, turret.requirements)) return false;
             t.setNet(turret, core.team, 0);
             if (t.build == null) return true;
             if (level.turretMagazines) {
@@ -489,7 +489,7 @@ public class BasePlanner {
                     Tile m = Vars.world.tile(t.x + arc.math.geom.Geometry.d4x(dir) * distance,
                         t.y + arc.math.geom.Geometry.d4y(dir) * distance);
                     if (m == null || !Build.validPlace(magazine, core.team, m.x, m.y, 0, false)) continue;
-                    if (!pay(core, magazine.requirements)) break;
+                    if (!payExpansion(core, magazine.requirements)) break;
                     m.setNet(magazine, core.team, 0);
                     break;
                 }
@@ -531,7 +531,7 @@ public class BasePlanner {
             if (Math.abs(arc.math.Angles.angleDist(a, gapAngle)) < gapHalf) continue; // the passage
             Tile t = Vars.world.tileWorld(core.x + arc.math.Angles.trnsx(a, radius), core.y + arc.math.Angles.trnsy(a, radius));
             if (t == null || t.block() != Blocks.air || !Build.validPlace(wall, core.team, t.x, t.y, 0, false)) continue;
-            if (!pay(core, wall.requirements)) return placed > 0;
+            if (!payExpansion(core, wall.requirements)) return placed > 0;
             t.setNet(wall, core.team, 0);
             placed++;
         }
@@ -714,15 +714,15 @@ public class BasePlanner {
         }
         return best;
     }
-    /** Reserve shared resources for the entire construction before removing any items. */
-    static boolean payTogether(Building core, ItemStack[]... costs) {
+    /** Pay optional expansion as one transaction while preserving the mining/power reserve. */
+    static boolean payExpansion(CoreBuild core, ItemStack[]... costs) {
         java.util.Map<Item, Integer> total = new java.util.HashMap<>();
         float mult = Vars.state.rules.buildCostMultiplier;
         for (ItemStack[] group : costs) for (ItemStack cost : group) {
             total.put(cost.item, total.getOrDefault(cost.item, 0) + Math.round(cost.amount * mult));
         }
         for (java.util.Map.Entry<Item, Integer> cost : total.entrySet()) {
-            if (core.items.get(cost.getKey()) < cost.getValue()) return false;
+            if (availableForAmmo(core, cost.getKey()) < cost.getValue()) return false;
         }
         for (java.util.Map.Entry<Item, Integer> cost : total.entrySet()) core.items.remove(cost.getKey(), cost.getValue());
         return true;
