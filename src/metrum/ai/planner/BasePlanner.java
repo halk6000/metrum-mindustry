@@ -206,6 +206,7 @@ public class BasePlanner {
         ItemStack demand = miningDemand.get(core);
         if (demand != null && !minedResources(core).contains(demand.item)
             && buildDrillLine(core, level, true)) return true;
+        if (demand != null && buildDemandProducer(core, demand.item)) return true;
         int factories = count(core, b -> b.block == metrum.content.MetrumPhysics.atomizer);
         if (factories < 1 + level.ordinal() / 2 && buildFactory(core)) return true;
         if (drills < wantDrills) return buildDrillLine(core, level);
@@ -627,6 +628,37 @@ public class BasePlanner {
     }
 
     /** Discover actual recipes instead of assuming every missing construction item is an ore. */
+    static boolean buildDemandProducer(CoreBuild core, Item item) {
+        Block producer = findProducer(core, item);
+        if (producer == null || count(core, b -> b.block == producer) > 0) return false;
+        java.util.Map<Item, Integer> inputs = new java.util.HashMap<>();
+        for (mindustry.world.consumers.Consume consume : producer.nonOptionalConsumers) {
+            if (consume instanceof mindustry.world.consumers.ConsumeItems) {
+                for (ItemStack input : ((mindustry.world.consumers.ConsumeItems) consume).items) {
+                    inputs.put(input.item, inputs.getOrDefault(input.item, 0) + input.amount);
+                }
+            }
+        }
+        ItemStack[] batch = new ItemStack[inputs.size()];
+        int index = 0;
+        for (java.util.Map.Entry<Item, Integer> input : inputs.entrySet()) {
+            if (input.getValue() > producer.itemCapacity) return false;
+            batch[index++] = new ItemStack(input.getKey(), input.getValue());
+        }
+        for (int dir = 0; dir < 4; dir++) {
+            int coreMin = -(core.block.size - 1) / 2, coreMax = core.block.size / 2;
+            int factoryMin = -(producer.size - 1) / 2, factoryMax = producer.size / 2;
+            int distance = (dir == 0 || dir == 1) ? coreMax - factoryMin + 1 : factoryMax - coreMin + 1;
+            Tile site = Vars.world.tile(core.tileX() + arc.math.geom.Geometry.d4x(dir) * distance,
+                core.tileY() + arc.math.geom.Geometry.d4y(dir) * distance);
+            if (site == null || !Build.validPlace(producer, core.team, site.x, site.y, 0, false)) continue;
+            if (!payExpansion(core, producer.requirements, batch)) return false;
+            site.setNet(producer, core.team, 0);
+            if (site.build != null) for (ItemStack input : batch) site.build.items.add(input.item, input.amount);
+            return true;
+        }
+        return false;
+    }
     static Block findProducer(CoreBuild core, Item item) {
         Block best = null;
         long bestCost = Long.MAX_VALUE;
