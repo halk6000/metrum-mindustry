@@ -13,6 +13,7 @@ import static mindustry.type.ItemStack.with;
 /** Blocks ported from the original Metrum JSON mod. */
 public class MetrumBlocks {
     public static Block oreIron;
+    public static Block colorBridge;
     public static Block quarkCannon, carborundumBore, hullGunTurret, hullMissileTurret;
     public static Block carborundumWall, carborundumWallLarge, tungstenCarbideWall, tungstenCarbideWallLarge;
     public static Block streamDrillT1, streamDrillT1Adv, streamDrillT2, streamDrillT2Adv, rockScraper;
@@ -20,6 +21,15 @@ public class MetrumBlocks {
     public static void load() {
         // iron ore: generated on Ferrox, mineable by drills and MonoMet drones
         oreIron = new mindustry.world.blocks.environment.OreBlock("ore-iron", MetrumItems.iron);
+
+        // circuit-coloured duct bridge: links only to bridges of the same colour
+        colorBridge = new metrum.world.ColorDuctBridge("color-bridge") {{
+            requirements(Category.distribution, with(Items.beryllium, 25, Items.graphite, 5));
+            health = 90;
+            speed = 4f;
+            range = 4;
+            buildCostMultiplier = 2f;
+        }};
 
         // carborundum-tipped beam drill: mines everything Erekir has, carborundum bits triple its speed
         carborundumBore = new metrum.world.BoostedBeamDrill("carborundum-bore") {{

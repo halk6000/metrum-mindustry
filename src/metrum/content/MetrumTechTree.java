@@ -38,6 +38,7 @@ public class MetrumTechTree {
 
         // drills
         node(Blocks.plasmaBore, streamDrillT1);
+        node(Blocks.ductBridge, colorBridge);
         node(streamDrillT1, streamDrillT1Adv);
         node(streamDrillT1, streamDrillT2);
         node(streamDrillT2, streamDrillT2Adv);
