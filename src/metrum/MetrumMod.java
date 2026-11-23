@@ -105,8 +105,6 @@ public class MetrumMod extends Mod {
                 t.sliderPref(metrum.ai.planner.AiLevel.setting, 2, 0, metrum.ai.planner.AiLevel.values().length - 1, 1,
                     i -> metrum.ai.planner.AiLevel.values()[i].localized());
                 t.checkPref(metrum.ai.planner.BasePlanner.everywhereSetting, true);
-                t.sliderPref(metrum.ai.planner.SectorAi.difficultySetting, 3, 1, 5, 1,
-                    i -> arc.Core.bundle.get("metrum.difficulty." + i));
             });
         }
         metrum.modular.Loadouts.init();

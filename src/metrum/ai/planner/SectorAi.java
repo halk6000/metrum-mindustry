@@ -7,12 +7,11 @@ import mindustry.type.Planet;
 import mindustry.type.Sector;
 
 /**
- * Planet difficulty (5 steps, Settings -> Metrum) decides how the AI levels are spread over the
+ * Planet difficulty (5 steps, standard campaign settings) decides how the AI levels are spread over the
  * planet's sectors (table from ROADMAP.md). The assignment is rolled once per planet+difficulty and remembered.
  * The planet's main sector ({@link #mainSector}) is always a Battle Tactician and is counted separately.
  */
 public class SectorAi {
-    public static final String difficultySetting = "metrum-planet-difficulty";
     /** id of the main sector to conquer per planet name; -1 = none yet */
     public static int mainSector = -1;
 
@@ -25,14 +24,14 @@ public class SectorAi {
         {0, 0, 50, 10, 30, 10}, // 5. Extermination (+ at least 7 Battle Tacticians)
     };
 
-    public static int difficulty() {
-        return Math.max(1, Math.min(5, Core.settings.getInt(difficultySetting, 3)));
+    public static int difficulty(Planet planet) {
+        return planet.campaignRules.difficulty.ordinal() + 1;
     }
 
     /** AI level of a sector (rolled on first use for the current planet difficulty) */
     public static AiLevel level(Sector sector) {
         if (sector.id == mainSector) return AiLevel.BATTLE_TACTICIAN;
-        String key = "metrum-sectorai-" + sector.planet.name + "-" + difficulty();
+        String key = "metrum-sectorai-" + sector.planet.name + "-" + difficulty(sector.planet);
         String data = Core.settings.getString(key, "");
         if (data.isEmpty()) {
             data = roll(sector.planet);
@@ -45,7 +44,7 @@ public class SectorAi {
 
     /** one digit (AiLevel ordinal) per sector id, distributed by the difficulty table */
     static String roll(Planet planet) {
-        int diff = difficulty();
+        int diff = difficulty(planet);
         Seq<Sector> pool = new Seq<>();
         for (Sector s : planet.sectors) if (s.id != mainSector) pool.add(s);
         int n = pool.size;
