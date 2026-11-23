@@ -31,6 +31,7 @@ public class BasePlanner {
     static float timer;
     static float lastPlannerTick = -1000f;
     static int completedSteps;
+    static String failureReason;
     static String plannerAction = "oczekiwanie na pierwszą próbę";
 
     /** fire map: damage taken by the AI team's buildings, per 30-degree sector around each core */
@@ -132,6 +133,7 @@ public class BasePlanner {
         timer += Time.delta;
         if (timer < level.buildInterval * 60f) return;
         timer = 0f;
+        failureReason = null;
         int before = completedSteps;
         Team team = Vars.state.rules.waveTeam;
         for (CoreBuild core : team.cores()) {
@@ -140,7 +142,7 @@ public class BasePlanner {
                 completedSteps++;
             }
         }
-        plannerAction = completedSteps > before ? "ostatnia próba: budowa wykonana" : "ostatnia próba: bez postępu";
+        plannerAction = completedSteps > before ? "ostatnia próba: budowa wykonana" : (failureReason == null ? "ostatnia próba: bez postępu" : failureReason);
     }
 
     /** picks the next build step in the planned order */
@@ -455,15 +457,15 @@ public class BasePlanner {
     /** places one drill on the nearest free ore of the scarcest mineable item, then a duct path to the core */
     static boolean buildDrillLine(CoreBuild core, AiLevel level) {
         Block drill = Blocks.plasmaBore, duct = Blocks.duct;
-        if (!drill.unlockedNow() && !drill.environmentBuildable()) return false;
+        if (!drill.unlockedNow() && !drill.environmentBuildable()) return stalled("wiertnica niedostępna");
         Tile ore = findOreSpot(core, drill, 30);
-        if (ore == null) return false;
-        if (!pay(core, drill.requirements)) return false;
+        if (ore == null) return stalled("brak dostępnego miejsca przy rudzie");
+        if (!pay(core, drill.requirements)) return stalled("brak surowców na wiertnicę");
 
         // beam drills face the wall they mine: place on the free tile next to the wall, rotated towards it
         Tile site = ore;
         site.setNet(drill, core.team, faceWall(site, drill));
-        if (site.build == null) return false;
+        if (site.build == null) return stalled("nie udało się postawić wiertnicy");
 
         // Route through the entire drill footprint to reach a free output tile at its edge.
         Seq<Tile> path = Astar.pathfind(site, core.tile, tile -> 1f,
@@ -482,7 +484,7 @@ public class BasePlanner {
             // Roll back the drill too: do not strand paid equipment without a complete delivery route.
             site.setNet(Blocks.air, core.team, 0);
             for (ItemStack cost : drill.requirements) core.items.add(cost.item, Math.round(cost.amount * costMultiplier));
-            return false;
+            return stalled(path == null || path.size < 2 ? "brak trasy do rdzenia" : "brak surowców na całą trasę");
         }
         for (int i = 0; i < path.size - 1; i++) {
             Tile t = path.get(i), next = path.get(i + 1);
@@ -491,6 +493,11 @@ public class BasePlanner {
             t.setNet(duct, core.team, t.relativeTo(next));
         }
         return true;
+    }
+
+    static boolean stalled(String reason) {
+        failureReason = reason;
+        return false;
     }
 
     /** a free tile next to an ore wall, within radius of the core; prefers the item the core has least of */
