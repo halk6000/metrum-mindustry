@@ -85,7 +85,7 @@ public class BasePlanner {
     /** setting: run the Metrum AI in custom games / editor playtests too (not only the Ferrox campaign) */
     public static final String everywhereSetting = "metrum-ai-everywhere";
 
-    static boolean active() {
+    public static boolean active() {
         if (Vars.state.rules.pvp || Vars.state.rules.waveTeam.cores().size == 0) return false;
         boolean ferroxCampaign = Vars.state.isCampaign() && Vars.state.rules.sector != null && planets.contains(Vars.state.rules.sector.planet);
         boolean custom = !Vars.state.isCampaign() && arc.Core.settings.getBool(everywhereSetting, true);

@@ -82,6 +82,11 @@ public class BaseExpander {
             boostTimer = 0f;
             boostEnemies();
         }
+        // The planner owns all construction; legacy random walls could close its deliberate passages.
+        if (metrum.ai.planner.BasePlanner.active()) {
+            timer = 0f;
+            return;
+        }
         timer += Time.delta;
         if (timer < interval) return;
         timer = 0f;
