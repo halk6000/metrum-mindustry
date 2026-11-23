@@ -29,6 +29,7 @@ import mindustry.world.blocks.storage.CoreBlock.CoreBuild;
 public class BasePlanner {
     public static final Seq<mindustry.type.Planet> planets = new Seq<>();
     static float timer;
+    static float miningBonusTimer = 60f;
     static float lastPlannerTick = -1000f;
     static int completedSteps;
     static String failureReason;
@@ -51,6 +52,7 @@ public class BasePlanner {
             lastPlannerTick = -1000f;
             completedSteps = 0;
             timer = 0f;
+            miningBonusTimer = 60f;
             plannerAction = "oczekiwanie na pierwszą próbę";
             builderTimers.clear();
 
@@ -141,6 +143,19 @@ public class BasePlanner {
     static void update() {
         if (!Vars.state.isPlaying() || Vars.net.client() || !active()) return;
         lastPlannerTick = Time.time;
+        // Economy compensation is earned by working miners, never by multiplying stored items.
+        Vars.state.rules.teams.get(Vars.state.rules.waveTeam).unitMineSpeedMultiplier = 1.5f;
+        miningBonusTimer += Time.delta;
+        if (miningBonusTimer >= 60f) {
+            miningBonusTimer = 0f;
+            mindustry.gen.Groups.build.each(b -> {
+                if (b.team == Vars.state.rules.waveTeam
+                    && (b.block instanceof mindustry.world.blocks.production.Drill
+                        || b.block instanceof mindustry.world.blocks.production.BeamDrill)) {
+                    b.applyBoost(1.5f, 120f);
+                }
+            });
+        }
         // Recent attacks matter most: halve remembered damage every minute of simulation time.
         float decay = (float) Math.pow(0.5, Time.delta / (60f * 60f));
         fireByCore.keySet().removeIf(core -> !core.isValid() || core.team != Vars.state.rules.waveTeam);
