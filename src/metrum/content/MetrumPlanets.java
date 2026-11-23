@@ -29,6 +29,8 @@ public class MetrumPlanets {
             startSector = 12;
             alwaysUnlocked = true;
             accessible = true;
+            // Expose the game's standard campaign difficulty/settings dialog.
+            allowCampaignRules = true;
             visible = true;
             hasAtmosphere = true;
             atmosphereColor = Color.valueOf("b0683f");
