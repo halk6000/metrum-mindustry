@@ -59,8 +59,7 @@ public class BaseExpander {
 
     static boolean active() {
         return Vars.state.isCampaign() && Vars.state.rules.sector != null
-            && planets.contains(Vars.state.rules.sector.planet)
-            && Vars.state.rules.waveTeam.cores().size > 0;
+            && planets.contains(Vars.state.rules.sector.planet);
     }
 
     static void update() {
@@ -70,6 +69,8 @@ public class BaseExpander {
             supplyTimer = 0f;
             supply();
         }
+        // Local ammo reserves remain usable; new construction still requires a core.
+        if (Vars.state.rules.waveTeam.cores().isEmpty()) return;
         boostTimer += Time.delta;
         if (boostTimer >= 60f * 30f) {
             boostTimer = 0f;
@@ -120,10 +121,10 @@ public class BaseExpander {
             mindustry.world.blocks.defense.turrets.ItemTurret turret = (mindustry.world.blocks.defense.turrets.ItemTurret) b.block;
             mindustry.world.blocks.defense.turrets.ItemTurret.ItemTurretBuild t = (mindustry.world.blocks.defense.turrets.ItemTurret.ItemTurretBuild) b;
             CoreBuild core = b.closestCore();
-            if (core == null) continue;
             Building magazine = b.proximity.find(other -> other.team == b.team
                 && other.block == Blocks.reinforcedContainer && other.items != null);
-            if (magazine != null) {
+            if (core == null && magazine == null) continue;
+            if (magazine != null && core != null) {
                 for (mindustry.type.Item ammo : turret.ammoTypes.keys()) {
                     int amount = Math.min(20 - magazine.items.get(ammo), core.items.get(ammo));
                     amount = Math.min(amount, magazine.getMaximumAccepted(ammo) - magazine.items.get(ammo));
@@ -137,9 +138,9 @@ public class BaseExpander {
                 mindustry.type.Item pick = null;
                 Building source = core;
                 for (mindustry.type.Item it : turret.ammoTypes.keys()) {
-                    if (!t.acceptItem(core, it)) continue;
+                    if (!t.acceptItem(magazine != null ? magazine : core, it)) continue;
                     if (magazine != null && magazine.items.has(it)) { pick = it; source = magazine; break; }
-                    if (core.items.has(it)) { pick = it; break; }
+                    if (core != null && core.items.has(it)) { pick = it; break; }
                 }
                 if (pick == null) break;
                 source.items.remove(pick, 1);
