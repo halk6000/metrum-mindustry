@@ -587,7 +587,7 @@ public class BasePlanner {
                 if (t == null || t.block() != Blocks.air) continue;
                 int rotation = faceWall(t, drill);
                 if (rotation < 0) continue;
-                Item item = t.nearby(rotation).wallDrop();
+                Item item = wallOreInDirection(t, (mindustry.world.blocks.production.BeamDrill) drill, rotation);
                 if (item == null) continue;
                 if (!Build.validPlace(drill, core.team, t.x, t.y, faceWall(t, drill), false)) continue;
                 int amount = core.items.get(item);
@@ -605,13 +605,32 @@ public class BasePlanner {
         return best;
     }
 
+    static Item wallOreInDirection(Tile site, mindustry.world.blocks.production.BeamDrill drill, int rotation) {
+        Item found = null;
+        arc.math.geom.Point2 edge = new arc.math.geom.Point2();
+        for (int lane = 0; lane < drill.size; lane++) {
+            drill.nearbySide(site.x, site.y, rotation, lane, edge);
+            for (int distance = 0; distance < drill.range; distance++) {
+                Tile hit = Vars.world.tile(edge.x + arc.math.geom.Geometry.d4x(rotation) * distance,
+                    edge.y + arc.math.geom.Geometry.d4y(rotation) * distance);
+                if (hit == null || !hit.solid()) continue;
+                Item item = hit.wallDrop();
+                if (item != null && item.hardness <= drill.tier && item != drill.blockedItem
+                    && (drill.blockedItems == null || !drill.blockedItems.contains(item))) {
+                    if (found != null && found != item) return null;
+                    found = item;
+                }
+                break; // a beam never passes through the first solid obstacle
+            }
+        }
+        return found;
+    }
+
     static int faceWall(Tile t, Block drill) {
         mindustry.world.blocks.production.BeamDrill beam = (mindustry.world.blocks.production.BeamDrill) drill;
         for (int r = 0; r < 4; r++) {
-            Tile n = t.nearby(r);
-            Item item = n == null ? null : n.wallDrop();
-            if (item == null || item.hardness > beam.tier || item == beam.blockedItem || beam.blockedItems.contains(item)) continue;
-            if (Build.validPlace(drill, Vars.state.rules.waveTeam, t.x, t.y, r, false)) return r;
+            if (Build.validPlace(drill, Vars.state.rules.waveTeam, t.x, t.y, r, false)
+                && wallOreInDirection(t, beam, r) != null) return r;
         }
         return -1;
     }
