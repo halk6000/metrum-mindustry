@@ -579,7 +579,7 @@ public class BasePlanner {
             : ((mindustry.world.blocks.production.Drill) drill).getDrop(ore);
         if (demandOnly && (demand == null || output != demand.item)) {
             if (demand != null) {
-                Block producer = findProducer(demand.item);
+                Block producer = findProducer(core, demand.item);
                 if (producer != null) return stalled("brak dostępnej rudy: " + demand.item.localizedName
                     + "; produkcja w: " + producer.localizedName);
             }
@@ -627,19 +627,45 @@ public class BasePlanner {
     }
 
     /** Discover actual recipes instead of assuming every missing construction item is an ore. */
-    static Block findProducer(Item item) {
-        for (Block block : Vars.content.blocks()) {
-            if (!(block instanceof mindustry.world.blocks.production.GenericCrafter) || !block.environmentBuildable()) continue;
+    static Block findProducer(CoreBuild core, Item item) {
+        Block best = null;
+        long bestCost = Long.MAX_VALUE;
+        java.util.Map<Item, Integer> reserve = economicReserve(core);
+        candidates: for (Block block : Vars.content.blocks()) {
+            if (!(block instanceof mindustry.world.blocks.production.GenericCrafter) || !block.environmentBuildable()
+                || block instanceof mindustry.world.blocks.production.HeatCrafter) continue;
             mindustry.world.blocks.production.GenericCrafter crafter =
                 (mindustry.world.blocks.production.GenericCrafter) block;
-            if (crafter.outputItem != null && crafter.outputItem.item == item) return block;
-            if (crafter.outputItems != null) for (ItemStack output : crafter.outputItems) {
-                if (output.item == item) return block;
+            boolean produces = crafter.outputItem != null && crafter.outputItem.item == item;
+            if (crafter.outputItems != null) for (ItemStack output : crafter.outputItems) produces |= output.item == item;
+            if (!produces) continue;
+            java.util.Map<Item, Integer> required = new java.util.HashMap<>();
+            long totalCost = 0;
+            for (ItemStack cost : block.requirements) {
+                int amount = Math.round(cost.amount * Vars.state.rules.buildCostMultiplier);
+                required.put(cost.item, required.getOrDefault(cost.item, 0) + amount);
+                totalCost += amount;
             }
+            for (mindustry.world.consumers.Consume consume : block.nonOptionalConsumers) {
+                if (consume instanceof mindustry.world.consumers.ConsumePower) {
+                    if (!hasGenerator(core)) continue candidates;
+                } else if (consume instanceof mindustry.world.consumers.ConsumeItems) {
+                    for (ItemStack input : ((mindustry.world.consumers.ConsumeItems) consume).items) {
+                        required.put(input.item, required.getOrDefault(input.item, 0) + input.amount);
+                    }
+                } else if (consume instanceof mindustry.world.consumers.ConsumeLiquid) {
+                    mindustry.type.Liquid liquid = ((mindustry.world.consumers.ConsumeLiquid) consume).liquid;
+                    if (liquid != mindustry.content.Liquids.water || count(core,
+                        b -> b.block.outputsLiquid && b.liquids != null && b.liquids.get(liquid) > 1f) == 0) continue candidates;
+                } else continue candidates;
+            }
+            for (java.util.Map.Entry<Item, Integer> need : required.entrySet()) {
+                if (core.items.get(need.getKey()) - reserve.getOrDefault(need.getKey(), 0) < need.getValue()) continue candidates;
+            }
+            if (totalCost < bestCost) { best = block; bestCost = totalCost; }
         }
-        return null;
-    }
-    static boolean canSupportDrill(CoreBuild core, Block drill) {
+        return best;
+    }    static boolean canSupportDrill(CoreBuild core, Block drill) {
         float multiplier = Vars.state.rules.buildCostMultiplier;
         for (ItemStack cost : drill.requirements) {
             if (core.items.get(cost.item) < Math.round(cost.amount * multiplier)) return false;
