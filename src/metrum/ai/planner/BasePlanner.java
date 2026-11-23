@@ -497,7 +497,8 @@ public class BasePlanner {
     }
 
     static boolean stalled(String reason) {
-        failureReason = reason;
+        // Preserve the first blocker in build-order priority for this planning cycle.
+        if (failureReason == null) failureReason = reason;
         return false;
     }
 
