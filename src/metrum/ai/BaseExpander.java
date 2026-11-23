@@ -137,7 +137,7 @@ public class BaseExpander {
             if (core == null && magazine == null) continue;
             if (magazine != null && core != null) {
                 for (mindustry.type.Item ammo : turret.ammoTypes.keys()) {
-                    int amount = Math.min(20 - magazine.items.get(ammo), core.items.get(ammo));
+                    int amount = Math.min(20 - magazine.items.get(ammo), metrum.ai.planner.BasePlanner.availableForAmmo(core, ammo));
                     amount = Math.min(amount, magazine.getMaximumAccepted(ammo) - magazine.items.get(ammo));
                     if (amount > 0) {
                         core.items.remove(ammo, amount);
@@ -151,7 +151,7 @@ public class BaseExpander {
                 for (mindustry.type.Item it : turret.ammoTypes.keys()) {
                     if (!t.acceptItem(magazine != null ? magazine : core, it)) continue;
                     if (magazine != null && magazine.items.has(it)) { pick = it; source = magazine; break; }
-                    if (core != null && core.items.has(it)) { pick = it; break; }
+                    if (core != null && metrum.ai.planner.BasePlanner.availableForAmmo(core, it) > 0) { pick = it; break; }
                 }
                 if (pick == null) break;
                 source.items.remove(pick, 1);

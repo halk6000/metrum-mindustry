@@ -208,6 +208,16 @@ public class BasePlanner {
         return false; // next steps (water, factories, turrets, walls) come later
     }
 
+    /** Keep the first two wall drills affordable before spending shared minerals on ammunition. */
+    public static int availableForAmmo(CoreBuild core, Item item) {
+        int drills = count(core, b -> b.block instanceof mindustry.world.blocks.production.BeamDrill
+            || b.block instanceof mindustry.world.blocks.production.Drill);
+        int missing = Math.max(0, 2 - drills), reserve = 0;
+        for (ItemStack cost : Blocks.plasmaBore.requirements) {
+            if (cost.item == item) reserve += missing * Math.round(cost.amount * Vars.state.rules.buildCostMultiplier);
+        }
+        return Math.max(0, core.items.get(item) - reserve);
+    }
     static int count(CoreBuild core, arc.func.Boolf<Building> pred) {
         int[] n = {0};
         mindustry.Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize, pred, b -> n[0]++);
