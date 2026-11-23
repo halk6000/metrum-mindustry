@@ -152,6 +152,7 @@ public class BasePlanner {
         miningBonusTimer += Time.delta;
         if (miningBonusTimer >= 60f) {
             miningBonusTimer = 0f;
+            for (CoreBuild core : Vars.state.rules.waveTeam.cores()) supplyCoreProducers(core);
             mindustry.gen.Groups.build.each(b -> {
                 if (b.team == Vars.state.rules.waveTeam
                     && (b.block instanceof mindustry.world.blocks.production.Drill
@@ -628,6 +629,34 @@ public class BasePlanner {
     }
 
     /** Discover actual recipes instead of assuming every missing construction item is an ore. */
+    /** Adjacent workshops draw a complete next batch from the core, never partial unpaid inputs. */
+    static void supplyCoreProducers(CoreBuild core) {
+        java.util.Map<Item, Integer> reserve = economicReserve(core);
+        workshops: for (Building factory : core.proximity) {
+            if (factory.team != core.team || !factory.enabled || factory.items == null
+                || !(factory.block instanceof mindustry.world.blocks.production.GenericCrafter)
+                || factory.closestCore() != core) continue;
+            java.util.Map<Item, Integer> required = new java.util.HashMap<>();
+            for (mindustry.world.consumers.Consume consume : factory.block.nonOptionalConsumers) {
+                if (!(consume instanceof mindustry.world.consumers.ConsumeItems)) continue;
+                for (ItemStack input : ((mindustry.world.consumers.ConsumeItems) consume).items) {
+                    required.put(input.item, required.getOrDefault(input.item, 0) + input.amount);
+                }
+            }
+            for (java.util.Map.Entry<Item, Integer> input : required.entrySet()) {
+                Item item = input.getKey();
+                int missing = Math.max(0, input.getValue() - factory.items.get(item));
+                if (input.getValue() > factory.getMaximumAccepted(item)
+                    || core.items.get(item) - reserve.getOrDefault(item, 0) < missing) continue workshops;
+            }
+            for (java.util.Map.Entry<Item, Integer> input : required.entrySet()) {
+                int missing = Math.max(0, input.getValue() - factory.items.get(input.getKey()));
+                if (missing == 0) continue;
+                core.items.remove(input.getKey(), missing);
+                factory.items.add(input.getKey(), missing);
+            }
+        }
+    }
     static boolean buildDemandProducer(CoreBuild core, Item item) {
         Block producer = findProducer(core, item);
         if (producer == null || count(core, b -> b.block == producer) > 0) return false;
