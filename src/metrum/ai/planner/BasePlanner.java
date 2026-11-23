@@ -456,6 +456,41 @@ public class BasePlanner {
         }
         return false;
     }
+    /** Reuse an existing downstream line across a short straight break instead of laying a parallel route. */
+    static boolean repairStraightWaterGap(CoreBuild core, Seq<Building> sources, Seq<Building> destinations) {
+        if (destinations.isEmpty()) return false;
+        Block conduit = Blocks.reinforcedConduit;
+        for (Building source : sources) {
+            if (source.block != conduit) continue;
+            Seq<Tile> gaps = new Seq<>();
+            for (int distance = 1; distance <= 7; distance++) {
+                Tile t = Vars.world.tile(source.tileX() + arc.math.geom.Geometry.d4x(source.rotation) * distance,
+                    source.tileY() + arc.math.geom.Geometry.d4y(source.rotation) * distance);
+                if (t == null) break;
+                if (t.build == null) {
+                    if (distance > 6 || t.block() != Blocks.air
+                        || !Build.validPlace(conduit, core.team, t.x, t.y, source.rotation, false)) break;
+                    gaps.add(t);
+                    continue;
+                }
+                Building next = t.build;
+                if (gaps.size < 2 || next.team != core.team) break;
+                if (next.block != conduit && !destinations.contains(next)) break;
+                if (next.block == conduit && next.rotation == (source.rotation + 2) % 4) break;
+                if (!destinations.contains(to -> next == to || waterLineConnected(next, to))) break;
+                for (ItemStack cost : conduit.requirements) {
+                    long total = (long) gaps.size * Math.round(cost.amount * Vars.state.rules.buildCostMultiplier);
+                    if (core.items.get(cost.item) < total) return false;
+                }
+                for (Tile gap : gaps) {
+                    pay(core, conduit.requirements);
+                    gap.setNet(conduit, core.team, source.rotation);
+                }
+                return true;
+            }
+        }
+        return false;
+    }
     static boolean pipeWater(CoreBuild core) {
         mindustry.type.Liquid water = mindustry.content.Liquids.water;
         Seq<Building> sources = new Seq<>(), destinations = new Seq<>();
@@ -468,6 +503,7 @@ public class BasePlanner {
         // Low liquid level is not proof of a missing line: do not build parallel duplicates.
         destinations.removeAll(to -> sources.contains(from -> waterLineConnected(from, to)));
         if (repairWaterGap(core, sources, destinations)) return true;
+        if (repairStraightWaterGap(core, sources, destinations)) return true;
         Seq<Building[]> pairs = new Seq<>();
         for (Building from : sources) for (Building to : destinations) {
             if (from != to) pairs.add(new Building[]{from, to});
