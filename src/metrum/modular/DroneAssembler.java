@@ -114,6 +114,11 @@ public class DroneAssembler extends Block {
         }
 
         @Override
+        public int getMaximumAccepted(Item item) {
+            return needed(item);
+        }
+
+        @Override
         public boolean acceptItem(Building source, Item item) {
             return items.get(item) < needed(item);
         }
