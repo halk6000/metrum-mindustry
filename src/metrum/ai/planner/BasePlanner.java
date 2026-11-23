@@ -577,7 +577,14 @@ public class BasePlanner {
         Item output = drill instanceof mindustry.world.blocks.production.BeamDrill
             ? wallOreInDirection(ore, (mindustry.world.blocks.production.BeamDrill) drill, rotation)
             : ((mindustry.world.blocks.production.Drill) drill).getDrop(ore);
-        if (demandOnly && (demand == null || output != demand.item)) return false;
+        if (demandOnly && (demand == null || output != demand.item)) {
+            if (demand != null) {
+                Block producer = findProducer(demand.item);
+                if (producer != null) return stalled("brak dostępnej rudy: " + demand.item.localizedName
+                    + "; produkcja w: " + producer.localizedName);
+            }
+            return false;
+        }
         if (!pay(core, drill.requirements)) return stalled("brak surowców na wiertnicę");
 
         // beam drills face the wall they mine: place on the free tile next to the wall, rotated towards it
@@ -619,6 +626,19 @@ public class BasePlanner {
         return false;
     }
 
+    /** Discover actual recipes instead of assuming every missing construction item is an ore. */
+    static Block findProducer(Item item) {
+        for (Block block : Vars.content.blocks()) {
+            if (!(block instanceof mindustry.world.blocks.production.GenericCrafter) || !block.environmentBuildable()) continue;
+            mindustry.world.blocks.production.GenericCrafter crafter =
+                (mindustry.world.blocks.production.GenericCrafter) block;
+            if (crafter.outputItem != null && crafter.outputItem.item == item) return block;
+            if (crafter.outputItems != null) for (ItemStack output : crafter.outputItems) {
+                if (output.item == item) return block;
+            }
+        }
+        return null;
+    }
     static boolean canSupportDrill(CoreBuild core, Block drill) {
         float multiplier = Vars.state.rules.buildCostMultiplier;
         for (ItemStack cost : drill.requirements) {
