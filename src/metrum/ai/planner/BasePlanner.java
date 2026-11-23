@@ -670,6 +670,8 @@ public class BasePlanner {
                     if (item != demand.item && pending.stream().noneMatch(parent -> parent.item == item)) {
                         pending.push(demand);
                         miningDemand.put(core, new ItemStack(item, missing + reserve.getOrDefault(item, 0)));
+                        // Other workshops still hold the old demand snapshot; resume them next supply tick.
+                        return;
                     }
                     continue workshops;
                 }
