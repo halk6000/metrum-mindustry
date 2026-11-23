@@ -61,6 +61,9 @@ public class FusionReactor extends PowerGenerator {
     @Override
     public void setBars() {
         super.setBars();
+        addBar("metrum-fusion", (FusionReactorBuild b) -> new mindustry.ui.Bar(
+            () -> b.warmup >= 0.99f ? arc.Core.bundle.format("metrum.reactor.fusing", (int) (b.transmuteProgress * 100)) : arc.Core.bundle.get("metrum.reactor.fusionlocked"),
+            () -> b.warmup >= 0.99f ? Color.valueOf("ffd37f") : Color.gray, () -> b.warmup >= 0.99f ? b.transmuteProgress : b.warmup));
         addBar("metrum-warmup", (FusionReactorBuild b) -> new mindustry.ui.Bar(
             () -> arc.Core.bundle.format("metrum.reactor.output", (int) (b.warmup * 100)), () -> Color.valueOf("ff50c8"), () -> b.warmup));
         addBar("metrum-meltdown", (FusionReactorBuild b) -> new mindustry.ui.Bar(
@@ -75,7 +78,8 @@ public class FusionReactor extends PowerGenerator {
         @Override
         public boolean acceptItem(mindustry.gen.Building source, Item item) {
             if (item == fuel) return items.get(fuel) < itemCapacity;
-            return warmup >= 0.99f && transmute.containsKey(item) && items.get(item) < itemCapacity;
+            // atoms can always be loaded; they are only fused once the reactor runs at 100%
+            return transmute.containsKey(item) && items.get(item) < itemCapacity;
         }
 
         void updateTransmute() {
