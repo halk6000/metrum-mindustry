@@ -286,19 +286,22 @@ public class BasePlanner {
 
     static boolean pipeWater(CoreBuild core) {
         mindustry.type.Liquid water = mindustry.content.Liquids.water;
-        Building[] src = {null};
-        mindustry.Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
-            b -> b.liquids != null && b.block.outputsLiquid && b.liquids.get(water) > 1f, b -> { if (src[0] == null) src[0] = b; });
-        if (src[0] == null) return false;
-        Seq<Building> destinations = new Seq<>();
-        mindustry.Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
-            b -> b != src[0] && b.block.consumesLiquid(water) && b.liquids != null && b.liquids.get(water) < 1f,
+        Seq<Building> sources = new Seq<>(), destinations = new Seq<>();
+        Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
+            b -> b.liquids != null && b.block.outputsLiquid && b.liquids.get(water) > 1f, sources::add);
+        if (sources.isEmpty()) return false;
+        Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
+            b -> b.block.consumesLiquid(water) && b.liquids != null && b.liquids.get(water) < 1f,
             destinations::add);
-        destinations.sort((a, b) -> Float.compare(a.dst2(src[0]), b.dst2(src[0])));
+        Seq<Building[]> pairs = new Seq<>();
+        for (Building from : sources) for (Building to : destinations) {
+            if (from != to) pairs.add(new Building[]{from, to});
+        }
+        pairs.sort((a, b) -> Float.compare(a[0].dst2(a[1]), b[0].dst2(b[1])));
         Block conduit = Blocks.reinforcedConduit;
-        Building from = src[0];
         Seq<Tile> path = null;
-        for (Building to : destinations) {
+        for (Building[] pair : pairs) {
+            Building from = pair[0], to = pair[1];
             Seq<Tile> candidate = Astar.pathfind(from.tile, to.tile, tile -> 1f,
                 t -> t.build == from || t.build == to ||
                     (t.block() == Blocks.air && Build.validPlace(conduit, core.team, t.x, t.y, 0, false)));
