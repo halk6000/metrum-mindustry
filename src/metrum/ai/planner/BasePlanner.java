@@ -346,9 +346,9 @@ public class BasePlanner {
         site.setNet(drill, core.team, faceWall(site, drill));
         if (site.build == null) return false;
 
-        // path from the drill to the core, made of ducts (dumb AI: shortest path, ignores existing lines)
+        // Route through the entire drill footprint to reach a free output tile at its edge.
         Seq<Tile> path = Astar.pathfind(site, core.tile, tile -> 1f,
-            t -> t.build == core || t == site ||
+            t -> t.build == core || t.build == site.build ||
                 (t.block() == Blocks.air && Build.validPlace(duct, core.team, t.x, t.y, 0, false)));
         if (path == null || path.size < 2) return true;
         for (int i = 0; i < path.size - 1; i++) {
