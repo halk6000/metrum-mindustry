@@ -120,6 +120,12 @@ public class BasePlanner {
     static void update() {
         if (!Vars.state.isPlaying() || Vars.net.client() || !active()) return;
         lastPlannerTick = Time.time;
+        // Recent attacks matter most: halve remembered damage every minute of simulation time.
+        float decay = (float) Math.pow(0.5, Time.delta / (60f * 60f));
+        for (int i = 0; i < fire.length; i++) {
+            fire[i] *= decay;
+            if (fire[i] < 0.01f) fire[i] = 0f;
+        }
         Team aiTeam = Vars.state.rules.waveTeam;
         // the Metrum planner replaces the vanilla base builder (otherwise both would build)
         Vars.state.rules.teams.get(aiTeam).buildAi = false;
