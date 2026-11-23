@@ -351,7 +351,10 @@ public class BasePlanner {
                     duct.y + arc.math.geom.Geometry.d4y(dir) * distance);
                 if (origin == null || !Build.validPlace(factory, core.team, origin.x, origin.y, 0, false)) continue;
                 if (!payTogether(core, factory.requirements, router.requirements)) return false;
+                Item carried = ((mindustry.world.blocks.distribution.Duct.DuctBuild) candidate).current;
                 duct.setNet(router, core.team, rot);
+                // Replacing a live duct must preserve the item currently travelling through it.
+                if (carried != null && duct.build != null) duct.build.handleItem(candidate, carried);
                 origin.setNet(factory, core.team, 0);
                 return true;
             }
