@@ -30,7 +30,7 @@ public class BaseExpander {
     /** from this wave on, the enemy's own "booster craft" empower a share of its army */
     public static int boostFromWave = 15;
     /** buildings placed by the expander, restocked from the nearest core */
-    private static final Seq<Building> placed = new Seq<>();
+    public static final Seq<Building> placed = new Seq<>();
 
     /** tiers of defences, unlocked as waves progress */
     static Block[][] tiers;

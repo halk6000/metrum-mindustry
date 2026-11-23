@@ -65,6 +65,8 @@ public class BasePlanner {
         int factories = count(core, b -> b.block == metrum.content.MetrumPhysics.atomizer);
         if (factories < 1 + level.ordinal() / 2 && buildFactory(core)) return true;
         if (drills < wantDrills) return buildDrillLine(core, level);
+        int turrets = count(core, b -> b.block instanceof mindustry.world.blocks.defense.turrets.Turret);
+        if (turrets < 2 + level.ordinal() * 2 && buildTurret(core, level)) return true;
         return false; // next steps (water, factories, turrets, walls) come later
     }
 
@@ -174,6 +176,34 @@ public class BasePlanner {
             if (!pay(core, factory.requirements) || !pay(core, router.requirements)) return false;
             duct.setNet(router, core.team, rot);
             origin.setNet(factory, core.team, 0);
+            return true;
+        }
+        return false;
+    }
+
+    // ---------- step 5: turrets facing the attacker; HARD and up add an ammo magazine ----------
+
+    static boolean buildTurret(CoreBuild core, AiLevel level) {
+        Block turret = Blocks.breach;
+        Block magazine = Blocks.reinforcedContainer;
+        // aim the defensive ring at the player's nearest core (or towards the map centre)
+        Building enemy = Vars.state.rules.defaultTeam.core();
+        float ang = enemy != null ? core.angleTo(enemy) : core.angleTo(Vars.world.unitWidth() / 2f, Vars.world.unitHeight() / 2f);
+        for (int attempt = 0; attempt < 16; attempt++) {
+            float a = ang + arc.math.Mathf.range(55f), d = arc.math.Mathf.random(9f, 16f) * Vars.tilesize;
+            Tile t = Vars.world.tileWorld(core.x + arc.math.Angles.trnsx(a, d), core.y + arc.math.Angles.trnsy(a, d));
+            if (t == null || !Build.validPlace(turret, core.team, t.x, t.y, 0, false)) continue;
+            if (!pay(core, turret.requirements)) return false;
+            t.setNet(turret, core.team, 0);
+            if (t.build == null) return true;
+            if (level.turretMagazines) {
+                // magazine on the side away from the enemy; magazines get restocked from the core
+                Tile m = Vars.world.tileWorld(t.worldx() - arc.math.Angles.trnsx(a, 3f * Vars.tilesize), t.worldy() - arc.math.Angles.trnsy(a, 3f * Vars.tilesize));
+                if (m != null && Build.validPlace(magazine, core.team, m.x, m.y, 0, false) && pay(core, magazine.requirements)) {
+                    m.setNet(magazine, core.team, 0);
+                }
+                metrum.ai.BaseExpander.placed.add(t.build);
+            }
             return true;
         }
         return false;
