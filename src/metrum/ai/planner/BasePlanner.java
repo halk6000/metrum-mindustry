@@ -723,7 +723,9 @@ public class BasePlanner {
             total.put(cost.item, total.getOrDefault(cost.item, 0) + Math.round(cost.amount * mult));
         }
         for (java.util.Map.Entry<Item, Integer> cost : total.entrySet()) {
-            if (availableForAmmo(core, cost.getKey()) < cost.getValue()) return false;
+            int available = availableForAmmo(core, cost.getKey());
+            if (available < cost.getValue()) return stalled("brak: " + cost.getKey().localizedName
+                + " (wolne " + available + "/" + cost.getValue() + ", po odjęciu rezerwy)");
         }
         for (java.util.Map.Entry<Item, Integer> cost : total.entrySet()) core.items.remove(cost.getKey(), cost.getValue());
         return true;
@@ -731,7 +733,10 @@ public class BasePlanner {
 
     static boolean pay(Building core, ItemStack[] cost) {
         float mult = Vars.state.rules.buildCostMultiplier;
-        for (ItemStack s : cost) if (core.items.get(s.item) < Math.round(s.amount * mult)) return false;
+        for (ItemStack s : cost) {
+            int needed = Math.round(s.amount * mult), stored = core.items.get(s.item);
+            if (stored < needed) return stalled("brak: " + s.item.localizedName + " (" + stored + "/" + needed + ")");
+        }
         for (ItemStack s : cost) core.items.remove(s.item, Math.round(s.amount * mult));
         return true;
     }
