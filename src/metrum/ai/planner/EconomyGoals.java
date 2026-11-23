@@ -64,18 +64,22 @@ final class EconomyGoals implements mindustry.io.SaveFileReader.CustomChunk {
     @Override
     public void read(java.io.DataInput in) throws java.io.IOException {
         pending.clear();
+        Seq<Saved> decoded = new Seq<>();
         int count = in.readInt();
+        if (count < 0) throw new java.io.IOException("Negative economic goal count");
         for (int i = 0; i < count; i++) {
             Saved saved = new Saved();
             saved.position = in.readInt();
             saved.team = in.readInt();
             saved.current = readGoal(in);
             int parents = in.readInt();
+            if (parents < 0) throw new java.io.IOException("Negative parent goal count");
             for (int j = 0; j < parents; j++) {
                 ItemStack goal = readGoal(in);
                 if (goal != null) saved.parents.addLast(goal);
             }
-            pending.add(saved);
+            decoded.add(saved);
         }
+        pending.addAll(decoded);
     }
 }
