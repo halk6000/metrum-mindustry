@@ -521,11 +521,19 @@ public class BasePlanner {
 
     /** places one drill on the nearest free ore of the scarcest mineable item, then a duct path to the core */
     static boolean buildDrillLine(CoreBuild core, AiLevel level) {
-        Block drill = Blocks.plasmaBore, duct = Blocks.duct;
-        if (!drill.unlockedNow() && !drill.environmentBuildable()) return stalled("wiertnica niedostępna");
-        Tile ore = findOreSpot(core, drill, 30);
-        if (ore == null) return stalled("brak dostępnego miejsca przy rudzie");
-        int rotation = faceWall(ore, drill, core, minedResources(core));
+        Block chosen = Blocks.plasmaBore, duct = Blocks.duct;
+        Tile ore = findOreSpot(core, chosen, 30);
+        if (ore == null) {
+            for (Block candidate : Vars.content.blocks()) {
+                if (!(candidate instanceof mindustry.world.blocks.production.Drill) || !candidate.environmentBuildable()) continue;
+                Tile floorOre = findFloorOreSpot(core, (mindustry.world.blocks.production.Drill) candidate, 30);
+                if (floorOre != null) { chosen = candidate; ore = floorOre; break; }
+            }
+        }
+        if (ore == null) return stalled("brak dostępnej rudy dla wiertnicy");
+        final Block drill = chosen;
+        int rotation = drill instanceof mindustry.world.blocks.production.BeamDrill
+            ? faceWall(ore, drill, core, minedResources(core)) : 0;
         if (rotation < 0) return stalled("brak poprawnego kierunku wiercenia");
         if (!pay(core, drill.requirements)) return stalled("brak surowców na wiertnicę");
 
@@ -568,6 +576,24 @@ public class BasePlanner {
         return false;
     }
 
+    static Tile findFloorOreSpot(CoreBuild core, mindustry.world.blocks.production.Drill drill, int radius) {
+        Tile best = null;
+        int least = Integer.MAX_VALUE;
+        float nearest = Float.MAX_VALUE;
+        for (int dx = -radius; dx <= radius; dx++) for (int dy = -radius; dy <= radius; dy++) {
+            Tile t = Vars.world.tile(core.tileX() + dx, core.tileY() + dy);
+            if (t == null || t.block() != Blocks.air || !drill.canMine(t)
+                || !Build.validPlace(drill, core.team, t.x, t.y, 0, false)) continue;
+            Item item = drill.getDrop(t);
+            if (item == null) continue;
+            int amount = core.items.get(item);
+            float distance = core.dst2(t);
+            if (best == null || amount < least || (amount == least && distance < nearest)) {
+                best = t; least = amount; nearest = distance;
+            }
+        }
+        return best;
+    }
     static java.util.Set<Item> minedResources(CoreBuild core) {
         java.util.Set<Item> mined = new java.util.HashSet<>();
         Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
