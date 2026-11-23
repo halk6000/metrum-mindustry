@@ -29,14 +29,25 @@ import mindustry.world.blocks.storage.CoreBlock.CoreBuild;
 public class BasePlanner {
     public static final Seq<mindustry.type.Planet> planets = new Seq<>();
     static float timer;
+    static float lastPlannerTick = -1000f;
+    static int completedSteps;
 
     /** fire map: damage taken by the AI team's buildings, per 30-degree sector around each core */
     static final float[] fire = new float[12];
 
     public static void init() {
         Events.run(Trigger.update, BasePlanner::update);
+        Events.on(mindustry.game.EventType.ClientLoadEvent.class, e -> {
+            arc.Core.scene.table(t -> {
+                t.top().right().marginTop(110f).marginRight(8f);
+                t.visible(() -> Vars.state.isGame() && Vars.ui.hudfrag.shown);
+                t.label(BasePlanner::controlStatus).style(mindustry.ui.Styles.outlineLabel).right();
+            });
+        });
         Events.on(mindustry.game.EventType.WorldLoadEvent.class, e -> {
             java.util.Arrays.fill(fire, 0f);
+            lastPlannerTick = -1000f;
+            completedSteps = 0;
             firstBuilder = true;
             builderTimer = 0f;
             // the enemy fields Metrum drones: swap the wave units for MonoMets of a similar strength
@@ -56,6 +67,15 @@ public class BasePlanner {
             int sector = (int) (arc.math.Angles.angle(core.x, core.y, e.source.x, e.source.y) / 30f) % 12;
             fire[sector] += e.source.damage;
         });
+    }
+
+    static String controlStatus() {
+        if (Vars.net.client()) return "[lightgray]AI: status serwera niedostępny[]";
+        mindustry.game.Rules.TeamRule rules = Vars.state.rules.teams.get(Vars.state.rules.waveTeam);
+        boolean heartbeat = active() && Time.time - lastPlannerTick < 120f;
+        String base = heartbeat ? "[green]Metrum (kroki: " + completedSteps + ")[]"
+            : rules.buildAi ? "[orange]Mindustry[]" : "[lightgray]brak aktywnego planera[]";
+        return "AI bazy: " + base + (rules.rtsAi ? "\n[orange]Oddziały: RTS Mindustry[]" : "");
     }
 
     /** setting: run the Metrum AI in custom games / editor playtests too (not only the Ferrox campaign) */
@@ -95,6 +115,7 @@ public class BasePlanner {
 
     static void update() {
         if (!Vars.state.isPlaying() || Vars.net.client() || !active()) return;
+        lastPlannerTick = Time.time;
         Team aiTeam = Vars.state.rules.waveTeam;
         // the Metrum planner replaces the vanilla base builder (otherwise both would build)
         Vars.state.rules.teams.get(aiTeam).buildAi = false;
@@ -109,6 +130,7 @@ public class BasePlanner {
         for (CoreBuild core : team.cores()) {
             for (int i = 0; i < level.stepsPerTick; i++) {
                 if (!step(core, level)) break;
+                completedSteps++;
             }
         }
     }

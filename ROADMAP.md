@@ -96,3 +96,7 @@
 - Test w grze: last_log.txt nie odświeża się przy automatycznym uruchomieniu (Steam Cloud?) — potrzebny ręczny test użytkownika.
 - Stary Metrum.zip przeniesiony z saves/mods do Metrum-backup-from-game.zip (konflikt nazw z jar).
 - Przeglądarka modów w grze: topic mindustry-mod, release z jar i [v160] w nazwie; lista odświeża się co ~2 h. Przy nowym wydaniu podbić version w mod.hjson.
+
+## Ustalenia fabularne i diagnostyka AI
+- [x] Wskaźnik AI bazy: zielony Metrum po wykonaniu aktualizacji planera, pomarańczowy Mindustry według buildAi; osobno RTS Mindustry i licznik udanych kroków. Klient sieciowy pokazuje brak danych serwera.
+- [ ] Mini scenka przed rozpoczęciem sektora Stary Wąwóz. Załogę zniosło zbyt daleko z Ekler; odkryła nowy typ drona. Dowództwo chce zdobyć jego plany, lecz posiadacze nie oddadzą ich bez walki. Cel pierwszej misji: zniszczyć rdzeń przeciwnika. Nazwę Ekler zachować według wypowiedzi użytkownika do doprecyzowania.
