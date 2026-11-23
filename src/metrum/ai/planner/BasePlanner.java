@@ -30,8 +30,19 @@ public class BasePlanner {
     public static final Seq<mindustry.type.Planet> planets = new Seq<>();
     static float timer;
 
+    /** fire map: damage taken by the AI team's buildings, per 30-degree sector around each core */
+    static final float[] fire = new float[12];
+
     public static void init() {
         Events.run(Trigger.update, BasePlanner::update);
+        Events.on(mindustry.game.EventType.WorldLoadEvent.class, e -> java.util.Arrays.fill(fire, 0f));
+        Events.on(mindustry.game.EventType.BuildDamageEvent.class, e -> {
+            if (e.build == null || e.source == null || e.build.team != Vars.state.rules.waveTeam) return;
+            CoreBuild core = e.build.closestCore();
+            if (core == null) return;
+            int sector = (int) (arc.math.Angles.angle(core.x, core.y, e.source.x, e.source.y) / 30f) % 12;
+            fire[sector] += e.source.damage;
+        });
     }
 
     static boolean active() {
@@ -67,6 +78,7 @@ public class BasePlanner {
         if (drills < wantDrills) return buildDrillLine(core, level);
         int turrets = count(core, b -> b.block instanceof mindustry.world.blocks.defense.turrets.Turret);
         if (turrets < 2 + level.ordinal() * 2 && buildTurret(core, level)) return true;
+        if (buildWalls(core, level)) return true;
         return false; // next steps (water, factories, turrets, walls) come later
     }
 
@@ -207,6 +219,31 @@ public class BasePlanner {
             return true;
         }
         return false;
+    }
+
+    // ---------- step 6: wall ring; leaves a gap where the fire is heaviest (all levels except DUMB) ----------
+
+    static boolean buildWalls(CoreBuild core, AiLevel level) {
+        Block wall = Blocks.tungstenWall;
+        float radius = 20f * Vars.tilesize;
+        // where to leave the gap: sector with the most recorded damage, else towards the player's core
+        int best = -1;
+        float max = 0f;
+        for (int i = 0; i < fire.length; i++) if (fire[i] > max) { max = fire[i]; best = i; }
+        Building enemy = Vars.state.rules.defaultTeam.core();
+        float gapAngle = best >= 0 ? best * 30f + 15f : (enemy != null ? core.angleTo(enemy) : 0f);
+        float gapHalf = level.wallGaps ? 12f : -1f; // ~3 tiles wide at radius 20
+        // wall arc facing the threat (+-70 degrees around the gap direction)
+        int placed = 0;
+        for (float a = gapAngle - 70f; a <= gapAngle + 70f && placed < 6; a += 3f) {
+            if (Math.abs(arc.math.Angles.angleDist(a, gapAngle)) < gapHalf) continue; // the passage
+            Tile t = Vars.world.tileWorld(core.x + arc.math.Angles.trnsx(a, radius), core.y + arc.math.Angles.trnsy(a, radius));
+            if (t == null || t.block() != Blocks.air || !Build.validPlace(wall, core.team, t.x, t.y, 0, false)) continue;
+            if (!pay(core, wall.requirements)) return placed > 0;
+            t.setNet(wall, core.team, 0);
+            placed++;
+        }
+        return placed > 0;
     }
 
     // ---------- step 1: drill + path to core ----------
