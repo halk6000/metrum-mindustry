@@ -685,7 +685,8 @@ public class BasePlanner {
         }
     }
     static boolean buildDemandProducer(CoreBuild core, Item item) {
-        Block producer = findProducer(core, item);
+        Block ready = findProducer(core, item);
+        final Block producer = ready != null ? ready : findProducer(core, item, true);
         if (producer == null || count(core, b -> b.block == producer) > 0) return false;
         java.util.Map<Item, Integer> inputs = new java.util.HashMap<>();
         for (mindustry.world.consumers.Consume consume : producer.nonOptionalConsumers) {
@@ -700,6 +701,21 @@ public class BasePlanner {
         for (java.util.Map.Entry<Item, Integer> input : inputs.entrySet()) {
             if (input.getValue() > producer.itemCapacity) return false;
             batch[index++] = new ItemStack(input.getKey(), input.getValue());
+        }
+        java.util.Map<Item, Integer> reserve = economicReserve(core);
+        for (ItemStack input : batch) {
+            int needed = input.amount + reserve.getOrDefault(input.item, 0);
+            for (ItemStack cost : producer.requirements) if (cost.item == input.item) {
+                needed += Math.round(cost.amount * Vars.state.rules.buildCostMultiplier);
+            }
+            if (core.items.get(input.item) >= needed) continue;
+            ItemStack parent = miningDemand.get(core);
+            java.util.Deque<ItemStack> pending = deferredDemand.computeIfAbsent(core, ignored -> new java.util.ArrayDeque<>());
+            if (parent != null && parent.item != input.item && pending.stream().noneMatch(goal -> goal.item == input.item)) {
+                pending.push(parent);
+                miningDemand.put(core, new ItemStack(input.item, needed));
+            }
+            return false;
         }
         for (int dir = 0; dir < 4; dir++) {
             int coreMin = -(core.block.size - 1) / 2, coreMax = core.block.size / 2;
@@ -716,6 +732,10 @@ public class BasePlanner {
         return false;
     }
     static Block findProducer(CoreBuild core, Item item) {
+        return findProducer(core, item, false);
+    }
+
+    static Block findProducer(CoreBuild core, Item item, boolean allowMissingInputs) {
         Block best = null;
         long bestCost = Long.MAX_VALUE;
         java.util.Map<Item, Integer> reserve = economicReserve(core);
@@ -739,7 +759,7 @@ public class BasePlanner {
                     if (!hasGenerator(core)) continue candidates;
                 } else if (consume instanceof mindustry.world.consumers.ConsumeItems) {
                     for (ItemStack input : ((mindustry.world.consumers.ConsumeItems) consume).items) {
-                        required.put(input.item, required.getOrDefault(input.item, 0) + input.amount);
+                        if (!allowMissingInputs) required.put(input.item, required.getOrDefault(input.item, 0) + input.amount);
                     }
                 } else if (consume instanceof mindustry.world.consumers.ConsumeLiquid) {
                     mindustry.type.Liquid liquid = ((mindustry.world.consumers.ConsumeLiquid) consume).liquid;
