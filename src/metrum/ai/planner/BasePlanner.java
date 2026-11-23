@@ -41,6 +41,7 @@ public class BasePlanner {
     static final java.util.Map<CoreBuild, float[]> fireByCore = new java.util.HashMap<>();
 
     public static void init() {
+        EconomyGoals.init();
         Events.run(Trigger.update, BasePlanner::update);
         Events.on(mindustry.game.EventType.ClientLoadEvent.class, e -> {
             arc.Core.scene.table(t -> {
@@ -147,6 +148,7 @@ public class BasePlanner {
     static void update() {
         if (!Vars.state.isPlaying() || Vars.net.client() || !active()) return;
         lastPlannerTick = Time.time;
+        EconomyGoals.restore();
         miningDemand.entrySet().removeIf(e -> !e.getKey().isValid()
             || e.getKey().items.get(e.getValue().item) >= e.getValue().amount);
         deferredDemand.keySet().removeIf(core -> !core.isValid() || core.team != Vars.state.rules.waveTeam);
