@@ -125,6 +125,7 @@ public class BaseExpander {
 
     /** tops up ammo of expander-built item turrets from their team's closest core */
     static void supply() {
+        java.util.Map<CoreBuild, java.util.Map<mindustry.type.Item, Integer>> reserves = new java.util.HashMap<>();
         // Captured defences must leave the enemy supply system immediately.
         placed.removeAll(b -> !b.isValid() || b.team != Vars.state.rules.waveTeam);
         for (Building b : placed) {
@@ -132,12 +133,14 @@ public class BaseExpander {
             mindustry.world.blocks.defense.turrets.ItemTurret turret = (mindustry.world.blocks.defense.turrets.ItemTurret) b.block;
             mindustry.world.blocks.defense.turrets.ItemTurret.ItemTurretBuild t = (mindustry.world.blocks.defense.turrets.ItemTurret.ItemTurretBuild) b;
             CoreBuild core = b.closestCore();
+            java.util.Map<mindustry.type.Item, Integer> reserve = core == null ? java.util.Collections.emptyMap()
+                : reserves.computeIfAbsent(core, metrum.ai.planner.BasePlanner::economicReserve);
             Building magazine = b.proximity.find(other -> other.team == b.team
                 && other.block == Blocks.reinforcedContainer && other.items != null);
             if (core == null && magazine == null) continue;
             if (magazine != null && core != null) {
                 for (mindustry.type.Item ammo : turret.ammoTypes.keys()) {
-                    int amount = Math.min(20 - magazine.items.get(ammo), metrum.ai.planner.BasePlanner.availableForAmmo(core, ammo));
+                    int amount = Math.min(20 - magazine.items.get(ammo), Math.max(0, core.items.get(ammo) - reserve.getOrDefault(ammo, 0)));
                     amount = Math.min(amount, magazine.getMaximumAccepted(ammo) - magazine.items.get(ammo));
                     if (amount > 0) {
                         core.items.remove(ammo, amount);
@@ -151,7 +154,7 @@ public class BaseExpander {
                 for (mindustry.type.Item it : turret.ammoTypes.keys()) {
                     if (!t.acceptItem(magazine != null ? magazine : core, it)) continue;
                     if (magazine != null && magazine.items.has(it)) { pick = it; source = magazine; break; }
-                    if (core != null && metrum.ai.planner.BasePlanner.availableForAmmo(core, it) > 0) { pick = it; break; }
+                    if (core != null && core.items.get(it) > reserve.getOrDefault(it, 0)) { pick = it; break; }
                 }
                 if (pick == null) break;
                 source.items.remove(pick, 1);

@@ -209,23 +209,23 @@ public class BasePlanner {
     }
 
     /** Keep startup mining and power affordable before spending shared minerals on ammunition. */
-    public static int availableForAmmo(CoreBuild core, Item item) {
+    public static java.util.Map<Item, Integer> economicReserve(CoreBuild core) {
+        java.util.Map<Item, Integer> reserve = new java.util.HashMap<>();
         int drills = count(core, b -> b.block instanceof mindustry.world.blocks.production.BeamDrill
             || b.block instanceof mindustry.world.blocks.production.Drill);
-        int missing = Math.max(0, 2 - drills), reserve = 0;
-        for (ItemStack cost : Blocks.plasmaBore.requirements) {
-            if (cost.item == item) reserve += missing * Math.round(cost.amount * Vars.state.rules.buildCostMultiplier);
-        }
         boolean needsGenerator = !hasGenerator(core);
-        if (needsGenerator) for (ItemStack cost : Blocks.turbineCondenser.requirements) {
-            if (cost.item == item) reserve += Math.round(cost.amount * Vars.state.rules.buildCostMultiplier);
+        Block[] blocks = {Blocks.plasmaBore, Blocks.turbineCondenser, Blocks.beamNode};
+        int[] quantities = {Math.max(0, 2 - drills), needsGenerator ? 1 : 0,
+            needsGenerator ? 4 : (!powerGridDone(core) ? 2 : 0)};
+        for (int i = 0; i < blocks.length; i++) for (ItemStack cost : blocks[i].requirements) {
+            int amount = quantities[i] * Math.round(cost.amount * Vars.state.rules.buildCostMultiplier);
+            reserve.put(cost.item, reserve.getOrDefault(cost.item, 0) + amount);
         }
-        // Keep a small construction batch available until the consumers actually receive power.
-        int nodes = needsGenerator ? 4 : (!powerGridDone(core) ? 2 : 0);
-        for (ItemStack cost : Blocks.beamNode.requirements) {
-            if (cost.item == item) reserve += nodes * Math.round(cost.amount * Vars.state.rules.buildCostMultiplier);
-        }
-        return Math.max(0, core.items.get(item) - reserve);
+        return reserve;
+    }
+
+    public static int availableForAmmo(CoreBuild core, Item item) {
+        return Math.max(0, core.items.get(item) - economicReserve(core).getOrDefault(item, 0));
     }
     static int count(CoreBuild core, arc.func.Boolf<Building> pred) {
         int[] n = {0};
