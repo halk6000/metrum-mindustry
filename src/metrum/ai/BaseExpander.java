@@ -44,7 +44,17 @@ public class BaseExpander {
             {Blocks.scathe, Blocks.smite, Blocks.titan, Blocks.reinforcedSurgeWallLarge},
         };
         Events.run(Trigger.update, BaseExpander::update);
-        Events.on(mindustry.game.EventType.WorldLoadEvent.class, e -> placed.clear());
+        Events.on(mindustry.game.EventType.WorldLoadEvent.class, e -> {
+            placed.clear();
+            timer = supplyTimer = boostTimer = 0f;
+            if (Vars.net.client() || !active()) return;
+            // Rebuild supply tracking from persisted enemy defences; multiblock tiles share one building.
+            for (Tile tile : Vars.world.tiles) {
+                Building b = tile.build;
+                if (b != null && b.tile == tile && b.team == Vars.state.rules.waveTeam
+                    && b instanceof mindustry.world.blocks.defense.turrets.ItemTurret.ItemTurretBuild) placed.add(b);
+            }
+        });
     }
 
     static boolean active() {
