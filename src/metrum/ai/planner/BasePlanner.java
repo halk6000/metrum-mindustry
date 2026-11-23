@@ -585,8 +585,10 @@ public class BasePlanner {
             for (int dy = -radius; dy <= radius; dy++) {
                 Tile t = Vars.world.tile(core.tileX() + dx, core.tileY() + dy);
                 if (t == null || t.block() != Blocks.air) continue;
-                Item item = adjacentWallOre(t);
-                if (item == null || item.hardness > 3) continue;
+                int rotation = faceWall(t, drill);
+                if (rotation < 0) continue;
+                Item item = t.nearby(rotation).wallDrop();
+                if (item == null) continue;
                 if (!Build.validPlace(drill, core.team, t.x, t.y, faceWall(t, drill), false)) continue;
                 int amount = core.items.get(item);
                 float dst = core.dst(t);
@@ -603,22 +605,16 @@ public class BasePlanner {
         return best;
     }
 
-    static Item adjacentWallOre(Tile t) {
-        for (int r = 0; r < 4; r++) {
-            Tile n = t.nearby(r);
-            if (n != null && n.wallDrop() != null) return n.wallDrop();
-        }
-        return null;
-    }
-
     static int faceWall(Tile t, Block drill) {
+        mindustry.world.blocks.production.BeamDrill beam = (mindustry.world.blocks.production.BeamDrill) drill;
         for (int r = 0; r < 4; r++) {
             Tile n = t.nearby(r);
-            if (n != null && n.wallDrop() != null) return r;
+            Item item = n == null ? null : n.wallDrop();
+            if (item == null || item.hardness > beam.tier || item == beam.blockedItem || beam.blockedItems.contains(item)) continue;
+            if (Build.validPlace(drill, Vars.state.rules.waveTeam, t.x, t.y, r, false)) return r;
         }
-        return 0;
+        return -1;
     }
-
     /** Reserve shared resources for the entire construction before removing any items. */
     static boolean payTogether(Building core, ItemStack[]... costs) {
         java.util.Map<Item, Integer> total = new java.util.HashMap<>();
