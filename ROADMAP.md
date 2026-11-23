@@ -63,18 +63,18 @@
 
 ## Planowane: symulacja rozwoju sektorów Ferrox (offline / podczas gry)
 - [ ] **Trudność planety = rozkład poziomów AI sektorów**: sektor losuje poziom inteligencji zgodnie z trudnością planety. Główny sektor do przejęcia ma zawsze Taktyka bitewnego (BATTLE_TACTICIAN), niezależnie od losowania; liczyć go osobno od procentów zwykłych sektorów.
-- [ ] **Docelowe rozkłady (zwykłe sektory)**:
+- [ ] **Rozkłady docelowe (zwykłe sektory)**: stałe udziały podane przez użytkownika są punktami zakotwiczenia, a pozostała pula jest **proporcjonalnie przeskalowywana (X)** na podstawie wag z poziomu Łatwy, po wykluczeniu kategorii z udziałem 0% i kategorii mających procent narzucony z góry.
 
-| Trudność | Głupi | Łatwy | Trudny | Szachista | Taktyczny | Taktyk bitewny | Nierozstrzygnięte |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 1. Swobodny | 40% | 60% | 0% | 0% | 0% | 0% | — |
-| 2. Łatwy | 20% | 60% | 10% | 6% | 2% | 2% (1% + 1%) | — |
-| 3. Normalny | 10% | 40% | 26%* | 16%* | 5%* | 3%* | — |
-| 4. Trudny | 0% | 10% | 40% | 33%* | 11%* | 6%* | — |
-| 5. Eksterminacja | 0% | 0% | 50% | 30%* | 10%* | 10%* | — |
+| Trudność planety | DUMB (głupi) | EASY (łatwy) | HARD (trudny) | CHESS (szachista) | TACTICAL (taktyczny) | BATTLE_TACTICIAN (taktyk bitewny) |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1. Swobodny | 40% | 60% | 0% | 0% | 0% | 0% |
+| 2. Łatwy | 20% | 60% | 10% | 6% | 2% | 2% |
+| 3. Normalny | 10% | 40% | 25% | 15% | 5% | 5% |
+| 4. Trudny | 0% | 10% | 40% | 30% | 10% | 10% |
+| 5. Eksterminacja | 0% | 0% | 50% | 30% | 10% | 10% |
 
-- [x] **Łatwy — suma 100%**: 60% EASY + 20% DUMB + 10% HARD + 6% CHESS + 2% TACTICAL + 1% BATTLE_TACTICIAN + 1% BATTLE_TACTICIAN = 100%. Oba udziały po 1% należą do Taktyka bitewnego (razem 2%); nie ma brakującego poziomu AI.
-- [ ] **Proporcje z gwiazdką są propozycją podziału reszty**, a nie wartościami wprost od użytkownika: Normalny: pozostałe 50% = 26% trudny / 16% szachista / 5% taktyczny / 3% bitewny; Trudny: pozostałe 50% = 33% szachista / 11% taktyczny / 6% bitewny; Eksterminacja: pozostałe 50% = 30% szachista / 10% taktyczny / 10% bitewny. Do zatwierdzenia przed implementacją.
+- [ ] **Wzór „X” (proporcjonalna reszta)**: dla danego poziomu trudności obliczyć `R = 100% - suma udziałów stałych`; dla kategorii bez ustalonego udziału, które są dozwolone, wylosować docelowy udział proporcjonalnie do wagi bazowej `w_i` z Łatwego: `p_i = R × w_i / Σ(w_j pozostałych kategorii)`. Przykłady: Normalny ma 50% do rozdania wg wag HARD:CHESS:TACTICAL:BATTLE_TACTICIAN = 10:6:2:2 → 25/15/5/5. Trudny ma 50% wg 6:2:2 → 30/10/10. Eksterminacja ma 50% wg 6:2:2 → 30/10/10. Wykluczone kategorie pozostają zerowe. W razie niecałkowitych wyników zaokrąglać liczebności sektorów bez utraty sumy.
+- [ ] **Stałe udziały nie podlegają skalowaniu**: Swobodny = 40% DUMB + 60% EASY; Łatwy = 60% EASY, 20% DUMB, 10% HARD, 6% CHESS, 2% TACTICAL, 2% BATTLE_TACTICIAN (dwa wskazane udziały po 1%); Normalny = 40% EASY i 10% DUMB; Trudny = 40% HARD i 10% EASY, bez DUMB; Eksterminacja = 50% HARD, bez EASY i DUMB. Główny sektor do przejęcia ma zawsze BATTLE_TACTICIAN, liczony osobno.
 - [ ] **Eksterminacja — minimum 7 Taktyków bitewnych na planecie**, wliczając główny sektor; po losowaniu skorygować przydziały, jeśli jest ich mniej niż 7 (jeżeli planeta ma mniej niż 7 sektorów, ograniczyć do liczby dostępnych). Dla każdego poziomu zaokrąglać przydziały do całkowitych liczebności sektorów z zachowaniem sumy.
 - [ ] **Rozdzielić pojęcia**: pięć poziomów trudności planety i sześć poziomów AI w kodzie to różne skale. Poziom rozwoju bazy pozostaje od nich niezależny.
 - [ ] **Oddzielić poziom AI od poziomu bazy**: poziom AI określa jakość decyzji, tempo i efektywność rozbudowy; poziom bazy określa rzeczywiście osiągnięty rozwój przemysłu, obrony i potencjału wojskowego. Łatwe AI może z czasem osiągnąć np. poziom bazy 10 — bez automatycznego zwiększania własnej inteligencji.
