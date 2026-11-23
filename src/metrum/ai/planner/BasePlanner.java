@@ -525,7 +525,7 @@ public class BasePlanner {
         if (!drill.unlockedNow() && !drill.environmentBuildable()) return stalled("wiertnica niedostępna");
         Tile ore = findOreSpot(core, drill, 30);
         if (ore == null) return stalled("brak dostępnego miejsca przy rudzie");
-        int rotation = faceWall(ore, drill, core);
+        int rotation = faceWall(ore, drill, core, minedResources(core));
         if (rotation < 0) return stalled("brak poprawnego kierunku wiercenia");
         if (!pay(core, drill.requirements)) return stalled("brak surowców na wiertnicę");
 
@@ -568,8 +568,7 @@ public class BasePlanner {
         return false;
     }
 
-    /** a free tile next to an ore wall, within radius of the core; prefers the item the core has least of */
-    static Tile findOreSpot(CoreBuild core, Block drill, int radius) {
+    static java.util.Set<Item> minedResources(CoreBuild core) {
         java.util.Set<Item> mined = new java.util.HashSet<>();
         Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
             b -> b instanceof mindustry.world.blocks.production.BeamDrill.BeamDrillBuild,
@@ -579,6 +578,12 @@ public class BasePlanner {
                 // Disabled drills and drills with no mineable wall do not cover the resource.
                 if (beam.enabled && beam.facingAmount > 0 && beam.lastItem != null) mined.add(beam.lastItem);
             });
+        return mined;
+    }
+
+    /** a free tile next to an ore wall, within radius of the core; prefers the item the core has least of */
+    static Tile findOreSpot(CoreBuild core, Block drill, int radius) {
+        java.util.Set<Item> mined = minedResources(core);
         Tile best = null;
         boolean bestCovered = true;
         int bestAmount = Integer.MAX_VALUE;
@@ -587,7 +592,7 @@ public class BasePlanner {
             for (int dy = -radius; dy <= radius; dy++) {
                 Tile t = Vars.world.tile(core.tileX() + dx, core.tileY() + dy);
                 if (t == null || t.block() != Blocks.air) continue;
-                int rotation = faceWall(t, drill, core);
+                int rotation = faceWall(t, drill, core, mined);
                 if (rotation < 0) continue;
                 Item item = wallOreInDirection(t, (mindustry.world.blocks.production.BeamDrill) drill, rotation);
                 if (item == null) continue;
@@ -628,14 +633,19 @@ public class BasePlanner {
         return found;
     }
 
-    static int faceWall(Tile t, Block drill, CoreBuild core) {
+    static int faceWall(Tile t, Block drill, CoreBuild core, java.util.Set<Item> mined) {
         mindustry.world.blocks.production.BeamDrill beam = (mindustry.world.blocks.production.BeamDrill) drill;
         int best = -1, least = Integer.MAX_VALUE;
+        boolean bestCovered = true;
         for (int r = 0; r < 4; r++) {
             if (!Build.validPlace(drill, core.team, t.x, t.y, r, false)) continue;
             Item item = wallOreInDirection(t, beam, r);
-            if (item != null && (best < 0 || core.items.get(item) < least)) {
+            if (item == null) continue;
+            boolean covered = mined.contains(item);
+            if (best < 0 || (!covered && bestCovered)
+                || (covered == bestCovered && core.items.get(item) < least)) {
                 best = r;
+                bestCovered = covered;
                 least = core.items.get(item);
             }
         }
