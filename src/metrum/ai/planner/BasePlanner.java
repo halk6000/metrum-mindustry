@@ -415,10 +415,19 @@ public class BasePlanner {
             t.setNet(turret, core.team, 0);
             if (t.build == null) return true;
             if (level.turretMagazines) {
-                // magazine on the side away from the enemy; magazines get restocked from the core
-                Tile m = Vars.world.tileWorld(t.worldx() - arc.math.Angles.trnsx(a, 3f * Vars.tilesize), t.worldy() - arc.math.Angles.trnsy(a, 3f * Vars.tilesize));
-                if (m != null && Build.validPlace(magazine, core.team, m.x, m.y, 0, false) && pay(core, magazine.requirements)) {
+                int back = Math.floorMod(Math.round((a + 180f) / 90f), 4);
+                for (int turn : new int[]{0, 1, 3, 2}) {
+                    int dir = (back + turn) % 4;
+                    int turretMin = -(turret.size - 1) / 2, turretMax = turret.size / 2;
+                    int magazineMin = -(magazine.size - 1) / 2, magazineMax = magazine.size / 2;
+                    int distance = (dir == 0 || dir == 1)
+                        ? turretMax - magazineMin + 1 : magazineMax - turretMin + 1;
+                    Tile m = Vars.world.tile(t.x + arc.math.geom.Geometry.d4x(dir) * distance,
+                        t.y + arc.math.geom.Geometry.d4y(dir) * distance);
+                    if (m == null || !Build.validPlace(magazine, core.team, m.x, m.y, 0, false)) continue;
+                    if (!pay(core, magazine.requirements)) break;
                     m.setNet(magazine, core.team, 0);
+                    break;
                 }
             }
             // Every turret needs ammo; the magazine option only controls extra storage.
