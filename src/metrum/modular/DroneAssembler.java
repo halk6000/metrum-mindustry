@@ -63,24 +63,36 @@ public class DroneAssembler extends Block {
         public float progress;
 
         void parse(String s) {
-            // Reapplying the same plan (e.g. configuration paste) must not restart assembly.
             if (s != null && s.equals(encode(hull, slots))) return;
-            hull = null;
-            slots = new Item[0];
-            progress = 0f;
-            if (s == null || s.isEmpty()) return;
-            String[] parts = s.split(";", -1);
-            int hid = Integer.parseInt(parts[0]);
-            for (ModularUnitType h : hulls) if (h.id == hid) hull = h;
-            if (hull == null) return;
-            slots = new Item[hull.slots];
-            if (parts.length > 1 && !parts[1].isEmpty()) {
-                String[] ids = parts[1].split(",");
-                for (int i = 0; i < Math.min(ids.length, slots.length); i++) {
-                    int id = Integer.parseInt(ids[i]);
-                    slots[i] = id < 0 ? null : Vars.content.item(id);
+            ModularUnitType nextHull = null;
+            Item[] nextSlots = new Item[0];
+            if (s != null && !s.isEmpty()) {
+                try {
+                    String[] parts = s.split(";", -1);
+                    if (parts.length > 2) return;
+                    int hid = Integer.parseInt(parts[0]);
+                    for (ModularUnitType h : hulls) if (h.id == hid) nextHull = h;
+                    if (nextHull == null) return;
+                    nextSlots = new Item[nextHull.slots];
+                    if (parts.length > 1 && !parts[1].isEmpty()) {
+                        String[] ids = parts[1].split(",", -1);
+                        if (ids.length > nextSlots.length) return;
+                        for (int i = 0; i < ids.length; i++) {
+                            int id = Integer.parseInt(ids[i]);
+                            if (id == -1) continue;
+                            Item module = Vars.content.item(id);
+                            if (module == null || !modules.contains(module)) return;
+                            nextSlots[i] = module;
+                        }
+                    }
+                } catch (NumberFormatException ex) {
+                    return;
                 }
             }
+            // Commit only a fully validated plan; bad input must preserve active assembly.
+            hull = nextHull;
+            slots = nextSlots;
+            progress = 0f;
         }
 
         String encode(ModularUnitType h, Item[] s) {
