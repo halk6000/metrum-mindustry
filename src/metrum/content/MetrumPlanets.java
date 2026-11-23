@@ -14,6 +14,7 @@ import mindustry.world.meta.Env;
 /** Ferrox - Metrum's industrial planet orbiting the sun beyond Erekir. */
 public class MetrumPlanets {
     public static Planet ferrox;
+    public static mindustry.type.SectorPreset oldRavine;
 
     public static void load() {
         ferrox = new Planet("ferrox", Planets.sun, 1f, 2) {{
@@ -52,6 +53,14 @@ public class MetrumPlanets {
                 r.teams.get(r.waveTeam).rtsMinSquad = 4;
                 r.teams.get(r.waveTeam).aiCoreSpawn = true;
             };
+        }};
+    
+        // first (starting) sector: hand-made map "Old Ravine" (Stary Wawoz) - AI test ground
+        oldRavine = new mindustry.type.SectorPreset("old-ravine", ferrox, 12) {{
+            alwaysUnlocked = true;
+            addStartingItems = true;
+            difficulty = 2;
+            captureWave = 20;
         }};
     }
 }
