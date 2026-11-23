@@ -334,26 +334,27 @@ public class BasePlanner {
     /** swaps one duct of a mining line for a router and puts a factory (atomizer: any mineral in) next to it */
     static boolean buildFactory(CoreBuild core) {
         Block router = Blocks.ductRouter, factory = metrum.content.MetrumPhysics.atomizer;
-        Building[] pick = {null};
-        mindustry.Vars.indexer.eachBlock(core.team, core.x, core.y, 30f * Vars.tilesize,
-            b -> b.block == Blocks.duct && b.dst(core) > 4f * Vars.tilesize, b -> { if (pick[0] == null) pick[0] = b; });
-        if (pick[0] == null) return false;
-        Tile duct = pick[0].tile;
-        int rot = pick[0].rotation;
-        // factory goes beside the line (left or right of the flow), touching the router
-        for (int side : new int[]{1, 3}) {
-            int dir = (rot + side) % 4;
-            Tile spot = duct.nearby(dir);
-            if (spot == null) continue;
-            // Even-sized blocks extend one tile farther along the positive axes.
-            int distance = (dir == 0 || dir == 1) ? (factory.size + 1) / 2 : factory.size / 2 + 1;
-            Tile origin = Vars.world.tile(duct.x + arc.math.geom.Geometry.d4x(dir) * distance,
-                duct.y + arc.math.geom.Geometry.d4y(dir) * distance);
-            if (origin == null || !Build.validPlace(factory, core.team, origin.x, origin.y, 0, false)) continue;
-            if (!payTogether(core, factory.requirements, router.requirements)) return false;
-            duct.setNet(router, core.team, rot);
-            origin.setNet(factory, core.team, 0);
-            return true;
+        Seq<Building> candidates = new Seq<>();
+        Vars.indexer.eachBlock(core.team, core.x, core.y, 30f * Vars.tilesize,
+            b -> b.block == Blocks.duct && b.dst(core) > 4f * Vars.tilesize, candidates::add);
+        for (Building candidate : candidates) {
+            Tile duct = candidate.tile;
+            int rot = candidate.rotation;
+            // factory goes beside the line (left or right of the flow), touching the router
+            for (int side : new int[]{1, 3}) {
+                int dir = (rot + side) % 4;
+                Tile spot = duct.nearby(dir);
+                if (spot == null) continue;
+                // Even-sized blocks extend one tile farther along the positive axes.
+                int distance = (dir == 0 || dir == 1) ? (factory.size + 1) / 2 : factory.size / 2 + 1;
+                Tile origin = Vars.world.tile(duct.x + arc.math.geom.Geometry.d4x(dir) * distance,
+                    duct.y + arc.math.geom.Geometry.d4y(dir) * distance);
+                if (origin == null || !Build.validPlace(factory, core.team, origin.x, origin.y, 0, false)) continue;
+                if (!payTogether(core, factory.requirements, router.requirements)) return false;
+                duct.setNet(router, core.team, rot);
+                origin.setNet(factory, core.team, 0);
+                return true;
+            }
         }
         return false;
     }
