@@ -449,6 +449,17 @@ public class BasePlanner {
         Building enemy = Vars.state.rules.defaultTeam.core();
         float gapAngle = best >= 0 ? best * 30f + 15f : (enemy != null ? core.angleTo(enemy) : 0f);
         float gapHalf = 12f; // ~3 tiles wide at radius 20
+        // A new fire direction can move the passage onto walls built during earlier cycles.
+        int cleared = 0;
+        for (int dx = -21; dx <= 21; dx++) for (int dy = -21; dy <= 21; dy++) {
+            Tile t = Vars.world.tile(core.tileX() + dx, core.tileY() + dy);
+            if (t == null || t.block() != wall || t.team() != core.team) continue;
+            if (Math.abs(core.dst(t) - radius) > Vars.tilesize) continue;
+            if (arc.math.Angles.angleDist(core.angleTo(t), gapAngle) >= gapHalf) continue;
+            t.setNet(Blocks.air, core.team, 0);
+            cleared++;
+        }
+        if (cleared > 0) return true;
         // wall arc facing the threat (+-70 degrees around the gap direction)
         int placed = 0;
         for (float a = gapAngle - 70f; a <= gapAngle + 70f && placed < 6; a += 3f) {
