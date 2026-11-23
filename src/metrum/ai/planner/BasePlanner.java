@@ -48,9 +48,75 @@ public class BasePlanner {
         Team team = Vars.state.rules.waveTeam;
         for (CoreBuild core : team.cores()) {
             for (int i = 0; i < level.stepsPerTick; i++) {
-                if (!buildDrillLine(core, level)) break;
+                if (!step(core, level)) break;
             }
         }
+    }
+
+    /** picks the next build step in the planned order */
+    static boolean step(CoreBuild core, AiLevel level) {
+        int drills = count(core, b -> b.block instanceof mindustry.world.blocks.production.BeamDrill
+            || b.block instanceof mindustry.world.blocks.production.Drill);
+        int wantDrills = 2 + level.ordinal();
+        if (drills < 2) return buildDrillLine(core, level);
+        if (!hasGenerator(core) && buildPower(core)) return true;
+        if (!powerGridDone(core) && extendPowerGrid(core)) return true;
+        if (drills < wantDrills) return buildDrillLine(core, level);
+        return false; // next steps (water, factories, turrets, walls) come later
+    }
+
+    static int count(CoreBuild core, arc.func.Boolf<Building> pred) {
+        int[] n = {0};
+        mindustry.Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize, pred, b -> n[0]++);
+        return n[0];
+    }
+
+    // ---------- step 2: power - geothermal (turbine condenser on steam vents) + beam-node grid ----------
+
+    static boolean hasGenerator(CoreBuild core) {
+        return count(core, b -> b.block instanceof mindustry.world.blocks.power.PowerGenerator) > 0;
+    }
+
+    static boolean buildPower(CoreBuild core) {
+        Block gen = Blocks.turbineCondenser;
+        Tile best = null;
+        float bestDst = Float.MAX_VALUE;
+        for (int dx = -35; dx <= 35; dx++) for (int dy = -35; dy <= 35; dy++) {
+            Tile t = Vars.world.tile(core.tileX() + dx, core.tileY() + dy);
+            if (t == null || !(t.floor() instanceof mindustry.world.blocks.environment.SteamVent)) continue;
+            if (!((mindustry.world.blocks.environment.SteamVent) t.floor()).isCenterVent(t)) continue;
+            if (!Build.validPlace(gen, core.team, t.x, t.y, 0, false)) continue;
+            float d = core.dst(t);
+            if (d < bestDst) { bestDst = d; best = t; }
+        }
+        if (best == null || !pay(core, gen.requirements)) return false;
+        best.setNet(gen, core.team, 0);
+        return true;
+    }
+
+    /** beam nodes on a lattice (every 8 tiles) between generators and consumers; nodes auto-link in straight lines */
+    static boolean powerGridDone(CoreBuild core) {
+        int[] unpowered = {0};
+        mindustry.Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
+            b -> b.block.consPower != null && b.power != null && b.power.graph.getPowerBalance() <= 0f && b.power.graph.getLastPowerProduced() <= 0f,
+            b -> unpowered[0]++);
+        return unpowered[0] == 0;
+    }
+
+    static boolean extendPowerGrid(CoreBuild core) {
+        Block node = Blocks.beamNode;
+        int step = 8, placed = 0;
+        for (int r = step; r <= 32 && placed < 3; r += step) {
+            for (int dx = -r; dx <= r && placed < 3; dx += step) for (int dy = -r; dy <= r && placed < 3; dy += step) {
+                if (Math.abs(dx) != r && Math.abs(dy) != r) continue;
+                Tile t = Vars.world.tile(core.tileX() + dx, core.tileY() + dy);
+                if (t == null || t.block() != Blocks.air || !Build.validPlace(node, core.team, t.x, t.y, 0, false)) continue;
+                if (!pay(core, node.requirements)) return placed > 0;
+                t.setNet(node, core.team, 0);
+                placed++;
+            }
+        }
+        return placed > 0;
     }
 
     // ---------- step 1: drill + path to core ----------
