@@ -70,6 +70,21 @@ public class MetrumPlanets {
                 r.attackMode = true;
             };
         }};
+        arc.Events.on(mindustry.game.EventType.SectorLaunchEvent.class, e -> {
+            if (mindustry.Vars.headless || e.sector.preset != oldRavine) return;
+            arc.Core.app.post(() -> {
+                if (!mindustry.Vars.state.isCampaign() || mindustry.Vars.state.rules.sector != e.sector) return;
+                mindustry.ui.dialogs.BaseDialog briefing = new mindustry.ui.dialogs.BaseDialog(
+                    arc.Core.bundle.get("metrum.ravine.briefing.title")) {{ shouldPause = true; }};
+                float width = Math.max(180f, Math.min(560f,
+                    arc.Core.graphics.getWidth() / arc.scene.ui.layout.Scl.scl(1f) - 80f));
+                briefing.cont.pane(t -> t.add(arc.Core.bundle.get("metrum.ravine.briefing.text"))
+                    .width(width).wrap().left()).maxHeight(arc.Core.graphics.getHeight() * 0.65f);
+                briefing.buttons.button(arc.Core.bundle.get("metrum.ravine.briefing.start"), briefing::hide).size(260f, 54f);
+                briefing.addCloseListener();
+                briefing.show();
+            });
+        });
         // the hand-made map has no enemy core: give the AI one on load, as far from the player as possible
         arc.Events.on(mindustry.game.EventType.WorldLoadEvent.class, e -> {
             if (mindustry.Vars.state.rules.sector == null || mindustry.Vars.state.rules.sector.preset != oldRavine || mindustry.Vars.net.client()) return;
