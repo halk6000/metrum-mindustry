@@ -568,7 +568,15 @@ public class BasePlanner {
 
     /** a free tile next to an ore wall, within radius of the core; prefers the item the core has least of */
     static Tile findOreSpot(CoreBuild core, Block drill, int radius) {
+        java.util.Set<Item> mined = new java.util.HashSet<>();
+        Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
+            b -> b instanceof mindustry.world.blocks.production.BeamDrill.BeamDrillBuild,
+            b -> {
+                Item item = ((mindustry.world.blocks.production.BeamDrill.BeamDrillBuild) b).lastItem;
+                if (item != null) mined.add(item);
+            });
         Tile best = null;
+        boolean bestCovered = true;
         int bestAmount = Integer.MAX_VALUE;
         float bestDst = Float.MAX_VALUE;
         for (int dx = -radius; dx <= radius; dx++) {
@@ -580,8 +588,11 @@ public class BasePlanner {
                 if (!Build.validPlace(drill, core.team, t.x, t.y, faceWall(t, drill), false)) continue;
                 int amount = core.items.get(item);
                 float dst = core.dst(t);
-                if (amount < bestAmount || (amount == bestAmount && dst < bestDst)) {
+                boolean covered = mined.contains(item);
+                if (best == null || (!covered && bestCovered)
+                    || (covered == bestCovered && (amount < bestAmount || (amount == bestAmount && dst < bestDst)))) {
                     best = t;
+                    bestCovered = covered;
                     bestAmount = amount;
                     bestDst = dst;
                 }
