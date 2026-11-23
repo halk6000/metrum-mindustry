@@ -108,6 +108,11 @@ public class MetrumMod extends Mod {
             MetrumUnits.monoMetT1b, MetrumUnits.monoMetT2b, MetrumUnits.monoMetT3b,
             MetrumUnits.monoMetT1c, MetrumUnits.monoMetT2c, MetrumUnits.monoMetT3c,
             MetrumUnits.monoMetT1d, MetrumUnits.monoMetT2d, MetrumUnits.monoMetT3d);
+        // "take care" command: rebuild + repair
+        metrum.ai.CaretakerAI.init(MetrumUnits.monoMetT1, MetrumUnits.monoMetT2, MetrumUnits.monoMetT3,
+            MetrumUnits.monoMetT1b, MetrumUnits.monoMetT2b, MetrumUnits.monoMetT3b,
+            MetrumUnits.monoMetT1c, MetrumUnits.monoMetT2c, MetrumUnits.monoMetT3c,
+            MetrumUnits.monoMetT1d, MetrumUnits.monoMetT2d, MetrumUnits.monoMetT3d);
         // mining grows with each upgrade (B: +graphite, C: +tungsten, D: +thorium) and freshly built drones
         // start in smart mining "least stored" mode
         mindustry.type.UnitType[][] lines = {
