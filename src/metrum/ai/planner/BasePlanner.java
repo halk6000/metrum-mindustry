@@ -248,19 +248,19 @@ public class BasePlanner {
         Seq<Building> nodes = new Seq<>();
         Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
             b -> b.block == node && b.power != null, nodes::add);
-        Building source = null, target = null;
-        float distance = Float.MAX_VALUE;
+        Seq<Building[]> pairs = new Seq<>();
         for (Building a : nodes) for (Building b : nodes) {
             if (a.power.graph.getLastPowerProduced() <= 0f || b.power.graph.getLastPowerProduced() > 0f
                 || a.power.graph == b.power.graph) continue;
-            float d = a.dst2(b);
-            if (d < distance) { distance = d; source = a; target = b; }
+            pairs.add(new Building[]{a, b});
         }
-        if (source != null) {
-            Building from = source, to = target;
-            Seq<Tile> route = Astar.pathfind(from.tile, to.tile, t -> 1f,
+        pairs.sort((a, b) -> Float.compare(a[0].dst2(a[1]), b[0].dst2(b[1])));
+        for (Building[] pair : pairs) {
+            Seq<Tile> route = Astar.pathfind(pair[0].tile, pair[1].tile, t -> 1f,
                 t -> (t.build != null && t.build.team == core.team && t.build.block == node)
                     || (t.block() == Blocks.air && Build.validPlace(node, core.team, t.x, t.y, 0, false)));
+            // An unreachable pair must not prevent another disconnected branch from getting power.
+            if (route == null || route.isEmpty()) continue;
             for (Tile t : route) {
                 if (t.build != null) continue;
                 if (!pay(core, node.requirements)) return false;
