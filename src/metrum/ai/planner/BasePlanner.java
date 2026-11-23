@@ -202,11 +202,16 @@ public class BasePlanner {
                 completedSteps++;
             }
         }
-        plannerAction = completedSteps > before ? "ostatnia próba: budowa wykonana" : (failureReason == null ? "ostatnia próba: bez postępu" : failureReason);
+        plannerAction = completedSteps > before ? "ostatnia próba: wykonano pracę" : (failureReason == null ? "ostatnia próba: bez postępu" : failureReason);
     }
 
     /** picks the next build step in the planned order */
     static boolean step(CoreBuild core, AiLevel level) {
+        // Early exits in the construction plan must still allow safe space reclamation.
+        return buildStep(core, level) || clearUnusedWaterPipes(core);
+    }
+
+    static boolean buildStep(CoreBuild core, AiLevel level) {
         int drills = count(core, b -> b.block instanceof mindustry.world.blocks.production.BeamDrill
             || b.block instanceof mindustry.world.blocks.production.Drill);
         int wantDrills = 2 + level.ordinal();
@@ -226,8 +231,7 @@ public class BasePlanner {
         int turrets = count(core, b -> b.block instanceof mindustry.world.blocks.defense.turrets.Turret);
         if (turrets < 2 + level.ordinal() * 2 && buildTurret(core, level)) return true;
         if (buildWalls(core, level)) return true;
-        if (clearUnusedWaterPipes(core)) return true;
-        return false; // next steps (water, factories, turrets, walls) come later
+        return false; // no construction progress; step() may reclaim unused pipe space
     }
 
     /** Keep startup mining and power affordable before spending shared minerals on ammunition. */
