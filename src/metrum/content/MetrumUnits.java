@@ -35,6 +35,7 @@ public class MetrumUnits {
         heal.lightningLengthRand = 16;
         heal.shootEffect = Fx.shootHeal;
         heal.healPercent = 2f;
+        heal.rangeOverride = 110f;
         BulletType arc = new BulletType(0.0001f, 0f);
         arc.lifetime = 16f;
         arc.hitEffect = Fx.hitLancer;
@@ -148,7 +149,7 @@ public class MetrumUnits {
         // 1D: its arc gun fires chain lightning that jumps across walls and units (Metrum chain-lightning library)
         for (Weapon w : monoMetT1d.weapons) if (w.name.equals("heal-shotgun-weapon")) {
             metrum.entities.ChainLightningBulletType chain = new metrum.entities.ChainLightningBulletType(25f);
-            chain.range = 110f; chain.jumps = 4; chain.jumpRange = 60f; chain.healPerJump = 12f;
+            chain.range = chain.rangeOverride = 110f; chain.jumps = 4; chain.jumpRange = 60f; chain.healPerJump = 12f;
             w.bullet = chain;
             w.shoot = new mindustry.entities.pattern.ShootPattern();
         }

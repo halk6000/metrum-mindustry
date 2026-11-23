@@ -37,6 +37,12 @@ public class ChainLightningBulletType extends BulletType {
         shootEffect = Fx.hitLancer;
     }
 
+    /** speed is 0 (instant arc), so the vanilla range formula gives 0 and units never fire: use the arc reach */
+    @Override
+    protected float calculateRange() {
+        return rangeOverride > 0f ? rangeOverride : Math.max(range, 110f);
+    }
+
     @Override
     public float estimateDPS() {
         return damage * jumps;
