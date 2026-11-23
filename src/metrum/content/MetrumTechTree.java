@@ -62,6 +62,10 @@ public class MetrumTechTree {
         node(MetrumPhysics.atomizer, atomicIron);
         node(MetrumPhysics.atomizer, atomicTungsten);
         node(MetrumPhysics.atomizer, atomicThorium);
+        node(MetrumPhysics.atomizer, atomicCopper);
+        node(MetrumPhysics.atomizer, atomicLead);
+        node(MetrumPhysics.atomizer, atomicTitanium);
+        node(MetrumPhysics.atomizer, MetrumPhysics.deAtomizer);
         node(MetrumPhysics.atomizer, MetrumPhysics.hadronCollider);
         node(MetrumPhysics.hadronCollider, carborundum);
         node(carborundum, carborundumWall);

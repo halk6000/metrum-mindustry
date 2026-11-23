@@ -67,7 +67,7 @@ def heat_inverter(path):
     im.save(path)
 
 ITEMS = pathlib.Path(__file__).resolve().parent.parent / "assets/sprites/items"
-ATOMS = {"carbon": (110, 110, 125), "silicon": (140, 150, 175), "beryllium": (90, 210, 155),
+ATOMS = {"copper": (217, 157, 115), "lead": (140, 127, 169), "titanium": (141, 161, 227), "carbon": (110, 110, 125), "silicon": (140, 150, 175), "beryllium": (90, 210, 155),
          "iron": (200, 200, 200), "tungsten": (125, 145, 210), "thorium": (225, 110, 175)}
 PRODUCTS = {"carborundum": (60, 150, 150), "tungsten-carbide": (95, 105, 125), "beryllium-bronze": (205, 160, 80),
             "ferrotungsten": (145, 145, 165), "quark-matter": (255, 80, 200)}

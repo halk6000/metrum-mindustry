@@ -58,11 +58,11 @@ public class MetrumPower {
         fusionReactor.coolant = Liquids.water;
         fusionReactor.coolantPerSecond = metrum.Balance.f("reactor.fusion.waterPerSecond", 90f);
         fusionReactor.steam = MetrumLiquids.steam;
-        fusionReactor.transmute.put(MetrumItems.atomicBeryllium, MetrumItems.atomicCarbon);
-        fusionReactor.transmute.put(MetrumItems.atomicCarbon, MetrumItems.atomicSilicon);
-        fusionReactor.transmute.put(MetrumItems.atomicSilicon, MetrumItems.atomicIron);
-        fusionReactor.transmute.put(MetrumItems.atomicIron, MetrumItems.atomicTungsten);
-        fusionReactor.transmute.put(MetrumItems.atomicTungsten, MetrumItems.atomicThorium);
+        // fusion chain by atomic number: Be(4) C(6) Si(14) Ti(22) Fe(26) Cu(29) W(74) Pb(82) Th(90)
+        mindustry.type.Item[] chain = {MetrumItems.atomicBeryllium, MetrumItems.atomicCarbon, MetrumItems.atomicSilicon,
+            MetrumItems.atomicTitanium, MetrumItems.atomicIron, MetrumItems.atomicCopper, MetrumItems.atomicTungsten,
+            MetrumItems.atomicLead, MetrumItems.atomicThorium};
+        for (int i = 0; i < chain.length - 1; i++) fusionReactor.transmute.put(chain[i], chain[i + 1]);
 
         // safe sibling: steady power, no meltdown, random resources from each decay
         decayReactor = new metrum.world.DecayReactor("decay-reactor");

@@ -5,7 +5,7 @@ import mindustry.type.Item;
 
 /** Items ported from the original Metrum JSON mod. */
 public class MetrumItems {
-    public static Item atomicCarbon, atomicSilicon, atomicBeryllium, atomicIron, atomicTungsten, atomicThorium;
+    public static Item atomicCarbon, atomicSilicon, atomicBeryllium, atomicIron, atomicTungsten, atomicThorium, atomicCopper, atomicLead, atomicTitanium;
     public static Item carborundum, tungstenCarbide, berylliumBronze, ferrotungsten, quarkMatter;
     public static Item ammoCrate, hullLight, hullMedium, hullHeavy, partEngine, partWings, partLegs, weaponMiningLaser, weaponMissiles, weaponExplosives, weaponFuelTank, weaponMachineGun;
     public static Item pieceRock, iron, steel, weaponPart, advancedWeaponPart;
@@ -42,6 +42,9 @@ public class MetrumItems {
         atomicIron = atomic("atomic-iron", "bebebe", 0f);
         atomicTungsten = atomic("atomic-tungsten", "788cc8", 0f);
         atomicThorium = atomic("atomic-thorium", "dc6eaa", 1f);
+        atomicCopper = atomic("atomic-copper", "d99d73", 0f);
+        atomicLead = atomic("atomic-lead", "8c7fa9", 0f);
+        atomicTitanium = atomic("atomic-titanium", "8da1e3", 0f);
 
         ammoCrate = new Item("ammo-crate", Color.valueOf("8a7a3a")) {{
             cost = 1.5f;
