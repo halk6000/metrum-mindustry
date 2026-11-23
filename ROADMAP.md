@@ -61,6 +61,15 @@
 - [x] Ikony statusów (paliwo, wzmocnienie)
 - [ ] Test kampanii Ferrox (TEST.md)
 
+## Planowane: symulacja rozwoju sektorów Ferrox (offline / podczas gry)
+- [ ] **Oddzielić poziom AI od poziomu bazy**: poziom AI określa jakość decyzji, tempo i efektywność rozbudowy; poziom bazy określa rzeczywiście osiągnięty rozwój przemysłu, obrony i potencjału wojskowego. Łatwe AI może z czasem osiągnąć np. poziom bazy 10 — bez automatycznego zwiększania własnej inteligencji.
+- [ ] **Rozwój sektora bez obecności gracza**: symulować upływ czasu, rozbudowę infrastruktury, produkcję, badania/odblokowania technologii oraz tworzenie i ulepszanie jednostek. Słabsze AI rozwija się wolniej i mniej efektywnie, ale nie ma sztucznego, niskiego limitu poziomu bazy.
+- [ ] **Ciągłość stanu sektora**: zapisywać poziom bazy, budynki/infrastrukturę, zasoby, technologie, garnizon i postęp produkcji. Po wejściu gracza odtworzyć stan wypracowany przez symulację, bez tworzenia gotowej bazy „znikąd”.
+- [ ] **Aktywny rozwój po wejściu gracza**: wróg nadal wydobywa surowce, buduje, produkuje i ulepsza jednostki oraz reaguje na atak zgodnie ze swoim poziomem AI. Po wyjściu gracza sektor wraca do symulacji uproszczonej.
+- [ ] **Jednostki zależne od bazy**: dostępne typy, poziomy ulepszeń i tempo produkcji wynikają z infrastruktury i technologii sektora, a nie wyłącznie z poziomu AI.
+- [ ] **Wsparcie międzysektorowe jako efekt rozwoju**: sektory wroga rozwijają własne zaplecze i wysyłają posiłki zależnie od swoich możliwości; gracz ma analogiczny mechanizm przygotowania i wysyłania jednostek. Zdobycie sektora osłabia sieć wsparcia przeciwnika.
+- [ ] **Balans trudności**: Ferrox docelowo trudniejszy od Erekiru dzięki kumulującemu się rozwojowi wrogich sektorów i wsparciu międzysektorowemu, nie przez samo podbijanie HP lub obrażeń. Przetestować scenariusze: łatwe AI + rozwinięta baza, trudne AI + młoda baza.
+
 ## Repo
 - GitHub (publiczne): https://github.com/halk6000/metrum-mindustry
 
