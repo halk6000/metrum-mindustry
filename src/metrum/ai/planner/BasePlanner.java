@@ -345,9 +345,10 @@ public class BasePlanner {
             int dir = (rot + side) % 4;
             Tile spot = duct.nearby(dir);
             if (spot == null) continue;
-            int off = factory.sizeOffset;
-            Tile origin = Vars.world.tile(spot.x + arc.math.geom.Geometry.d4x(dir) * (factory.size / 2) - off * 0,
-                spot.y + arc.math.geom.Geometry.d4y(dir) * (factory.size / 2));
+            // Even-sized blocks extend one tile farther along the positive axes.
+            int distance = (dir == 0 || dir == 1) ? (factory.size + 1) / 2 : factory.size / 2 + 1;
+            Tile origin = Vars.world.tile(duct.x + arc.math.geom.Geometry.d4x(dir) * distance,
+                duct.y + arc.math.geom.Geometry.d4y(dir) * distance);
             if (origin == null || !Build.validPlace(factory, core.team, origin.x, origin.y, 0, false)) continue;
             if (!payTogether(core, factory.requirements, router.requirements)) return false;
             duct.setNet(router, core.team, rot);
