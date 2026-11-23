@@ -340,6 +340,10 @@ public class BasePlanner {
         for (Building candidate : candidates) {
             Tile duct = candidate.tile;
             int rot = candidate.rotation;
+            // Duct routers only accept from behind; do not replace a bend fed from the side.
+            Tile input = duct.nearby((rot + 2) % 4);
+            if (input == null || input.build == null || input.build.team != core.team
+                || input.build.block != Blocks.duct || input.build.rotation != rot) continue;
             // factory goes beside the line (left or right of the flow), touching the router
             for (int side : new int[]{1, 3}) {
                 int dir = (rot + side) % 4;
