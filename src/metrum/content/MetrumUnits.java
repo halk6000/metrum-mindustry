@@ -117,8 +117,8 @@ public class MetrumUnits {
             plate.color = Color.valueOf("c8a050");
             t.abilities.add(plate);
         }
-        // every D: red gigalaser - continuous beam, 250 dmg every 0.33 s for 2.5 s
-        for (UnitType t : new UnitType[]{monoMetT1d, monoMetT2d, monoMetT3d}) {
+        // 2D only: red gigalaser - continuous beam, 250 dmg every 0.33 s for 2.5 s
+        for (UnitType t : new UnitType[]{monoMetT2d}) {
             Weapon giga = new Weapon(P + "gigalaser");
             giga.x = 0f; giga.y = -2f; giga.mirror = false; giga.top = true;
             giga.reload = 60f * 8f; giga.shake = 2f; giga.recoil = 0f;
@@ -135,12 +135,32 @@ public class MetrumUnits {
             }};
             t.weapons.add(giga);
         }
-        // 1D also gets the heavy missile pods of the 3D
+        // 1D: ONE heavy missile pod (not a mirrored pair) -> reload doubled to keep the same fire rate per launcher
         for (Weapon w : monoMetT3c.weapons) if (w.name.endsWith("missile-pod-heavy")) {
             Weapon pod = w.copy();
-            pod.x = monoMetT1d.hitSize * 0.45f;
+            pod.mirror = false;
+            pod.alternate = false;
+            pod.x = 0f;
+            pod.y = -monoMetT1d.hitSize * 0.2f;
+            pod.reload *= 2f;
             monoMetT1d.weapons.add(pod);
         }
+        // 1D: +15 damage on all its guns
+        for (Weapon w : monoMetT1d.weapons) {
+            w.bullet = w.bullet.copy();
+            w.bullet.damage += 15f;
+        }
+
+        // 1C: light suppressive fire instead of the duplicated extra gun
+        monoMetT1c.weapons.remove(monoMetT1c.weapons.size - 1);
+        Weapon barrage = new Weapon(P + "c1-mass-weapon");
+        barrage.x = monoMetT1c.hitSize * 0.4f; barrage.y = 1f; barrage.mirror = true; barrage.alternate = true;
+        barrage.reload = 6f; barrage.inaccuracy = 8f; barrage.shootSound = Sounds.shoot;
+        barrage.bullet = new mindustry.entities.bullet.BasicBulletType(5f, 7f) {{
+            lifetime = 30f; width = 4f; height = 7f;
+            frontColor = Color.valueOf("fff4c8"); backColor = Color.valueOf("d9a441");
+        }};
+        monoMetT1c.weapons.add(barrage);
     }
 
     /**
