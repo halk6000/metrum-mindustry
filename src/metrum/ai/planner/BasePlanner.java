@@ -97,17 +97,28 @@ public class BasePlanner {
     static final double builderFlag = -7346281d; // saved by the standard unit serializer
     static final java.util.Map<CoreBuild, Float> builderTimers = new java.util.HashMap<>();
 
+    static double builderHomeFlag(CoreBuild core) {
+        return builderFlag - (core.tile.pos() & 0xffffffffL) - 1d;
+    }
+
+    static boolean isBuilderFlag(double flag) {
+        return flag <= builderFlag && flag >= builderFlag - 4294967296d && flag == Math.rint(flag);
+    }
+
     static boolean hasBuilder(CoreBuild core) {
         return mindustry.gen.Groups.unit.contains(u -> u.team == core.team
             && u.type == metrum.content.MetrumUnits.monoMetT1 && !u.dead()
-            && u.controller() instanceof mindustry.ai.types.BuilderAI && u.closestCore() == core);
+            && u.controller() instanceof mindustry.ai.types.BuilderAI && u.flag == builderHomeFlag(core));
     }
 
     static void keepBuilder(Team team) {
         mindustry.gen.Groups.unit.each(u -> {
             if (u.team != team || u.type != metrum.content.MetrumUnits.monoMetT1 || u.dead() || u.isPlayer()) return;
-            if (u.controller() instanceof mindustry.ai.types.BuilderAI && u.flag == 0d) u.flag = builderFlag;
-            if (u.flag == builderFlag && !(u.controller() instanceof mindustry.ai.types.BuilderAI)) {
+            if (u.flag == builderFlag || (u.flag == 0d && u.controller() instanceof mindustry.ai.types.BuilderAI)) {
+                CoreBuild home = u.closestCore();
+                if (home != null) u.flag = builderHomeFlag(home);
+            }
+            if (isBuilderFlag(u.flag) && !(u.controller() instanceof mindustry.ai.types.BuilderAI)) {
                 u.controller(new mindustry.ai.types.BuilderAI(true, 600f));
             }
         });
@@ -122,6 +133,7 @@ public class BasePlanner {
             if (elapsed < builderRespawn) continue;
             builderTimers.put(core, 0f);
             mindustry.gen.Unit u = metrum.content.MetrumUnits.monoMetT1.spawn(team, core.x, core.y);
+            u.flag = builderHomeFlag(core);
             u.controller(new mindustry.ai.types.BuilderAI(true, 600f));
             mindustry.content.Fx.spawn.at(u);
         }
