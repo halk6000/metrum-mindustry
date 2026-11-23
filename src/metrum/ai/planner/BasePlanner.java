@@ -226,6 +226,7 @@ public class BasePlanner {
         int turrets = count(core, b -> b.block instanceof mindustry.world.blocks.defense.turrets.Turret);
         if (turrets < 2 + level.ordinal() * 2 && buildTurret(core, level)) return true;
         if (buildWalls(core, level)) return true;
+        if (clearUnusedWaterPipes(core)) return true;
         return false; // next steps (water, factories, turrets, walls) come later
     }
 
@@ -403,6 +404,38 @@ public class BasePlanner {
 
     // ---------- step 3: water - conduit from a water source (turbine condenser / pump) to a thirsty consumer ----------
 
+    /** Free space only in empty pipe components having no connection to any liquid building. */
+    static boolean clearUnusedWaterPipes(CoreBuild core) {
+        Seq<Building> pipes = new Seq<>();
+        Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
+            b -> b.block == Blocks.reinforcedConduit, pipes::add);
+        java.util.Set<Building> seen = new java.util.HashSet<>();
+        for (Building seed : pipes) {
+            if (seen.contains(seed)) continue;
+            Seq<Building> component = new Seq<>();
+            java.util.ArrayDeque<Building> queue = new java.util.ArrayDeque<>();
+            queue.add(seed);
+            boolean needed = false;
+            while (!queue.isEmpty()) {
+                Building pipe = queue.removeFirst();
+                if (!seen.add(pipe)) continue;
+                component.add(pipe);
+                if (component.size > 512) return false; // leave large networks for a fuller analysis
+                if (pipe.liquids == null || pipe.liquids.sum((liquid, amount) -> amount) > 0.001f) needed = true;
+                for (Building neighbour : pipe.proximity) {
+                    if (neighbour.team == core.team && neighbour.block == Blocks.reinforcedConduit) {
+                        if (!seen.contains(neighbour)) queue.add(neighbour);
+                    } else if (neighbour.block.hasLiquids) needed = true;
+                }
+            }
+            if (needed) continue;
+            for (int i = 0; i < Math.min(6, component.size); i++) {
+                component.get(i).tile.setNet(Blocks.air, core.team, 0);
+            }
+            return true;
+        }
+        return false;
+    }
     static boolean waterLineConnected(Building from, Building to) {
         Block conduit = Blocks.reinforcedConduit;
         java.util.Set<Building> visited = new java.util.HashSet<>();
