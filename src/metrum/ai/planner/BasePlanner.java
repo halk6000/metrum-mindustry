@@ -350,7 +350,21 @@ public class BasePlanner {
         Seq<Tile> path = Astar.pathfind(site, core.tile, tile -> 1f,
             t -> t.build == core || t.build == site.build ||
                 (t.block() == Blocks.air && Build.validPlace(duct, core.team, t.x, t.y, 0, false)));
-        if (path == null || path.size < 2) return true;
+        int ductCount = 0;
+        if (path != null) for (int i = 0; i < path.size - 1; i++) {
+            if (path.get(i).build == null) ductCount++;
+        }
+        float costMultiplier = Vars.state.rules.buildCostMultiplier;
+        boolean affordable = path != null && path.size >= 2;
+        for (ItemStack cost : duct.requirements) {
+            if (core.items.get(cost.item) < (long) Math.round(cost.amount * costMultiplier) * ductCount) affordable = false;
+        }
+        if (!affordable) {
+            // Roll back the drill too: do not strand paid equipment without a complete delivery route.
+            site.setNet(Blocks.air, core.team, 0);
+            for (ItemStack cost : drill.requirements) core.items.add(cost.item, Math.round(cost.amount * costMultiplier));
+            return false;
+        }
         for (int i = 0; i < path.size - 1; i++) {
             Tile t = path.get(i), next = path.get(i + 1);
             if (t == site || t.build == core || t.build != null) continue;
