@@ -44,6 +44,14 @@ public class DroneAssembler extends Block {
     }
 
     @Override
+    public void setBars() {
+        super.setBars();
+        // progress + what is still missing, so a stalled assembler explains itself
+        addBar("metrum-progress", (DroneAssemblerBuild b) -> new mindustry.ui.Bar(
+            () -> b.statusText(), () -> b.ready() ? Pal.accent : Color.scarlet, () -> b.progress));
+    }
+
+    @Override
     public void setStats() {
         super.setStats();
         stats.add(Stat.productionTime, buildTime / 60f, StatUnit.seconds);
@@ -89,6 +97,14 @@ public class DroneAssembler extends Block {
             int n = item == hull.hull ? 1 : 0;
             for (Item s : slots) if (s == item) n++;
             return n;
+        }
+
+        String statusText() {
+            if (hull == null) return Core.bundle.get("metrum.assembler.nohull");
+            if (items.get(hull.hull) < 1) return Core.bundle.format("metrum.assembler.missing", hull.hull.localizedName);
+            for (Item s : slots) if (s != null && items.get(s) < needed(s)) return Core.bundle.format("metrum.assembler.missing", s.localizedName);
+            if (efficiency <= 0f) return Core.bundle.get("metrum.assembler.nopower");
+            return Core.bundle.format("metrum.assembler.building", (int) (progress * 100));
         }
 
         boolean ready() {
