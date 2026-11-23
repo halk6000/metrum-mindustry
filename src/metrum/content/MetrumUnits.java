@@ -145,6 +145,13 @@ public class MetrumUnits {
             pod.reload *= 2f;
             monoMetT1d.weapons.add(pod);
         }
+        // 1D: its arc gun fires chain lightning that jumps across walls and units (Metrum chain-lightning library)
+        for (Weapon w : monoMetT1d.weapons) if (w.name.equals("heal-shotgun-weapon")) {
+            metrum.entities.ChainLightningBulletType chain = new metrum.entities.ChainLightningBulletType(25f);
+            chain.range = 110f; chain.jumps = 4; chain.jumpRange = 60f; chain.healPerJump = 12f;
+            w.bullet = chain;
+            w.shoot = new mindustry.entities.pattern.ShootPattern();
+        }
         // 1D: +15 damage on all its guns
         for (Weapon w : monoMetT1d.weapons) {
             w.bullet = w.bullet.copy();
