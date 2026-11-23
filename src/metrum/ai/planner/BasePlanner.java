@@ -429,6 +429,33 @@ public class BasePlanner {
         }
         return false;
     }
+    /** Repair one missing pipe before considering a whole new water line. */
+    static boolean repairWaterGap(CoreBuild core, Seq<Building> sources, Seq<Building> destinations) {
+        Block conduit = Blocks.reinforcedConduit;
+        if (destinations.isEmpty()) return false;
+        for (Building source : sources) {
+            if (source.block != conduit) continue;
+            Tile gap = source.tile.nearby(source.rotation);
+            if (gap == null || gap.block() != Blocks.air
+                || !Build.validPlace(conduit, core.team, gap.x, gap.y, 0, false)) continue;
+            for (int direction = 0; direction < 4; direction++) {
+                if (direction == (source.rotation + 2) % 4) continue;
+                Tile beyond = gap.nearby(direction);
+                Building next = beyond == null ? null : beyond.build;
+                if (next == null || next.team != core.team) continue;
+                if (next.block != conduit && !destinations.contains(next)) continue;
+                if (next.block == conduit) {
+                    Tile output = next.tile.nearby(next.rotation);
+                    if (output == gap) continue; // opposing pipes would not form a working connection
+                }
+                if (!destinations.contains(to -> next == to || waterLineConnected(next, to))) continue;
+                if (!pay(core, conduit.requirements)) return false;
+                gap.setNet(conduit, core.team, direction);
+                return true;
+            }
+        }
+        return false;
+    }
     static boolean pipeWater(CoreBuild core) {
         mindustry.type.Liquid water = mindustry.content.Liquids.water;
         Seq<Building> sources = new Seq<>(), destinations = new Seq<>();
@@ -440,6 +467,7 @@ public class BasePlanner {
             destinations::add);
         // Low liquid level is not proof of a missing line: do not build parallel duplicates.
         destinations.removeAll(to -> sources.contains(from -> waterLineConnected(from, to)));
+        if (repairWaterGap(core, sources, destinations)) return true;
         Seq<Building[]> pairs = new Seq<>();
         for (Building from : sources) for (Building to : destinations) {
             if (from != to) pairs.add(new Building[]{from, to});
