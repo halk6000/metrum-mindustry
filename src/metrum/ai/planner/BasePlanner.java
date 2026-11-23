@@ -34,6 +34,7 @@ public class BasePlanner {
     static int completedSteps;
     static String failureReason;
     static final java.util.Map<CoreBuild, ItemStack> miningDemand = new java.util.HashMap<>();
+    static final java.util.Map<CoreBuild, java.util.Deque<ItemStack>> deferredDemand = new java.util.HashMap<>();
     static String plannerAction = "oczekiwanie na pierwszą próbę";
 
     /** fire map: damage taken by the AI team's buildings, per 30-degree sector around each core */
@@ -57,6 +58,7 @@ public class BasePlanner {
             plannerAction = "oczekiwanie na pierwszą próbę";
             builderTimers.clear();
             miningDemand.clear();
+            deferredDemand.clear();
 
             // the enemy fields Metrum drones: swap the wave units for MonoMets of a similar strength
             if (active()) {
@@ -147,6 +149,14 @@ public class BasePlanner {
         lastPlannerTick = Time.time;
         miningDemand.entrySet().removeIf(e -> !e.getKey().isValid()
             || e.getKey().items.get(e.getValue().item) >= e.getValue().amount);
+        deferredDemand.keySet().removeIf(core -> !core.isValid() || core.team != Vars.state.rules.waveTeam);
+        for (java.util.Map.Entry<CoreBuild, java.util.Deque<ItemStack>> entry : deferredDemand.entrySet()) {
+            CoreBuild core = entry.getKey();
+            while (!miningDemand.containsKey(core) && !entry.getValue().isEmpty()) {
+                ItemStack previous = entry.getValue().pop();
+                if (core.items.get(previous.item) < previous.amount) miningDemand.put(core, previous);
+            }
+        }
         // Economy compensation is earned by working miners, never by multiplying stored items.
         Vars.state.rules.teams.get(Vars.state.rules.waveTeam).unitMineSpeedMultiplier = 1.5f;
         miningBonusTimer += Time.delta;
@@ -653,8 +663,16 @@ public class BasePlanner {
             for (java.util.Map.Entry<Item, Integer> input : required.entrySet()) {
                 Item item = input.getKey();
                 int missing = Math.max(0, input.getValue() - factory.items.get(item));
-                if (input.getValue() > factory.getMaximumAccepted(item)
-                    || core.items.get(item) - reserve.getOrDefault(item, 0) < missing) continue workshops;
+                if (input.getValue() > factory.getMaximumAccepted(item)) continue workshops;
+                if (core.items.get(item) - reserve.getOrDefault(item, 0) < missing) {
+                    java.util.Deque<ItemStack> pending = deferredDemand.computeIfAbsent(core, ignored -> new java.util.ArrayDeque<>());
+                    // Keep the parent objective and avoid circular ingredient dependencies.
+                    if (item != demand.item && pending.stream().noneMatch(parent -> parent.item == item)) {
+                        pending.push(demand);
+                        miningDemand.put(core, new ItemStack(item, missing + reserve.getOrDefault(item, 0)));
+                    }
+                    continue workshops;
+                }
             }
             for (java.util.Map.Entry<Item, Integer> input : required.entrySet()) {
                 int missing = Math.max(0, input.getValue() - factory.items.get(input.getKey()));
