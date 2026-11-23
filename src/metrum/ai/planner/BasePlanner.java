@@ -200,7 +200,7 @@ public class BasePlanner {
     static boolean powerGridDone(CoreBuild core) {
         int[] unpowered = {0};
         mindustry.Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
-            b -> b.block.consPower != null && b.power != null && b.power.graph.getPowerBalance() <= 0f && b.power.graph.getLastPowerProduced() <= 0f,
+            b -> b.block.consPower != null && b.power != null && b.power.status < 0.999f,
             b -> unpowered[0]++);
         return unpowered[0] == 0;
     }
