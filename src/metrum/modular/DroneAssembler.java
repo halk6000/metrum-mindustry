@@ -133,8 +133,8 @@ public class DroneAssembler extends Block {
         @Override
         public void updateTile() {
             if (!ready() || efficiency <= 0f) return;
-            progress += getProgressIncrease(buildTime);
-            if (progress < 1f) return;
+            progress = Math.min(1f, progress + getProgressIncrease(buildTime));
+            if (progress < 1f || Vars.net.client()) return;
             progress = 0f;
             items.remove(hull.hull, 1);
             Seq<Item> mods = new Seq<>();
@@ -142,7 +142,6 @@ public class DroneAssembler extends Block {
                 items.remove(s, 1);
                 mods.add(s);
             }
-            if (Vars.net.client()) return;
             Unit u = hull.spawn(team, x, y);
             Loadouts.set(u, mods, null);
             Fx.spawn.at(u);
