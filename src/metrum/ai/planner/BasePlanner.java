@@ -631,11 +631,18 @@ public class BasePlanner {
     /** Discover actual recipes instead of assuming every missing construction item is an ore. */
     /** Adjacent workshops draw a complete next batch from the core, never partial unpaid inputs. */
     static void supplyCoreProducers(CoreBuild core) {
+        ItemStack demand = miningDemand.get(core);
+        if (demand == null || core.items.get(demand.item) >= demand.amount) return;
         java.util.Map<Item, Integer> reserve = economicReserve(core);
         workshops: for (Building factory : core.proximity) {
             if (factory.team != core.team || !factory.enabled || factory.items == null
                 || !(factory.block instanceof mindustry.world.blocks.production.GenericCrafter)
                 || factory.closestCore() != core) continue;
+            mindustry.world.blocks.production.GenericCrafter recipe =
+                (mindustry.world.blocks.production.GenericCrafter) factory.block;
+            boolean wanted = recipe.outputItem != null && recipe.outputItem.item == demand.item;
+            if (recipe.outputItems != null) for (ItemStack output : recipe.outputItems) wanted |= output.item == demand.item;
+            if (!wanted) continue;
             java.util.Map<Item, Integer> required = new java.util.HashMap<>();
             for (mindustry.world.consumers.Consume consume : factory.block.nonOptionalConsumers) {
                 if (!(consume instanceof mindustry.world.consumers.ConsumeItems)) continue;
