@@ -42,11 +42,13 @@ public class MetrumPlanets {
             allowLaunchToNumbered = false;
             // enemies rebuild faster here; smarter base AI comes in a later step
             enemyBuildSpeedMultiplier = 0.6f;
+            enemyInfiniteItems = false; // enemy industry must use actual stored and mined resources
             unlockedOnLand.add(Blocks.coreBastion);
             // share Erekir research so Metrum content stays unlocked in one tree
             techTree = Planets.erekir.techTree;
             ruleSetter = r -> {
                 r.waveTeam = Team.crux; // red enemy, as placed in the hand-made maps
+                r.teams.get(r.waveTeam).infiniteResources = false;
                 r.placeRangeCheck = false;
                 r.coreDestroyClear = true;
                 // smarter enemy: vanilla base builder + RTS squads, plus BaseExpander fortifications

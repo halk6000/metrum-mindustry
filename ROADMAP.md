@@ -100,3 +100,5 @@
 ## Ustalenia fabularne i diagnostyka AI
 - [x] Wskaźnik AI bazy: zielony Metrum po wykonaniu aktualizacji planera, pomarańczowy Mindustry według buildAi; osobno RTS Mindustry i licznik udanych kroków. Klient sieciowy pokazuje brak danych serwera.
 - [ ] Mini scenka przed rozpoczęciem sektora Stary Wąwóz. Załogę zniosło zbyt daleko z Ekler; odkryła nowy typ drona. Dowództwo chce zdobyć jego plany, lecz posiadacze nie oddadzą ich bez walki. Cel pierwszej misji: zniszczyć rdzeń przeciwnika. Nazwę Ekler zachować według wypowiedzi użytkownika do doprecyzowania.
+
+- [ ] Gospodarka AI (ustalenie użytkownika): buduje z posiadanych zasobów jak gracz; otrzymuje bonus 50% zasobów jako rekompensatę słabszych decyzji. Wdrażać jako +50% realnego wydobycia, bez nieskończonych magazynów; nie mnożyć istniejących zapasów ponownie przy wczytaniu.

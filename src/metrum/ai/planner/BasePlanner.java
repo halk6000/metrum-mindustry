@@ -151,6 +151,7 @@ public class BasePlanner {
         Team aiTeam = Vars.state.rules.waveTeam;
         // the Metrum planner replaces the vanilla base builder (otherwise both would build)
         Vars.state.rules.teams.get(aiTeam).buildAi = false;
+        Vars.state.rules.teams.get(aiTeam).infiniteResources = false;
         keepBuilder(aiTeam);
         AiLevel level = AiLevel.current();
         timer += Time.delta;
