@@ -33,6 +33,7 @@ public class BasePlanner {
     static float lastPlannerTick = -1000f;
     static int completedSteps;
     static String failureReason;
+    static final java.util.Map<CoreBuild, ItemStack> miningDemand = new java.util.HashMap<>();
     static String plannerAction = "oczekiwanie na pierwszą próbę";
 
     /** fire map: damage taken by the AI team's buildings, per 30-degree sector around each core */
@@ -55,6 +56,7 @@ public class BasePlanner {
             miningBonusTimer = 60f;
             plannerAction = "oczekiwanie na pierwszą próbę";
             builderTimers.clear();
+            miningDemand.clear();
 
             // the enemy fields Metrum drones: swap the wave units for MonoMets of a similar strength
             if (active()) {
@@ -143,6 +145,8 @@ public class BasePlanner {
     static void update() {
         if (!Vars.state.isPlaying() || Vars.net.client() || !active()) return;
         lastPlannerTick = Time.time;
+        miningDemand.entrySet().removeIf(e -> !e.getKey().isValid()
+            || e.getKey().items.get(e.getValue().item) >= e.getValue().amount);
         // Economy compensation is earned by working miners, never by multiplying stored items.
         Vars.state.rules.teams.get(Vars.state.rules.waveTeam).unitMineSpeedMultiplier = 1.5f;
         miningBonusTimer += Time.delta;
@@ -649,7 +653,7 @@ public class BasePlanner {
     static Tile findOreSpot(CoreBuild core, Block drill, int radius) {
         java.util.Set<Item> mined = minedResources(core);
         Tile best = null;
-        boolean bestCovered = true;
+        int bestPriority = Integer.MAX_VALUE;
         int bestAmount = Integer.MAX_VALUE;
         float bestDst = Float.MAX_VALUE;
         for (int dx = -radius; dx <= radius; dx++) {
@@ -663,11 +667,11 @@ public class BasePlanner {
                 if (!Build.validPlace(drill, core.team, t.x, t.y, rotation, false)) continue;
                 int amount = core.items.get(item);
                 float dst = core.dst(t);
-                boolean covered = mined.contains(item);
-                if (best == null || (!covered && bestCovered)
-                    || (covered == bestCovered && (amount < bestAmount || (amount == bestAmount && dst < bestDst)))) {
+                int priority = orePriority(core, item, mined);
+                if (best == null || (priority < bestPriority)
+                    || (priority == bestPriority && (amount < bestAmount || (amount == bestAmount && dst < bestDst)))) {
                     best = t;
-                    bestCovered = covered;
+                    bestPriority = priority;
                     bestAmount = amount;
                     bestDst = dst;
                 }
@@ -697,19 +701,23 @@ public class BasePlanner {
         return found;
     }
 
+    static int orePriority(CoreBuild core, Item item, java.util.Set<Item> mined) {
+        ItemStack demand = miningDemand.get(core);
+        return demand != null && demand.item == item ? 0 : (mined.contains(item) ? 2 : 1);
+    }
     static int faceWall(Tile t, Block drill, CoreBuild core, java.util.Set<Item> mined) {
         mindustry.world.blocks.production.BeamDrill beam = (mindustry.world.blocks.production.BeamDrill) drill;
         int best = -1, least = Integer.MAX_VALUE;
-        boolean bestCovered = true;
+        int bestPriority = Integer.MAX_VALUE;
         for (int r = 0; r < 4; r++) {
             if (!Build.validPlace(drill, core.team, t.x, t.y, r, false)) continue;
             Item item = wallOreInDirection(t, beam, r);
             if (item == null) continue;
-            boolean covered = mined.contains(item);
-            if (best < 0 || (!covered && bestCovered)
-                || (covered == bestCovered && core.items.get(item) < least)) {
+            int priority = orePriority(core, item, mined);
+            if (best < 0 || (priority < bestPriority)
+                || (priority == bestPriority && core.items.get(item) < least)) {
                 best = r;
-                bestCovered = covered;
+                bestPriority = priority;
                 least = core.items.get(item);
             }
         }
@@ -724,8 +732,12 @@ public class BasePlanner {
         }
         for (java.util.Map.Entry<Item, Integer> cost : total.entrySet()) {
             int available = availableForAmmo(core, cost.getKey());
-            if (available < cost.getValue()) return stalled("brak: " + cost.getKey().localizedName
+            if (available < cost.getValue()) {
+                miningDemand.putIfAbsent(core, new ItemStack(cost.getKey(), cost.getValue()
+                    + economicReserve(core).getOrDefault(cost.getKey(), 0)));
+                return stalled("brak: " + cost.getKey().localizedName
                 + " (wolne " + available + "/" + cost.getValue() + ", po odjęciu rezerwy)");
+            }
         }
         for (java.util.Map.Entry<Item, Integer> cost : total.entrySet()) core.items.remove(cost.getKey(), cost.getValue());
         return true;
@@ -735,7 +747,10 @@ public class BasePlanner {
         float mult = Vars.state.rules.buildCostMultiplier;
         for (ItemStack s : cost) {
             int needed = Math.round(s.amount * mult), stored = core.items.get(s.item);
-            if (stored < needed) return stalled("brak: " + s.item.localizedName + " (" + stored + "/" + needed + ")");
+            if (stored < needed) {
+                if (core instanceof CoreBuild) miningDemand.putIfAbsent((CoreBuild) core, new ItemStack(s.item, needed));
+                return stalled("brak: " + s.item.localizedName + " (" + stored + "/" + needed + ")");
+            }
         }
         for (ItemStack s : cost) core.items.remove(s.item, Math.round(s.amount * mult));
         return true;
