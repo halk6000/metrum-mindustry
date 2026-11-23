@@ -543,7 +543,7 @@ public class BasePlanner {
             if (path.get(i).build == null) ductCount++;
         }
         float costMultiplier = Vars.state.rules.buildCostMultiplier;
-        boolean affordable = path != null && path.size >= 2;
+        boolean affordable = path != null && !path.isEmpty(); // adjacent core needs no duct
         for (ItemStack cost : duct.requirements) {
             if (core.items.get(cost.item) < (long) Math.round(cost.amount * costMultiplier) * ductCount) affordable = false;
         }
@@ -551,7 +551,7 @@ public class BasePlanner {
             // Roll back the drill too: do not strand paid equipment without a complete delivery route.
             site.setNet(Blocks.air, core.team, 0);
             for (ItemStack cost : drill.requirements) core.items.add(cost.item, Math.round(cost.amount * costMultiplier));
-            return stalled(path == null || path.size < 2 ? "brak trasy do rdzenia" : "brak surowców na całą trasę");
+            return stalled(path == null || path.isEmpty() ? "brak trasy do rdzenia" : "brak surowców na całą trasę");
         }
         for (int i = 0; i < path.size - 1; i++) {
             Tile t = path.get(i), next = path.get(i + 1);
