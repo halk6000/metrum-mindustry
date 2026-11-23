@@ -208,6 +208,8 @@ public class MetrumUnits {
         pb.sprite = "metrum-rocket";
         pb.frontColor = Color.white;
         pb.width = 7f; pb.height = 16f;
+        pb.hitSound = Sounds.explosionMissile;
+        pb.hitSoundVolume = 0.5f;
         pods.bullet = pb;
 
         // side torpedoes: slow, homing, 300 dmg, range 800, once per 30 s
@@ -228,6 +230,8 @@ public class MetrumUnits {
         tb.frontColor = Color.white;
         tb.width = 10f; tb.height = 26f;
         tb.homingPower = 0.05f; tb.trailLength = 12; tb.trailColor = Color.valueOf("e6be28");
+        tb.hitSound = Sounds.explosionArtilleryShock;
+        tb.hitSoundVolume = 1f;
         torpedo.bullet = tb;
 
         u.weapons.addAll(laser, pods, torpedo);

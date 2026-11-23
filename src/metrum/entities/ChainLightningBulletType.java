@@ -60,6 +60,7 @@ public class ChainLightningBulletType extends BulletType {
             if (target == null) break;
             hit.add(target);
             Fx.chainLightning.at(from.getX(), from.getY(), 0f, arcColor, target);
+            mindustry.gen.Sounds.shockBullet.at(target.getX(), target.getY(), 1f + i * 0.08f, 0.4f);
             if (target instanceof Building && ((Building) target).team == b.team) {
                 if (healPerJump > 0f) ((Building) target).heal(healPerJump);
             } else {
