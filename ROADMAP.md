@@ -62,9 +62,21 @@
 - [ ] Test kampanii Ferrox (TEST.md)
 
 ## Planowane: symulacja rozwoju sektorów Ferrox (offline / podczas gry)
-- [ ] **Trudność planety = rozkład poziomów AI między sektorami**: ustawiona trudność wyznacza dominujący poziom inteligencji w skali planety, nie jednakowy poziom każdego sektora. Przykład: przy trudności „Łatwy” około 80% zwykłych sektorów ma łatwe AI, a pozostałe około 20% otrzymuje losowo inne poziomy AI (bez sztywnych proporcji między nimi). **Wyjątek: główny sektor do przejęcia zawsze ma AI „Taktyk bitewny”**, niezależnie od trudności planety i losowania. Poziom AI sektora pozostaje niezależny od poziomu rozwoju jego bazy. Proporcje dotyczą zwykłych sektorów; sektor główny jest traktowany osobno.
-- [ ] **Rozkład dla trudności „Normalny”**: 40% zwykłych sektorów otrzymuje normalny poziom AI, pozostałe 60% losowo inne poziomy; główny sektor nadal zawsze otrzymuje „Taktyka bitewnego”. **Do ustalenia w implementacji:** enum `AiLevel` nie zawiera jeszcze poziomu `NORMAL` (obecnie: DUMB, EASY, HARD, TACTICAL, CHESS, BATTLE_TACTICIAN); nie utożsamiać automatycznie `HARD` z normalnym bez decyzji projektowej.
-- [ ] **Wagi losowania dla pozostałych sektorów (propozycja użytkownika)**: w puli sektorów niewchodzących do dominującej grupy trudności planety: `DUMB` 10%, `HARD` 8%, `CHESS` 8%, „taktyk” pozostałe 74%. Uwaga: „taktyk” wymaga wskazania, czy chodzi o `TACTICAL` (Taktyczny), czy `BATTLE_TACTICIAN` (Taktyk bitewny); do tego czasu nie przypisywać wagi automatycznie w kodzie. Główny sektor nadal ma gwarantowanego `BATTLE_TACTICIAN`, poza losowaniem.
+- [ ] **Trudność planety = rozkład poziomów AI sektorów**: sektor losuje poziom inteligencji zgodnie z trudnością planety. Główny sektor do przejęcia ma zawsze Taktyka bitewnego (BATTLE_TACTICIAN), niezależnie od losowania; liczyć go osobno od procentów zwykłych sektorów.
+- [ ] **Docelowe rozkłady (zwykłe sektory)**:
+
+| Trudność | Głupi | Łatwy | Trudny | Szachista | Taktyczny | Taktyk bitewny | Nierozstrzygnięte |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1. Swobodny | 40% | 60% | 0% | 0% | 0% | 0% | — |
+| 2. Łatwy | 20% | 60% | 10% | 6% | 2% | 1% | 1% |
+| 3. Normalny | 10% | 40% | 26%* | 16%* | 5%* | 3%* | — |
+| 4. Trudny | 0% | 10% | 40% | 33%* | 11%* | 6%* | — |
+| 5. Eksterminacja | 0% | 0% | 50% | 30%* | 10%* | 10%* | — |
+
+- [ ] **Doprecyzować 1% na Łatwym**: podane przez użytkownika wagi to 60% łatwy / 20% głupi / 10% trudny / 6% szachista / 2% taktyk / 1% oraz TB 1% (łącznie 100%). W aktualnym enumie jest sześć poziomów AI: DUMB, EASY, HARD, TACTICAL, CHESS, BATTLE_TACTICIAN. Jedno 1% nie ma jednoznacznej kategorii — nie dopisywać wymyślonego siódmego poziomu.
+- [ ] **Proporcje z gwiazdką są propozycją podziału reszty**, a nie wartościami wprost od użytkownika: Normalny: pozostałe 50% = 26% trudny / 16% szachista / 5% taktyczny / 3% bitewny; Trudny: pozostałe 50% = 33% szachista / 11% taktyczny / 6% bitewny; Eksterminacja: pozostałe 50% = 30% szachista / 10% taktyczny / 10% bitewny. Do zatwierdzenia przed implementacją.
+- [ ] **Eksterminacja — minimum 7 Taktyków bitewnych na planecie**, wliczając główny sektor; po losowaniu skorygować przydziały, jeśli jest ich mniej niż 7 (jeżeli planeta ma mniej niż 7 sektorów, ograniczyć do liczby dostępnych). Dla każdego poziomu zaokrąglać przydziały do całkowitych liczebności sektorów z zachowaniem sumy.
+- [ ] **Rozdzielić pojęcia**: pięć poziomów trudności planety i sześć poziomów AI w kodzie to różne skale. Poziom rozwoju bazy pozostaje od nich niezależny.
 - [ ] **Oddzielić poziom AI od poziomu bazy**: poziom AI określa jakość decyzji, tempo i efektywność rozbudowy; poziom bazy określa rzeczywiście osiągnięty rozwój przemysłu, obrony i potencjału wojskowego. Łatwe AI może z czasem osiągnąć np. poziom bazy 10 — bez automatycznego zwiększania własnej inteligencji.
 - [ ] **Rozwój sektora bez obecności gracza**: symulować upływ czasu, rozbudowę infrastruktury, produkcję, badania/odblokowania technologii oraz tworzenie i ulepszanie jednostek. Słabsze AI rozwija się wolniej i mniej efektywnie, ale nie ma sztucznego, niskiego limitu poziomu bazy.
 - [ ] **Ciągłość stanu sektora**: zapisywać poziom bazy, budynki/infrastrukturę, zasoby, technologie, garnizon i postęp produkcji. Po wejściu gracza odtworzyć stan wypracowany przez symulację, bez tworzenia gotowej bazy „znikąd”.
