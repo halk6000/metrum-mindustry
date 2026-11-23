@@ -286,21 +286,28 @@ public class BasePlanner {
 
     static boolean pipeWater(CoreBuild core) {
         mindustry.type.Liquid water = mindustry.content.Liquids.water;
-        Building[] src = {null}, dst = {null};
+        Building[] src = {null};
         mindustry.Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
             b -> b.liquids != null && b.block.outputsLiquid && b.liquids.get(water) > 1f, b -> { if (src[0] == null) src[0] = b; });
         if (src[0] == null) return false;
+        Seq<Building> destinations = new Seq<>();
         mindustry.Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
             b -> b != src[0] && b.block.consumesLiquid(water) && b.liquids != null && b.liquids.get(water) < 1f,
-            b -> { if (dst[0] == null || b.dst(src[0]) < dst[0].dst(src[0])) dst[0] = b; });
-        if (dst[0] == null) return false;
-
+            destinations::add);
+        destinations.sort((a, b) -> Float.compare(a.dst2(src[0]), b.dst2(src[0])));
         Block conduit = Blocks.reinforcedConduit;
-        Building from = src[0], to = dst[0];
-        Seq<Tile> path = Astar.pathfind(from.tile, to.tile, tile -> 1f,
-            t -> t.build == from || t.build == to ||
-                (t.block() == Blocks.air && Build.validPlace(conduit, core.team, t.x, t.y, 0, false)));
-        if (path == null || path.size < 3) return false;
+        Building from = src[0];
+        Seq<Tile> path = null;
+        for (Building to : destinations) {
+            Seq<Tile> candidate = Astar.pathfind(from.tile, to.tile, tile -> 1f,
+                t -> t.build == from || t.build == to ||
+                    (t.block() == Blocks.air && Build.validPlace(conduit, core.team, t.x, t.y, 0, false)));
+            if (candidate != null && candidate.size >= 3) {
+                path = candidate;
+                break;
+            }
+        }
+        if (path == null) return false;
         int pipeCount = 0;
         for (int i = 0; i < path.size - 1; i++) if (path.get(i).build == null) pipeCount++;
         // Check the complete line before spending anything; partial pipes obstruct later retries.
