@@ -61,6 +61,7 @@ public class BasePlanner {
         if (drills < 2) return buildDrillLine(core, level);
         if (!hasGenerator(core) && buildPower(core)) return true;
         if (!powerGridDone(core) && extendPowerGrid(core)) return true;
+        if (pipeWater(core)) return true;
         if (drills < wantDrills) return buildDrillLine(core, level);
         return false; // next steps (water, factories, turrets, walls) come later
     }
@@ -115,6 +116,35 @@ public class BasePlanner {
                 t.setNet(node, core.team, 0);
                 placed++;
             }
+        }
+        return placed > 0;
+    }
+
+    // ---------- step 3: water - conduit from a water source (turbine condenser / pump) to a thirsty consumer ----------
+
+    static boolean pipeWater(CoreBuild core) {
+        mindustry.type.Liquid water = mindustry.content.Liquids.water;
+        Building[] src = {null}, dst = {null};
+        mindustry.Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
+            b -> b.liquids != null && b.block.outputsLiquid && b.liquids.get(water) > 1f, b -> { if (src[0] == null) src[0] = b; });
+        if (src[0] == null) return false;
+        mindustry.Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
+            b -> b != src[0] && b.block.consumesLiquid(water) && b.liquids != null && b.liquids.get(water) < 1f,
+            b -> { if (dst[0] == null || b.dst(src[0]) < dst[0].dst(src[0])) dst[0] = b; });
+        if (dst[0] == null) return false;
+
+        Block conduit = Blocks.reinforcedConduit;
+        Building from = src[0], to = dst[0];
+        Seq<Tile> path = Astar.pathfind(from.tile, to.tile, tile -> 1f,
+            t -> t.block() == Blocks.air || t.build == from || t.build == to);
+        if (path == null || path.size < 3) return false;
+        int placed = 0;
+        for (int i = 0; i < path.size - 1; i++) {
+            Tile t = path.get(i), next = path.get(i + 1);
+            if (t.build != null) continue; // inside source/target
+            if (!pay(core, conduit.requirements)) break;
+            t.setNet(conduit, core.team, t.relativeTo(next));
+            placed++;
         }
         return placed > 0;
     }
