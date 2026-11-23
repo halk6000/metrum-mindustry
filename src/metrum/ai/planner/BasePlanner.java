@@ -52,8 +52,8 @@ public class BasePlanner {
             completedSteps = 0;
             timer = 0f;
             plannerAction = "oczekiwanie na pierwszą próbę";
-            firstBuilder = true;
-            builderTimer = 0f;
+            builderTimers.clear();
+
             // the enemy fields Metrum drones: swap the wave units for MonoMets of a similar strength
             if (active()) {
                 for (mindustry.game.SpawnGroup g : Vars.state.rules.spawns) g.type = metrumEquivalent(g.type);
@@ -93,30 +93,31 @@ public class BasePlanner {
     }
 
     /** each enemy core keeps one builder drone (MonoMet T1); respawned 30 s after it dies */
-    static float builderRespawn = 60f * 30f, builderTimer;
+    static float builderRespawn = 60f * 30f;
+    static final java.util.Map<CoreBuild, Float> builderTimers = new java.util.HashMap<>();
 
-    static boolean hasBuilder(Team team) {
-        return team.data().countType(metrum.content.MetrumUnits.monoMetT1) > 0;
+    static boolean hasBuilder(CoreBuild core) {
+        return mindustry.gen.Groups.unit.contains(u -> u.team == core.team
+            && u.type == metrum.content.MetrumUnits.monoMetT1 && !u.dead()
+            && u.controller() instanceof mindustry.ai.types.BuilderAI && u.closestCore() == core);
     }
 
     static void keepBuilder(Team team) {
-        if (hasBuilder(team)) {
-            builderTimer = 0f;
-            return;
+        builderTimers.keySet().removeIf(core -> !core.isValid() || core.team != team);
+        for (CoreBuild core : team.cores()) {
+            if (hasBuilder(core)) {
+                builderTimers.put(core, 0f);
+                continue;
+            }
+            float elapsed = builderTimers.getOrDefault(core, builderRespawn) + Time.delta;
+            builderTimers.put(core, elapsed);
+            if (elapsed < builderRespawn) continue;
+            builderTimers.put(core, 0f);
+            mindustry.gen.Unit u = metrum.content.MetrumUnits.monoMetT1.spawn(team, core.x, core.y);
+            u.controller(new mindustry.ai.types.BuilderAI(true, 600f));
+            mindustry.content.Fx.spawn.at(u);
         }
-        builderTimer += Time.delta;
-        if (builderTimer < builderRespawn && !firstBuilder) return;
-        firstBuilder = false;
-        builderTimer = 0f;
-        CoreBuild core = team.core();
-        if (core == null) return;
-        mindustry.gen.Unit u = metrum.content.MetrumUnits.monoMetT1.spawn(team, core.x, core.y);
-        u.controller(new mindustry.ai.types.BuilderAI(true, 600f));
-        mindustry.content.Fx.spawn.at(u);
     }
-
-    static boolean firstBuilder = true;
-
     static void update() {
         if (!Vars.state.isPlaying() || Vars.net.client() || !active()) return;
         lastPlannerTick = Time.time;
@@ -131,11 +132,6 @@ public class BasePlanner {
         // the Metrum planner replaces the vanilla base builder (otherwise both would build)
         Vars.state.rules.teams.get(aiTeam).buildAi = false;
         keepBuilder(aiTeam);
-        // no builder drone -> no construction
-        if (!hasBuilder(aiTeam)) {
-            plannerAction = "oczekiwanie na konstruktora";
-            return;
-        }
         AiLevel level = AiLevel.current();
         timer += Time.delta;
         if (timer < level.buildInterval * 60f) return;
@@ -144,6 +140,10 @@ public class BasePlanner {
         int before = completedSteps;
         Team team = Vars.state.rules.waveTeam;
         for (CoreBuild core : team.cores()) {
+            if (!hasBuilder(core)) {
+                stalled("oczekiwanie na konstruktora przy rdzeniu");
+                continue;
+            }
             for (int i = 0; i < level.stepsPerTick; i++) {
                 if (!step(core, level)) break;
                 completedSteps++;
