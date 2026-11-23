@@ -43,7 +43,7 @@ public class MetrumPlanets {
             // share Erekir research so Metrum content stays unlocked in one tree
             techTree = Planets.erekir.techTree;
             ruleSetter = r -> {
-                r.waveTeam = Team.malis;
+                r.waveTeam = Team.crux; // red enemy, as placed in the hand-made maps
                 r.placeRangeCheck = false;
                 r.coreDestroyClear = true;
                 // smarter enemy: vanilla base builder + RTS squads, plus BaseExpander fortifications

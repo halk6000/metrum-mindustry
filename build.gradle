@@ -1,5 +1,5 @@
 apply plugin: 'java'
-version = '2.5.7'
+version = '2.5.8'
 ext.mindustryVersion = 'v146'
 repositories {
     mavenCentral()

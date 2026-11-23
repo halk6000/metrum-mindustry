@@ -2,7 +2,7 @@ name: "metrum"
 displayName: "Metrum Industry Drones"
 author: "AkinoxPl (Steam) / halk6000 (Discord)"
 description: "Industry, drones, fuel logistics and particle physics for a new planet."
-version: "2.5.7"
+version: "2.5.8"
 minGameVersion: "160"
 main: "metrum.MetrumMod"
 java: true
