@@ -62,6 +62,7 @@
 - [ ] Test kampanii Ferrox (TEST.md)
 
 ## Planowane: symulacja rozwoju sektorów Ferrox (offline / podczas gry)
+- [ ] **Trudność planety = rozkład poziomów AI między sektorami**: ustawiona trudność wyznacza dominujący poziom inteligencji w skali całej planety, a nie jednakowy poziom każdego sektora. Przykład: przy trudności „Łatwy” 80% sektorów ma łatwe AI, natomiast pozostałe 20% reprezentuje inne poziomy trudności (ich dokładne proporcje do ustalenia). Poziom AI sektora pozostaje niezależny od jego osiągniętego poziomu bazy.
 - [ ] **Oddzielić poziom AI od poziomu bazy**: poziom AI określa jakość decyzji, tempo i efektywność rozbudowy; poziom bazy określa rzeczywiście osiągnięty rozwój przemysłu, obrony i potencjału wojskowego. Łatwe AI może z czasem osiągnąć np. poziom bazy 10 — bez automatycznego zwiększania własnej inteligencji.
 - [ ] **Rozwój sektora bez obecności gracza**: symulować upływ czasu, rozbudowę infrastruktury, produkcję, badania/odblokowania technologii oraz tworzenie i ulepszanie jednostek. Słabsze AI rozwija się wolniej i mniej efektywnie, ale nie ma sztucznego, niskiego limitu poziomu bazy.
 - [ ] **Ciągłość stanu sektora**: zapisywać poziom bazy, budynki/infrastrukturę, zasoby, technologie, garnizon i postęp produkcji. Po wejściu gracza odtworzyć stan wypracowany przez symulację, bez tworzenia gotowej bazy „znikąd”.
