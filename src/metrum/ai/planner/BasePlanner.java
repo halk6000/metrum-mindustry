@@ -244,6 +244,30 @@ public class BasePlanner {
                 return true;
             }
         }
+        // Grow a continuous connection from a producing graph to an isolated node.
+        Seq<Building> nodes = new Seq<>();
+        Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
+            b -> b.block == node && b.power != null, nodes::add);
+        Building source = null, target = null;
+        float distance = Float.MAX_VALUE;
+        for (Building a : nodes) for (Building b : nodes) {
+            if (a.power.graph.getLastPowerProduced() <= 0f || b.power.graph.getLastPowerProduced() > 0f
+                || a.power.graph == b.power.graph) continue;
+            float d = a.dst2(b);
+            if (d < distance) { distance = d; source = a; target = b; }
+        }
+        if (source != null) {
+            Building from = source, to = target;
+            Seq<Tile> route = Astar.pathfind(from.tile, to.tile, t -> 1f,
+                t -> (t.build != null && t.build.team == core.team && t.build.block == node)
+                    || (t.block() == Blocks.air && Build.validPlace(node, core.team, t.x, t.y, 0, false)));
+            for (Tile t : route) {
+                if (t.build != null) continue;
+                if (!pay(core, node.requirements)) return false;
+                t.setNet(node, core.team, 0);
+                return true;
+            }
+        }
         int step = 8, placed = 0;
         for (int r = step; r <= 32 && placed < 3; r += step) {
             for (int dx = -r; dx <= r && placed < 3; dx += step) for (int dy = -r; dy <= r && placed < 3; dy += step) {
