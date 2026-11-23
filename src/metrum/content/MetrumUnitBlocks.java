@@ -17,6 +17,7 @@ import static mindustry.type.ItemStack.with;
 public class MetrumUnitBlocks {
     public static Block airMinerDock, airMinerRebuilder;
     public static WarReconstructor warReconstructor;
+    public static metrum.world.DropPodLauncher dropPodLauncher;
     public static metrum.world.HullPrinter hullPrinter, partPrinter, weaponPrinter;
     public static Block partsMagazine, weaponsMagazine;
     public static FuelStation fuelStation;
@@ -118,6 +119,13 @@ public class MetrumUnitBlocks {
         weaponsMagazine.requirements(Category.effect, with(MetrumItems.steel, 60, Items.tungsten, 30));
         weaponsMagazine.size = 2;
         weaponsMagazine.itemCapacity = 100;
+
+        // drop pods: send units to the core of another of your sectors (any planet); 1500 power/s for 15 s
+        dropPodLauncher = new metrum.world.DropPodLauncher("drop-pod-launcher");
+        dropPodLauncher.requirements(Category.units, with(MetrumItems.steel, 150, Items.silicon, 200, Items.tungsten, 80, Items.graphite, 100));
+        dropPodLauncher.size = 3;
+        dropPodLauncher.launchPowerPerSecond = metrum.Balance.f("pods.powerPerSecond", 1500f);
+        dropPodLauncher.launchTime = metrum.Balance.f("pods.launchSeconds", 15f) * 60f;
 
         fuelStation = new FuelStation("fuel-station");
         fuelStation.requirements(Category.units, with(MetrumItems.steel, 60, Items.silicon, 50, Items.graphite, 40, Items.beryllium, 80));

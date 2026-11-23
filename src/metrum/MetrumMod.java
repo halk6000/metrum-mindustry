@@ -95,6 +95,7 @@ public class MetrumMod extends Mod {
         BoostSystem.init();
         BaseExpander.planets.add(MetrumPlanets.ferrox);
         BaseExpander.init();
+        metrum.world.DropPodLauncher.initEvents();
         metrum.ai.planner.BasePlanner.planets.add(MetrumPlanets.ferrox);
         metrum.ai.planner.BasePlanner.init();
         // Settings -> Metrum: enemy AI level (separate AI mode)
