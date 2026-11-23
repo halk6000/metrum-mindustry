@@ -31,6 +31,11 @@ public enum AiLevel {
     public static final String setting = "metrum-ai-level";
 
     public static AiLevel current() {
+        // campaign on a Metrum planet: the sector's own level, rolled from the planet difficulty
+        mindustry.type.Sector sector = mindustry.Vars.state == null ? null : mindustry.Vars.state.rules.sector;
+        if (mindustry.Vars.state != null && mindustry.Vars.state.isCampaign() && sector != null && BasePlanner.planets.contains(sector.planet)) {
+            return SectorAi.level(sector);
+        }
         int i = Core.settings == null ? 2 : Core.settings.getInt(setting, 2);
         return values()[Math.max(0, Math.min(values().length - 1, i))];
     }
