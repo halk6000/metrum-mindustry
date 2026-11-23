@@ -47,7 +47,7 @@ public class BaseExpander {
         Events.on(mindustry.game.EventType.WorldLoadEvent.class, e -> {
             placed.clear();
             timer = supplyTimer = boostTimer = 0f;
-            if (Vars.net.client() || !active()) return;
+            if (Vars.net.client() || !supplyEnabled()) return;
             // Rebuild supply tracking from persisted enemy defences; multiblock tiles share one building.
             for (Tile tile : Vars.world.tiles) {
                 Building b = tile.build;
@@ -62,15 +62,21 @@ public class BaseExpander {
             && planets.contains(Vars.state.rules.sector.planet);
     }
 
+    static boolean supplyEnabled() {
+        if (Vars.state.rules.pvp) return false;
+        return active() || (!Vars.state.isCampaign() && arc.Core.settings.getBool(
+            metrum.ai.planner.BasePlanner.everywhereSetting, true));
+    }
+
     static void update() {
-        if (!Vars.state.isPlaying() || Vars.net.client() || !active()) return;
+        if (!Vars.state.isPlaying() || Vars.net.client() || !supplyEnabled()) return;
         supplyTimer += Time.delta;
         if (supplyTimer >= 60f * 5f) {
             supplyTimer = 0f;
             supply();
         }
         // Local ammo reserves remain usable; new construction still requires a core.
-        if (Vars.state.rules.waveTeam.cores().isEmpty()) return;
+        if (!active() || Vars.state.rules.waveTeam.cores().isEmpty()) return;
         boostTimer += Time.delta;
         if (boostTimer >= 60f * 30f) {
             boostTimer = 0f;
