@@ -240,7 +240,8 @@ public class BasePlanner {
             float d = core.dst(t);
             if (d < bestDst) { bestDst = d; best = t; }
         }
-        if (best == null || !pay(core, gen.requirements)) return false;
+        if (best == null) return stalled("geoterma: brak wolnego miejsca na wyziewie");
+        if (!pay(core, gen.requirements)) return stalled("geoterma: brak surowców");
         best.setNet(gen, core.team, 0);
         return true;
     }
@@ -271,7 +272,7 @@ public class BasePlanner {
                     || (dy >= min && dy <= max && (dx == min - 1 || dx == max + 1)))) continue;
                 Tile t = Vars.world.tile(endpoint.tileX() + dx, endpoint.tileY() + dy);
                 if (t == null || t.block() != Blocks.air || !Build.validPlace(node, core.team, t.x, t.y, 0, false)) continue;
-                if (!pay(core, node.requirements)) return false;
+                if (!pay(core, node.requirements)) return stalled("sieć prądu: brak surowców na węzeł");
                 t.setNet(node, core.team, 0);
                 return true;
             }
@@ -295,7 +296,7 @@ public class BasePlanner {
             if (route == null || route.isEmpty()) continue;
             for (Tile t : route) {
                 if (t.build != null) continue;
-                if (!pay(core, node.requirements)) return false;
+                if (!pay(core, node.requirements)) return stalled("sieć prądu: brak surowców na węzeł");
                 t.setNet(node, core.team, 0);
                 return true;
             }
@@ -306,12 +307,12 @@ public class BasePlanner {
                 if (Math.abs(dx) != r && Math.abs(dy) != r) continue;
                 Tile t = Vars.world.tile(core.tileX() + dx, core.tileY() + dy);
                 if (t == null || t.block() != Blocks.air || !Build.validPlace(node, core.team, t.x, t.y, 0, false)) continue;
-                if (!pay(core, node.requirements)) return placed > 0;
+                if (!pay(core, node.requirements)) return placed > 0 || stalled("sieć prądu: brak surowców na węzeł");
                 t.setNet(node, core.team, 0);
                 placed++;
             }
         }
-        return placed > 0;
+        return placed > 0 || stalled("sieć prądu: brak dostępnego miejsca na dalsze węzły");
     }
 
     // ---------- step 3: water - conduit from a water source (turbine condenser / pump) to a thirsty consumer ----------
