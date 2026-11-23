@@ -35,7 +35,11 @@ public class BasePlanner {
 
     public static void init() {
         Events.run(Trigger.update, BasePlanner::update);
-        Events.on(mindustry.game.EventType.WorldLoadEvent.class, e -> java.util.Arrays.fill(fire, 0f));
+        Events.on(mindustry.game.EventType.WorldLoadEvent.class, e -> {
+            java.util.Arrays.fill(fire, 0f);
+            firstBuilder = true;
+            builderTimer = 0f;
+        });
         Events.on(mindustry.game.EventType.BuildDamageEvent.class, e -> {
             if (e.build == null || e.source == null || e.build.team != Vars.state.rules.waveTeam) return;
             CoreBuild core = e.build.closestCore();
@@ -50,8 +54,37 @@ public class BasePlanner {
             && planets.contains(Vars.state.rules.sector.planet) && Vars.state.rules.waveTeam.cores().size > 0;
     }
 
+    /** each enemy core keeps one builder drone (MonoMet T1); respawned 30 s after it dies */
+    static float builderRespawn = 60f * 30f, builderTimer;
+
+    static boolean hasBuilder(Team team) {
+        return team.data().countType(metrum.content.MetrumUnits.monoMetT1) > 0;
+    }
+
+    static void keepBuilder(Team team) {
+        if (hasBuilder(team)) {
+            builderTimer = 0f;
+            return;
+        }
+        builderTimer += Time.delta;
+        if (builderTimer < builderRespawn && !firstBuilder) return;
+        firstBuilder = false;
+        builderTimer = 0f;
+        CoreBuild core = team.core();
+        if (core == null) return;
+        mindustry.gen.Unit u = metrum.content.MetrumUnits.monoMetT1.spawn(team, core.x, core.y);
+        u.controller(new mindustry.ai.types.BuilderAI(true, 600f));
+        mindustry.content.Fx.spawn.at(u);
+    }
+
+    static boolean firstBuilder = true;
+
     static void update() {
         if (!Vars.state.isPlaying() || Vars.net.client() || !active()) return;
+        Team aiTeam = Vars.state.rules.waveTeam;
+        keepBuilder(aiTeam);
+        // no builder drone -> no construction
+        if (!hasBuilder(aiTeam)) return;
         AiLevel level = AiLevel.current();
         timer += Time.delta;
         if (timer < level.buildInterval * 60f) return;
