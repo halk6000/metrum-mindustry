@@ -526,6 +526,7 @@ public class BasePlanner {
         if (ore == null) {
             for (Block candidate : Vars.content.blocks()) {
                 if (!(candidate instanceof mindustry.world.blocks.production.Drill) || !candidate.environmentBuildable()) continue;
+                if (!canSupportDrill(core, candidate)) continue;
                 Tile floorOre = findFloorOreSpot(core, (mindustry.world.blocks.production.Drill) candidate, 30);
                 if (floorOre != null) { chosen = candidate; ore = floorOre; break; }
             }
@@ -576,6 +577,21 @@ public class BasePlanner {
         return false;
     }
 
+    static boolean canSupportDrill(CoreBuild core, Block drill) {
+        float multiplier = Vars.state.rules.buildCostMultiplier;
+        for (ItemStack cost : drill.requirements) {
+            if (core.items.get(cost.item) < Math.round(cost.amount * multiplier)) return false;
+        }
+        for (mindustry.world.consumers.Consume consume : drill.nonOptionalConsumers) {
+            if (consume instanceof mindustry.world.consumers.ConsumePower) continue;
+            if (!(consume instanceof mindustry.world.consumers.ConsumeLiquid)) return false;
+            mindustry.type.Liquid liquid = ((mindustry.world.consumers.ConsumeLiquid) consume).liquid;
+            // The current pipe planner supplies water only, so gas-dependent drills must wait.
+            if (liquid != mindustry.content.Liquids.water) return false;
+            if (count(core, b -> b.block.outputsLiquid && b.liquids != null && b.liquids.get(liquid) > 1f) == 0) return false;
+        }
+        return true;
+    }
     static Tile findFloorOreSpot(CoreBuild core, mindustry.world.blocks.production.Drill drill, int radius) {
         Tile best = null;
         int least = Integer.MAX_VALUE;
