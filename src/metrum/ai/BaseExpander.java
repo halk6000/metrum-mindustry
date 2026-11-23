@@ -120,14 +120,29 @@ public class BaseExpander {
             mindustry.world.blocks.defense.turrets.ItemTurret.ItemTurretBuild t = (mindustry.world.blocks.defense.turrets.ItemTurret.ItemTurretBuild) b;
             CoreBuild core = b.closestCore();
             if (core == null) continue;
+            Building magazine = b.proximity.find(other -> other.team == b.team
+                && other.block == Blocks.reinforcedContainer && other.items != null);
+            if (magazine != null) {
+                for (mindustry.type.Item ammo : turret.ammoTypes.keys()) {
+                    int amount = Math.min(20 - magazine.items.get(ammo), core.items.get(ammo));
+                    amount = Math.min(amount, magazine.getMaximumAccepted(ammo) - magazine.items.get(ammo));
+                    if (amount > 0) {
+                        core.items.remove(ammo, amount);
+                        magazine.items.add(ammo, amount);
+                    }
+                }
+            }
             for (int i = 0; i < 10 && t.totalAmmo < turret.maxAmmo / 2; i++) {
                 mindustry.type.Item pick = null;
+                Building source = core;
                 for (mindustry.type.Item it : turret.ammoTypes.keys()) {
-                    if (core.items.has(it) && t.acceptItem(core, it)) { pick = it; break; }
+                    if (!t.acceptItem(core, it)) continue;
+                    if (magazine != null && magazine.items.has(it)) { pick = it; source = magazine; break; }
+                    if (core.items.has(it)) { pick = it; break; }
                 }
                 if (pick == null) break;
-                core.items.remove(pick, 1);
-                t.handleItem(core, pick);
+                source.items.remove(pick, 1);
+                t.handleItem(source, pick);
             }
         }
     }
