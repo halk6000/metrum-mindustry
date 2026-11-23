@@ -403,6 +403,32 @@ public class BasePlanner {
 
     // ---------- step 3: water - conduit from a water source (turbine condenser / pump) to a thirsty consumer ----------
 
+    static boolean waterLineConnected(Building from, Building to) {
+        Block conduit = Blocks.reinforcedConduit;
+        java.util.Set<Building> visited = new java.util.HashSet<>();
+        java.util.ArrayDeque<Building> queue = new java.util.ArrayDeque<>();
+        if (from.block == conduit) queue.add(from);
+        else {
+            if (from.proximity.contains(to)) return true;
+            for (Building adjacent : from.proximity) {
+                if (adjacent.team == from.team && adjacent.block == conduit) {
+                    Tile output = adjacent.tile.nearby(adjacent.rotation);
+                    if (output != null && output.build != from) queue.add(adjacent);
+                }
+            }
+        }
+        while (!queue.isEmpty()) {
+            Building pipe = queue.removeFirst();
+            if (!visited.add(pipe)) continue;
+            Tile output = pipe.tile.nearby(pipe.rotation);
+            Building next = output == null ? null : output.build;
+            if (next == to) return true;
+            if (next == null || next.team != from.team || next.block != conduit) continue;
+            Tile nextOutput = next.tile.nearby(next.rotation);
+            if (nextOutput != null && nextOutput.build != pipe) queue.add(next);
+        }
+        return false;
+    }
     static boolean pipeWater(CoreBuild core) {
         mindustry.type.Liquid water = mindustry.content.Liquids.water;
         Seq<Building> sources = new Seq<>(), destinations = new Seq<>();
@@ -412,6 +438,8 @@ public class BasePlanner {
         Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
             b -> b.block.consumesLiquid(water) && b.liquids != null && b.liquids.get(water) < 1f,
             destinations::add);
+        // Low liquid level is not proof of a missing line: do not build parallel duplicates.
+        destinations.removeAll(to -> sources.contains(from -> waterLineConnected(from, to)));
         Seq<Building[]> pairs = new Seq<>();
         for (Building from : sources) for (Building to : destinations) {
             if (from != to) pairs.add(new Building[]{from, to});

@@ -102,3 +102,5 @@
 - [ ] Mini scenka przed rozpoczęciem sektora Stary Wąwóz. Załogę zniosło zbyt daleko z Ekler; odkryła nowy typ drona. Dowództwo chce zdobyć jego plany, lecz posiadacze nie oddadzą ich bez walki. Cel pierwszej misji: zniszczyć rdzeń przeciwnika. Nazwę Ekler zachować według wypowiedzi użytkownika do doprecyzowania.
 
 - [ ] Gospodarka AI (ustalenie użytkownika): buduje z posiadanych zasobów jak gracz; otrzymuje bonus 50% zasobów jako rekompensatę słabszych decyzji. Wdrażać jako +50% realnego wydobycia, bez nieskończonych magazynów; nie mnożyć istniejących zapasów ponownie przy wczytaniu.
+
+- [ ] Optymalizacja ciasnej bazy (ustalenie użytkownika): gdy brakuje miejsca na budowę, sprawdzić faktyczną ciągłość transportu i mediów, naprawiać przerwy oraz skracać zbędne trasy; demontaż tylko po potwierdzeniu zachowania dostaw. Nie powielać rur przy niskim poziomie wody w odbiorniku.
