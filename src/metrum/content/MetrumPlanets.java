@@ -15,6 +15,7 @@ import mindustry.world.meta.Env;
 public class MetrumPlanets {
     public static Planet ferrox;
     public static mindustry.type.SectorPreset oldRavine;
+    private static Runnable pendingBriefing;
 
     public static void load() {
         ferrox = new Planet("ferrox", Planets.sun, 1f, 2) {{
@@ -72,7 +73,7 @@ public class MetrumPlanets {
         }};
         arc.Events.on(mindustry.game.EventType.SectorLaunchEvent.class, e -> {
             if (mindustry.Vars.headless || e.sector.preset != oldRavine) return;
-            arc.Core.app.post(() -> {
+            pendingBriefing = () -> {
                 if (!mindustry.Vars.state.isCampaign() || mindustry.Vars.state.rules.sector != e.sector) return;
                 mindustry.ui.dialogs.BaseDialog briefing = new mindustry.ui.dialogs.BaseDialog(
                     arc.Core.bundle.get("metrum.ravine.briefing.title")) {{ shouldPause = true; }};
@@ -83,7 +84,14 @@ public class MetrumPlanets {
                 briefing.buttons.button(arc.Core.bundle.get("metrum.ravine.briefing.start"), briefing::hide).size(260f, 54f);
                 briefing.addCloseListener();
                 briefing.show();
-            });
+            };
+        });
+        arc.Events.run(mindustry.game.EventType.Trigger.update, () -> {
+            if (pendingBriefing == null || mindustry.Vars.headless || !mindustry.Vars.state.isGame()
+                || mindustry.Vars.ui.loadfrag.shown()) return;
+            Runnable ready = pendingBriefing;
+            pendingBriefing = null;
+            ready.run();
         });
         // the hand-made map has no enemy core: give the AI one on load, as far from the player as possible
         arc.Events.on(mindustry.game.EventType.WorldLoadEvent.class, e -> {
