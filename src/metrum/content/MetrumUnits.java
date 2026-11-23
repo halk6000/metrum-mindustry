@@ -31,11 +31,11 @@ public class MetrumUnits {
         LightningBulletType heal = new LightningBulletType();
         heal.lightningColor = heal.hitColor = Color.valueOf("2feb79");
         heal.damage = 25f;
-        heal.lightningLength = 16;
-        heal.lightningLengthRand = 16;
+        heal.lightningLength = 30;  // longer arcs (were too short to reach targets)
+        heal.lightningLengthRand = 10;
         heal.shootEffect = Fx.shootHeal;
         heal.healPercent = 2f;
-        heal.rangeOverride = 110f;
+        heal.rangeOverride = 180f;
         BulletType arc = new BulletType(0.0001f, 0f);
         arc.lifetime = 16f;
         arc.hitEffect = Fx.hitLancer;
@@ -49,7 +49,7 @@ public class MetrumUnits {
 
         Weapon shotgun = new Weapon("heal-shotgun-weapon");
         shotgun.top = false; shotgun.x = 5f; shotgun.y = 0.5f; shotgun.shootY = 2.5f; shotgun.shake = 2.2f;
-        shotgun.reload = 36f; shotgun.inaccuracy = 35f; shotgun.recoil = 2.5f;
+        shotgun.reload = 36f; shotgun.inaccuracy = 12f; shotgun.recoil = 2.5f;
         shotgun.shoot = shots(3, 0.5f);
         shotgun.ejectEffect = Fx.none;
         shotgun.shootSound = Sounds.shootArc;
