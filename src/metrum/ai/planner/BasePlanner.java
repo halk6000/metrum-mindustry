@@ -387,8 +387,9 @@ public class BasePlanner {
                 if (m != null && Build.validPlace(magazine, core.team, m.x, m.y, 0, false) && pay(core, magazine.requirements)) {
                     m.setNet(magazine, core.team, 0);
                 }
-                metrum.ai.BaseExpander.placed.add(t.build);
             }
+            // Every turret needs ammo; the magazine option only controls extra storage.
+            metrum.ai.BaseExpander.placed.add(t.build);
             return true;
         }
         return false;
