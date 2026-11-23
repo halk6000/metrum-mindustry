@@ -72,9 +72,9 @@ public class MetrumTechTree {
         node(MetrumPhysics.atomizer, MetrumPhysics.deAtomizer);
         // drop pods: unlocked early - atomizer + 2 atoms of every kind + 100 steel + 250 silicon
         TechNode pods = node(MetrumPhysics.atomizer, dropPodLauncher);
-        if (pods != null) pods.requirements = mindustry.type.ItemStack.with(steel, 100, Items.silicon, 250,
+        if (pods != null) pods.setupRequirements(mindustry.type.ItemStack.with(steel, 100, Items.silicon, 250,
             atomicCarbon, 2, atomicSilicon, 2, atomicBeryllium, 2, atomicIron, 2, atomicTungsten, 2, atomicThorium, 2,
-            atomicCopper, 2, atomicLead, 2, atomicTitanium, 2);
+            atomicCopper, 2, atomicLead, 2, atomicTitanium, 2)); // setupRequirements keeps the progress array in sync
         node(MetrumPhysics.atomizer, MetrumPhysics.hadronCollider);
         node(MetrumPhysics.hadronCollider, carborundum);
         node(carborundum, carborundumWall);
