@@ -525,11 +525,13 @@ public class BasePlanner {
         if (!drill.unlockedNow() && !drill.environmentBuildable()) return stalled("wiertnica niedostępna");
         Tile ore = findOreSpot(core, drill, 30);
         if (ore == null) return stalled("brak dostępnego miejsca przy rudzie");
+        int rotation = faceWall(ore, drill, core);
+        if (rotation < 0) return stalled("brak poprawnego kierunku wiercenia");
         if (!pay(core, drill.requirements)) return stalled("brak surowców na wiertnicę");
 
         // beam drills face the wall they mine: place on the free tile next to the wall, rotated towards it
         Tile site = ore;
-        site.setNet(drill, core.team, faceWall(site, drill));
+        site.setNet(drill, core.team, rotation);
         if (site.build == null) return stalled("nie udało się postawić wiertnicy");
 
         // Route through the entire drill footprint to reach a free output tile at its edge.
@@ -585,11 +587,11 @@ public class BasePlanner {
             for (int dy = -radius; dy <= radius; dy++) {
                 Tile t = Vars.world.tile(core.tileX() + dx, core.tileY() + dy);
                 if (t == null || t.block() != Blocks.air) continue;
-                int rotation = faceWall(t, drill);
+                int rotation = faceWall(t, drill, core);
                 if (rotation < 0) continue;
                 Item item = wallOreInDirection(t, (mindustry.world.blocks.production.BeamDrill) drill, rotation);
                 if (item == null) continue;
-                if (!Build.validPlace(drill, core.team, t.x, t.y, faceWall(t, drill), false)) continue;
+                if (!Build.validPlace(drill, core.team, t.x, t.y, rotation, false)) continue;
                 int amount = core.items.get(item);
                 float dst = core.dst(t);
                 boolean covered = mined.contains(item);
@@ -626,13 +628,18 @@ public class BasePlanner {
         return found;
     }
 
-    static int faceWall(Tile t, Block drill) {
+    static int faceWall(Tile t, Block drill, CoreBuild core) {
         mindustry.world.blocks.production.BeamDrill beam = (mindustry.world.blocks.production.BeamDrill) drill;
+        int best = -1, least = Integer.MAX_VALUE;
         for (int r = 0; r < 4; r++) {
-            if (Build.validPlace(drill, Vars.state.rules.waveTeam, t.x, t.y, r, false)
-                && wallOreInDirection(t, beam, r) != null) return r;
+            if (!Build.validPlace(drill, core.team, t.x, t.y, r, false)) continue;
+            Item item = wallOreInDirection(t, beam, r);
+            if (item != null && (best < 0 || core.items.get(item) < least)) {
+                best = r;
+                least = core.items.get(item);
+            }
         }
-        return -1;
+        return best;
     }
     /** Reserve shared resources for the entire construction before removing any items. */
     static boolean payTogether(Building core, ItemStack[]... costs) {
