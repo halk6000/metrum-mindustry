@@ -572,8 +572,10 @@ public class BasePlanner {
         Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
             b -> b instanceof mindustry.world.blocks.production.BeamDrill.BeamDrillBuild,
             b -> {
-                Item item = ((mindustry.world.blocks.production.BeamDrill.BeamDrillBuild) b).lastItem;
-                if (item != null) mined.add(item);
+                mindustry.world.blocks.production.BeamDrill.BeamDrillBuild beam =
+                    (mindustry.world.blocks.production.BeamDrill.BeamDrillBuild) b;
+                // Disabled drills and drills with no mineable wall do not cover the resource.
+                if (beam.enabled && beam.facingAmount > 0 && beam.lastItem != null) mined.add(beam.lastItem);
             });
         Tile best = null;
         boolean bestCovered = true;
