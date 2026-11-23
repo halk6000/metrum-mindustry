@@ -348,7 +348,8 @@ public class BasePlanner {
 
         // path from the drill to the core, made of ducts (dumb AI: shortest path, ignores existing lines)
         Seq<Tile> path = Astar.pathfind(site, core.tile, tile -> 1f,
-            t -> t.block() == Blocks.air || t.build == core || t == site || (t.build != null && t.build.block == duct));
+            t -> t.build == core || t == site ||
+                (t.block() == Blocks.air && Build.validPlace(duct, core.team, t.x, t.y, 0, false)));
         if (path == null || path.size < 2) return true;
         for (int i = 0; i < path.size - 1; i++) {
             Tile t = path.get(i), next = path.get(i + 1);
