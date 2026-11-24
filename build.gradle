@@ -28,6 +28,21 @@ tasks.register('contentCheck', Exec) {
 }
 jar.dependsOn contentCheck
 
+// Run the salvager regression checks against the same game API as the mod.
+def compileSalvagerTest = tasks.register('compileSalvagerTest', JavaCompile) {
+    dependsOn classes
+    source = files('tools/tests/SalvagerOutputTest.java')
+    classpath = sourceSets.main.output + files(gameJar)
+    destinationDirectory = layout.buildDirectory.dir('salvager-test-classes')
+}
+tasks.register('salvagerTest', JavaExec) {
+    group = 'verification'
+    description = 'Checks salvager output, conveyor delivery, consumption and restart.'
+    dependsOn compileSalvagerTest
+    classpath = files(compileSalvagerTest.flatMap { it.destinationDirectory }) + sourceSets.main.output + files(gameJar)
+    mainClass = 'SalvagerOutputTest'
+}
+
 // gradlew deploy: build and install into the game (same file name the in-game importer uses)
 tasks.register('deploy', Copy) {
     dependsOn jar
