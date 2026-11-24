@@ -450,7 +450,12 @@ public class BasePlanner {
         Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
             b -> b.block == Blocks.reinforcedConduit, pipes::add);
         Seq<Building> unused = unusedWaterPipes(pipes, core.team);
-        for (Building pipe : unused) pipe.tile.setNet(Blocks.air, core.team, 0);
+        mindustry.gen.Unit builder = assignedBuilder(core);
+        if (builder == null || !builder.plans.isEmpty()) return false;
+        for (Building pipe : unused) {
+            if (!Build.validBreak(core.team, pipe.tileX(), pipe.tileY())) return false;
+        }
+        for (Building pipe : unused) builder.addBuild(new BuildPlan(pipe.tileX(), pipe.tileY()));
         return !unused.isEmpty();
     }
 
