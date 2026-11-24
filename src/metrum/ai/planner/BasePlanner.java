@@ -521,12 +521,8 @@ public class BasePlanner {
                 if (next.block != conduit && !destinations.contains(next)) break;
                 if (next.block == conduit && next.rotation == (source.rotation + 2) % 4) break;
                 if (!destinations.contains(to -> next == to || waterLineConnected(next, to))) break;
-                for (ItemStack cost : conduit.requirements) {
-                    long total = (long) gaps.size * Math.round(cost.amount * Vars.state.rules.buildCostMultiplier);
-                    if (core.items.get(cost.item) < total) return false;
-                }
+                if (!payBatch(core, conduit.requirements, gaps.size)) return false;
                 for (Tile gap : gaps) {
-                    pay(core, conduit.requirements);
                     gap.setNet(conduit, core.team, source.rotation);
                 }
                 return true;
@@ -1063,15 +1059,26 @@ public class BasePlanner {
     }
 
     static boolean pay(Building core, ItemStack[] cost) {
-        float mult = Vars.state.rules.buildCostMultiplier;
-        for (ItemStack s : cost) {
-            int needed = Math.round(s.amount * mult), stored = core.items.get(s.item);
+        return payBatch(core, cost, 1);
+    }
+
+    static boolean payBatch(Building core, ItemStack[] cost, int quantity) {
+        if (quantity < 0) throw new IllegalArgumentException("Negative construction quantity");
+        java.util.Map<Item, Long> totals = new java.util.HashMap<>();
+        for (ItemStack entry : cost) {
+            long amount = (long) Math.round(entry.amount * Vars.state.rules.buildCostMultiplier) * quantity;
+            totals.put(entry.item, totals.getOrDefault(entry.item, 0L) + amount);
+        }
+        for (java.util.Map.Entry<Item, Long> entry : totals.entrySet()) {
+            int stored = core.items.get(entry.getKey());
+            long needed = entry.getValue();
             if (stored < needed) {
-                if (core instanceof CoreBuild) miningDemand.putIfAbsent((CoreBuild) core, new ItemStack(s.item, needed));
-                return stalled("brak: " + s.item.localizedName + " (" + stored + "/" + needed + ")");
+                if (core instanceof CoreBuild && needed <= Integer.MAX_VALUE)
+                    miningDemand.putIfAbsent((CoreBuild) core, new ItemStack(entry.getKey(), (int) needed));
+                return stalled("brak: " + entry.getKey().localizedName + " (" + stored + "/" + needed + ")");
             }
         }
-        for (ItemStack s : cost) core.items.remove(s.item, Math.round(s.amount * mult));
+        for (java.util.Map.Entry<Item, Long> entry : totals.entrySet()) core.items.remove(entry.getKey(), entry.getValue().intValue());
         return true;
     }
 }
