@@ -34,7 +34,7 @@ public class DrawSteamBoiler extends DrawBlock {
             Draw.color(metal);
             Fill.rect(x, y + 9f, 20f, 3f);
             Fill.rect(x, y - 9f, 20f, 3f);
-            for (int side : new int[]{-1, 1}) {
+            for (int side = -1; side <= 1; side += 2) {
                 Draw.color(metal);
                 Fill.rect(x + side * 10f, y, 2f, 18f);
                 Draw.color(highlight);

@@ -12,7 +12,8 @@ public class DrawSalvager extends DrawBlock {
     public boolean overclocked;
     public boolean advanced;
     private final Color edge = Color.valueOf("30343c"), metal = Color.valueOf("656b76"),
-        bright = Color.valueOf("a6adb8"), accent = Color.valueOf("c5a66b");
+        bright = Color.valueOf("a6adb8"), accent = Color.valueOf("c5a66b"),
+        separatorAccent = Color.valueOf("82b9b0");
 
     @Override
     public void drawPlan(mindustry.world.Block block, mindustry.entities.units.BuildPlan plan,
@@ -43,7 +44,7 @@ public class DrawSalvager extends DrawBlock {
                 Draw.color(edge);
                 Lines.stroke(0.6f);
                 Lines.lineAngleCenter(cx, y, side * build.totalProgress() * 2f, 2.8f);
-                Draw.color(Color.valueOf("82b9b0"));
+                Draw.color(separatorAccent);
                 Fill.rect(cx, y + 4f, 2f, 1f);
                 Fill.rect(cx, y - 4f, 2f, 1f);
             }
