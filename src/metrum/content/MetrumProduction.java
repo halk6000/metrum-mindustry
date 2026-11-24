@@ -134,6 +134,7 @@ public class MetrumProduction {
             discoveryChance = metrum.Balance.f("pit.discoveryChance", 0.2f);
             minDiscovery = metrum.Balance.i("pit.minDiscovery", 50);
             maxDiscovery = metrum.Balance.i("pit.maxDiscovery", 200);
+            depositPerTile = metrum.Balance.i("pit.depositPerTile", 25);
             discoveries = with(Items.beryllium, 30, Items.coal, 20, Items.scrap, 20, Items.tungsten, 15, Items.thorium, 10, Items.copper, 5);
         }};
 

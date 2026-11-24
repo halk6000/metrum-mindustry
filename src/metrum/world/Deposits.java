@@ -44,6 +44,8 @@ public class Deposits {
 
     /** packed tile position -> remaining stock */
     public static final IntMap<Deposit> all = new IntMap<>();
+    /** shows the ore of a new deposit */
+    public static arc.func.Cons2<Tile, Block> setOre = Tile::setOverlayNet;
     /** strips the ore from an exhausted tile */
     public static Cons<Tile> removeOre = tile -> tile.setOverlayNet(Blocks.air);
 
@@ -83,9 +85,56 @@ public class Deposits {
         }
         Block ore = oreFor(item);
         if (ore == null || tile.overlay() != Blocks.air) return false;
-        tile.setOverlayNet(ore);
+        setOre.get(tile, ore);
         all.put(tile.pos(), new Deposit(item, amount));
         return true;
+    }
+
+    /** Free ground that can hold a new deposit: no building, wall, liquid, vent or existing ore. */
+    public static boolean free(Tile tile) {
+        return tile != null && tile.block() == Blocks.air && tile.build == null && tile.overlay() == Blocks.air
+            && !tile.floor().isLiquid && !tile.floor().isDeep() && tile.floor() != Blocks.empty && tile.floor() != Blocks.space
+            && !(tile.floor() instanceof mindustry.world.blocks.environment.SteamVent);
+    }
+
+    /**
+     * Scatters finds around a point as compact patches, so that ordinary drills fit on them.
+     * The search widens up to {@code maxRadius} when there is little room; crowded finds get richer tiles instead of vanishing.
+     */
+    public static void scatter(int cx, int cy, arc.struct.ObjectIntMap<Item> found, int perTile, int radius, int maxRadius) {
+        Seq<Item> items = new Seq<>();
+        int wanted = 0;
+        for (Item item : Vars.content.items()) {
+            if (found.get(item) <= 0 || oreFor(item) == null) continue;
+            items.add(item);
+            wanted += tilesFor(found.get(item), perTile);
+        }
+        Seq<Tile> ground = new Seq<>();
+        for (int r = radius; ; r = Math.min(r + 4, maxRadius)) {
+            ground.clear();
+            for (int x = cx - r; x <= cx + r; x++) for (int y = cy - r; y <= cy + r; y++) {
+                Tile t = Vars.world.tile(x, y);
+                if (Mathf.within(cx, cy, x, y, r + 0.5f) && free(t)) ground.add(t);
+            }
+            if (ground.size >= wanted || r >= maxRadius) break;
+        }
+        for (int i = 0; i < items.size && !ground.isEmpty(); i++) {
+            Item item = items.get(i);
+            int amount = found.get(item);
+            // leave room for the remaining finds
+            int count = Mathf.clamp(tilesFor(amount, perTile), 1, Math.max(1, ground.size / (items.size - i)));
+            Tile seed = ground.min(t -> Mathf.dst2(cx, cy, t.x, t.y));
+            ground.sort(t -> Mathf.dst2(seed.x, seed.y, t.x, t.y));
+            for (int k = 0; k < count; k++) {
+                // spread the remainder so that the patch holds exactly the discovered amount
+                place(ground.get(k), item, amount / count + (k < amount % count ? 1 : 0));
+            }
+            ground.removeRange(0, count - 1);
+        }
+    }
+
+    static int tilesFor(int amount, int perTile) {
+        return Math.max(1, Mathf.ceil(amount / (float) perTile));
     }
 
     /** Takes up to {@code amount} from the tile; strips its ore when nothing is left. Returns the amount taken. */

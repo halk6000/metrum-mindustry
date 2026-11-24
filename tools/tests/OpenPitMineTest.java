@@ -36,6 +36,7 @@ public class OpenPitMineTest {
         arc.util.Time.delta = 1f;
         Item good = new Item("good"), junk = new Item("junk"), never = new Item("never");
         OpenPitMine block = new OpenPitMine("test-pit");
+        block.collapses = false; // scattering is covered by DepositsTest
         block.discoveries = new ItemStack[]{new ItemStack(good, 3), new ItemStack(junk, 1), new ItemStack(never, 0)};
         OpenPitMine.OpenPitMineBuild b = mine(block);
         run(b, 590);

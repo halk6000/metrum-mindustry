@@ -20,13 +20,16 @@ import mindustry.world.meta.StatUnit;
 
 /**
  * Open-pit mine: digs {@link #steps} steps; each one may reveal an underground deposit.
- * Discoveries add up. Digging stops once the pit is complete.
+ * Discoveries add up. The finished pit collapses and scatters them as exhaustible deposits.
  */
 public class OpenPitMine extends Block {
     public int steps = 100;
     public float stepTime = 60f * 10f;
     public float discoveryChance = 0.2f;
     public int minDiscovery = 50, maxDiscovery = 200;
+    /** deposits left by the collapse: stock per tile and search radius in tiles */
+    public int depositPerTile = 25, scatterRadius = 8, maxScatterRadius = 24;
+    public boolean collapses = true;
     /** possible discoveries; amounts are relative weights */
     public ItemStack[] discoveries = {};
 
@@ -85,7 +88,10 @@ public class OpenPitMine extends Block {
 
         @Override
         public void updateTile() {
-            if (step >= steps) return;
+            if (step >= steps) {
+                if (collapses && !Vars.net.client()) collapse();
+                return;
+            }
             stepProgress += delta() / stepTime;
             if (stepProgress < 1f) return;
             if (Vars.net.client()) { // wait for the server's result
@@ -98,6 +104,14 @@ public class OpenPitMine extends Block {
             if (discoveries.length > 0 && Mathf.chance(discoveryChance)) {
                 found.increment(randomItem(), 0, Mathf.random(minDiscovery, maxDiscovery));
             }
+        }
+
+        /** Removes the pit without leaving a rebuild plan, then reveals the deposits. */
+        void collapse() {
+            int cx = tile.x, cy = tile.y;
+            mindustry.gen.Call.effect(mindustry.content.Fx.reactorExplosion, x, y, 0f, Color.valueOf("8a6a52"));
+            tile.removeNet();
+            Deposits.scatter(cx, cy, found, depositPerTile, scatterRadius, maxScatterRadius);
         }
 
         @Override

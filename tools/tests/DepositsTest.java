@@ -10,6 +10,7 @@ import mindustry.gen.Groups;
 import mindustry.type.Item;
 import mindustry.world.Tile;
 import mindustry.world.blocks.environment.AirBlock;
+import mindustry.world.blocks.environment.Floor;
 import mindustry.world.blocks.environment.OreBlock;
 import mindustry.world.blocks.production.BurstDrill;
 import mindustry.world.blocks.production.Drill;
@@ -36,6 +37,12 @@ public class DepositsTest {
         Deposits.update();
         d.progress = 1f;
         Deposits.update();
+    }
+
+    static int stock(Item item) {
+        int sum = 0;
+        for (arc.struct.IntMap.Entry<Deposits.Deposit> e : Deposits.all.entries()) if (e.value.item == item) sum += e.value.amount;
+        return sum;
     }
 
     public static void main(String[] args) throws Exception {
@@ -109,6 +116,43 @@ public class DepositsTest {
         t1.setOverlayQuiet(Blocks.air);
         t2.setOverlayQuiet(Blocks.air);
         Deposits.update();
+        check(Deposits.all.size == 0);
+        // Collapsed pits reveal the exact discovered amounts on free ground only.
+        Item second = new Item("second"), oreless = new Item("oreless");
+        OreBlock secondBlock = new OreBlock("ore-second", second);
+        Floor ground = new Floor("ground");
+        mindustry.world.blocks.environment.StaticWall wall = new mindustry.world.blocks.environment.StaticWall("wall");
+        Floor water = new Floor("water");
+        water.isLiquid = true;
+        Deposits.setOre = Tile::setOverlayQuiet;
+        arc.struct.ObjectIntMap<Item> found = new arc.struct.ObjectIntMap<>();
+        found.put(ore, 610);
+        found.put(second, 407);
+        found.put(oreless, 99);
+        Vars.world.resize(60, 60);
+        for (int x = 0; x < 60; x++) for (int y = 0; y < 60; y++) {
+            Vars.world.tiles.set(x, y, new Tile(x, y, x < 28 ? water : ground, Blocks.air, x > 34 ? wall : Blocks.air));
+        }
+        Tile natural = Vars.world.tile(30, 30);
+        natural.setOverlayQuiet(secondBlock);
+        Deposits.scatter(30, 30, found, 25, 8, 24);
+        check(stock(ore) == 610 && stock(second) == 407 && stock(oreless) == 0 && !Deposits.all.containsKey(natural.pos()));
+        check(Deposits.all.size == 25 + 17);
+        for (arc.struct.IntMap.Entry<Deposits.Deposit> e : Deposits.all.entries()) {
+            Tile t = Vars.world.tile(e.key);
+            check(t.x >= 28 && t.x <= 34 && t.drop() == e.value.item);
+        }
+        // Almost no room: nothing is lost, the few tiles are just richer.
+        Deposits.clear();
+        for (int x = 0; x < 60; x++) for (int y = 0; y < 60; y++) {
+            Vars.world.tiles.set(x, y, new Tile(x, y, x == 30 && y < 33 && y > 29 ? ground : water, Blocks.air, Blocks.air));
+        }
+        Deposits.scatter(30, 30, found, 25, 8, 24);
+        check(stock(ore) == 610 && stock(second) == 407 && Deposits.all.size == 3);
+        // No room at all must not crash.
+        Deposits.clear();
+        for (int y = 30; y < 33; y++) Vars.world.tiles.set(30, y, new Tile(30, y, water, Blocks.air, Blocks.air));
+        Deposits.scatter(30, 30, found, 25, 8, 24);
         check(Deposits.all.size == 0);
         System.out.println("OK: deposit mining, exhaustion and save/load");
     }
