@@ -96,7 +96,7 @@ public class SmartMining {
             }
         }
 
-        Item desired() {
+        protected Item desired() {
             int m = mode(unit);
             if (m >= 0) return Vars.content.item(m);
             // re-evaluated every 2 s
