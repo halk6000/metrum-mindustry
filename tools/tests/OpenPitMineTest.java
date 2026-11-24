@@ -29,6 +29,10 @@ public class OpenPitMineTest {
         return t;
     }
 
+    static mindustry.type.Planet planet(String name) {
+        return new mindustry.type.Planet(name, null, 1f);
+    }
+
     public static void main(String[] args) throws Exception {
         Vars.content = new ContentLoader();
         Vars.state = new mindustry.core.GameState();
@@ -60,6 +64,23 @@ public class OpenPitMineTest {
         OpenPitMine.OpenPitMineBuild unlucky = mine(block);
         run(unlucky, 600 * 120);
         check(unlucky.step == 100 && unlucky.found.isEmpty());
+        // Every planet has its own list; unknown planets use the default one.
+        mindustry.type.Planet home = planet("home"), other = planet("other");
+        block.discoveryChance = 1f;
+        block.byPlanet.put(home, new ItemStack[]{new ItemStack(never, 1)});
+        Vars.state.rules.planet = home;
+        OpenPitMine.OpenPitMineBuild local = mine(block);
+        run(local, 6100);
+        check(local.found.get(never) > 0 && local.found.get(good) == 0);
+        Vars.state.rules.planet = other;
+        OpenPitMine.OpenPitMineBuild abroad = mine(block);
+        run(abroad, 6100);
+        check(abroad.found.get(never) == 0 && abroad.found.get(good) > 0);
+        block.byPlanet.put(other, new ItemStack[]{new ItemStack(good, 0)});
+        OpenPitMine.OpenPitMineBuild barren = mine(block);
+        run(barren, 6100);
+        check(barren.found.isEmpty() && barren.step > 5);
+        block.byPlanet.clear();
         // Long-run discovery rate stays near the configured 20%.
         block.discoveryChance = 0.2f;
         block.stepTime = 1f;

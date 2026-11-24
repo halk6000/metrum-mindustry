@@ -6,6 +6,7 @@ import arc.graphics.g2d.Fill;
 import arc.math.Mathf;
 import arc.scene.ui.layout.Table;
 import arc.struct.ObjectIntMap;
+import arc.struct.ObjectMap;
 import arc.struct.Seq;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
@@ -14,6 +15,7 @@ import mindustry.gen.Building;
 import mindustry.graphics.Pal;
 import mindustry.type.Item;
 import mindustry.type.ItemStack;
+import mindustry.type.Planet;
 import mindustry.world.Block;
 import mindustry.world.meta.Stat;
 import mindustry.world.meta.StatUnit;
@@ -30,7 +32,9 @@ public class OpenPitMine extends Block {
     /** deposits left by the collapse: stock per tile and search radius in tiles */
     public int depositPerTile = 25, scatterRadius = 8, maxScatterRadius = 24;
     public boolean collapses = true;
-    /** possible discoveries; amounts are relative weights */
+    /** discoveries per planet; amounts are relative weights */
+    public final ObjectMap<Planet, ItemStack[]> byPlanet = new ObjectMap<>();
+    /** used on planets without their own list */
     public ItemStack[] discoveries = {};
 
     public OpenPitMine(String name) {
@@ -47,10 +51,15 @@ public class OpenPitMine extends Block {
         stats.add(Stat.productionTime, steps * stepTime / 60f, StatUnit.seconds);
         stats.add(Stat.output, table -> {
             table.row();
-            for (ItemStack s : discoveries) {
-                table.image(s.item.uiIcon).size(24f).padRight(4f);
-                table.add(s.item.localizedName + " " + Math.round(100f * s.amount / totalWeight()) + "%").left();
-                table.row();
+            for (ObjectMap.Entry<Planet, ItemStack[]> e : byPlanet) {
+                int total = Math.max(1, totalWeight(e.value));
+                table.add("[accent]" + e.key.localizedName + "[]").left().colspan(2).padTop(6f).row();
+                for (ItemStack s : e.value) {
+                    if (s.amount <= 0) continue;
+                    table.image(s.item.uiIcon).size(24f).padRight(4f);
+                    table.add(s.item.localizedName + " " + Math.round(100f * s.amount / total) + "%").left();
+                    table.row();
+                }
             }
         });
     }
@@ -62,19 +71,28 @@ public class OpenPitMine extends Block {
             () -> arc.Core.bundle.format("metrum.pit.progress", b.step * 100 / steps), () -> Pal.ammo, () -> b.fraction()));
     }
 
-    int totalWeight() {
+    /** discoveries possible on the current planet */
+    public ItemStack[] available() {
+        Planet planet = Vars.state.rules.sector != null ? Vars.state.rules.sector.planet : Vars.state.rules.planet;
+        return planet == null ? discoveries : byPlanet.get(planet, discoveries);
+    }
+
+    static int totalWeight(ItemStack[] list) {
         int total = 0;
-        for (ItemStack s : discoveries) total += s.amount;
+        for (ItemStack s : list) total += s.amount;
         return total;
     }
 
-    Item randomItem() {
-        int roll = Mathf.random(totalWeight() - 1);
-        for (ItemStack s : discoveries) {
+    /** weighted choice, or null when every weight is zero */
+    static Item randomItem(ItemStack[] list) {
+        int total = totalWeight(list);
+        if (total <= 0) return null;
+        int roll = Mathf.random(total - 1);
+        for (ItemStack s : list) {
             roll -= s.amount;
             if (roll < 0) return s.item;
         }
-        return discoveries[discoveries.length - 1].item;
+        return null;
     }
 
     public class OpenPitMineBuild extends Building {
@@ -101,8 +119,9 @@ public class OpenPitMine extends Block {
             stepProgress -= 1f;
             step++;
             if (step >= steps) stepProgress = 0f;
-            if (discoveries.length > 0 && Mathf.chance(discoveryChance)) {
-                found.increment(randomItem(), 0, Mathf.random(minDiscovery, maxDiscovery));
+            Item item = Mathf.chance(discoveryChance) ? randomItem(available()) : null;
+            if (item != null) {
+                found.increment(item, 0, Mathf.random(minDiscovery, maxDiscovery));
             }
         }
 

@@ -60,6 +60,8 @@ public class MetrumPlanets {
             };
         }};
     
+        metrum.content.MetrumProduction.openPitMine.byPlanet.put(ferrox, metrum.content.MetrumProduction.openPitMine.discoveries);
+
         // first (starting) sector: hand-made map "Old Ravine" (Stary Wawoz) - AI test ground
         oldRavine = new mindustry.type.SectorPreset("old-ravine", ferrox, 12) {{
             alwaysUnlocked = true;

@@ -135,7 +135,24 @@ public class MetrumProduction {
             minDiscovery = metrum.Balance.i("pit.minDiscovery", 50);
             maxDiscovery = metrum.Balance.i("pit.maxDiscovery", 200);
             depositPerTile = metrum.Balance.i("pit.depositPerTile", 25);
-            discoveries = with(Items.beryllium, 30, Items.coal, 20, Items.scrap, 20, Items.tungsten, 15, Items.thorium, 10, Items.copper, 5);
+            discoveries = new ItemStack[]{
+                pitWeight("metonia.beryllium", Items.beryllium, 35),
+                pitWeight("metonia.graphite", Items.graphite, 25),
+                pitWeight("metonia.iron", MetrumItems.iron, 20),
+                pitWeight("metonia.tungsten", Items.tungsten, 12),
+                pitWeight("metonia.thorium", Items.thorium, 8)};
+            byPlanet.put(mindustry.content.Planets.erekir, new ItemStack[]{
+                pitWeight("erekir.beryllium", Items.beryllium, 40),
+                pitWeight("erekir.graphite", Items.graphite, 30),
+                pitWeight("erekir.tungsten", Items.tungsten, 20),
+                pitWeight("erekir.thorium", Items.thorium, 10)});
+            byPlanet.put(mindustry.content.Planets.serpulo, new ItemStack[]{
+                pitWeight("serpulo.copper", Items.copper, 30),
+                pitWeight("serpulo.lead", Items.lead, 25),
+                pitWeight("serpulo.coal", Items.coal, 15),
+                pitWeight("serpulo.titanium", Items.titanium, 14),
+                pitWeight("serpulo.scrap", Items.scrap, 10),
+                pitWeight("serpulo.thorium", Items.thorium, 6)});
         }};
 
         infusionSmelter = new GenericCrafter("infusion-smelter") {{
@@ -250,5 +267,10 @@ public class MetrumProduction {
             drawer = new DrawMulti(new DrawDefault(), new DrawGlowRegion() {{ color = flame; }},
                 new DrawCrucibleFlame() {{ flameColor = flame; midColor = flame; particleRad = 12f; particleSize = 1f; }});
         }};
+    }
+
+    /** discovery weight of the open-pit mine, adjustable in the balance editor */
+    private static ItemStack pitWeight(String key, mindustry.type.Item item, int weight) {
+        return new ItemStack(item, Math.max(0, metrum.Balance.i("pit." + key, weight)));
     }
 }

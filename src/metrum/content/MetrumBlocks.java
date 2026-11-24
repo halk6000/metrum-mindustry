@@ -12,7 +12,7 @@ import static mindustry.type.ItemStack.with;
 
 /** Blocks ported from the original Metrum JSON mod. */
 public class MetrumBlocks {
-    public static Block oreIron;
+    public static Block oreIron, oreGraphite;
     public static Block colorBridge;
     public static Block quarkCannon, carborundumBore, hullGunTurret, hullMissileTurret;
     public static Block carborundumWall, carborundumWallLarge, tungstenCarbideWall, tungstenCarbideWallLarge;
@@ -21,6 +21,8 @@ public class MetrumBlocks {
     public static void load() {
         // iron ore: generated on Ferrox, mineable by drills and MonoMet drones
         oreIron = new mindustry.world.blocks.environment.OreBlock("ore-iron", MetrumItems.iron);
+        // the base game only has graphite in walls; open-pit deposits need a floor ore
+        oreGraphite = new mindustry.world.blocks.environment.OreBlock("ore-graphite", Items.graphite);
 
         // circuit-coloured duct bridge: links only to bridges of the same colour
         colorBridge = new metrum.world.ColorDuctBridge("color-bridge") {{
