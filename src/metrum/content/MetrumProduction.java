@@ -168,7 +168,7 @@ public class MetrumProduction {
 
         // advanced 3x3: also recovers beryllium and tungsten - iron 60% / sand 20% / beryllium 15% / tungsten 5%
         salvagerAdvanced = new Separator("salvager-advanced") {{
-            requirements(Category.crafting, with(MetrumItems.steel, 80, Items.graphite, 100, Items.silicon, 80, Items.tungsten, 40));
+            requirements(Category.crafting, with(MetrumItems.steel, 160, Items.graphite, 100, Items.silicon, 80));
             size = 3;
             craftTime = 12f;
             itemCapacity = 30;
