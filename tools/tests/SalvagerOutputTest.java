@@ -182,7 +182,31 @@ public class SalvagerOutputTest {
             "resumed production must consume steam again");
         check(b.items.get(MetrumItems.iron) + b.items.get(Items.sand) <= 20,
             "resumed batch must fit in output storage");
-        System.out.println("OK: running consumption, blocked storage and automatic restart; 100 cycles ("
+        mindustry.world.blocks.production.GenericCrafter smelter =
+            (mindustry.world.blocks.production.GenericCrafter) MetrumProduction.infusionSmelter;
+        smelter.init();
+        mindustry.world.blocks.production.GenericCrafter.GenericCrafterBuild furnace =
+            (mindustry.world.blocks.production.GenericCrafter.GenericCrafterBuild) smelter.buildType.get();
+        furnace.block = smelter;
+        furnace.team = b.team;
+        furnace.tile = b.tile;
+        furnace.tile.build = furnace;
+        furnace.items = new ItemModule();
+        furnace.liquids = new mindustry.world.modules.LiquidModule();
+        furnace.items.add(MetrumItems.iron, 2);
+        furnace.items.add(Items.coal, 1);
+        furnace.proximity.add(belt);
+        belt.items.clear();
+        belt.len = 0;
+        belt.minitem = 1f;
+        furnace.craft();
+        check(furnace.items.get(MetrumItems.iron) == 0 && furnace.items.get(Items.coal) == 0,
+            "smelter must consume its recipe ingredients");
+        check(belt.items.get(MetrumItems.steel) >= 1,
+            "smelter must deliver steel to the actual conveyor");
+        check(belt.items.get(MetrumItems.steel) + furnace.items.get(MetrumItems.steel) == 2,
+            "smelter must preserve both produced steel items");
+        System.out.println("OK: smelter steel delivery; salvager consumption, blockage and restart; 100 cycles ("
             + ironRolls + " iron / " + sandRolls + " sand rolls)");
     }
 }
