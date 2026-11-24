@@ -91,6 +91,7 @@ public class DepositsTest {
         t2.setOverlayQuiet(oreBlock);
         Drill.DrillBuild d = drill(small, 4, 4, ore);
         d.progress = 50f;
+        check(Deposits.remaining(t1) == 7 && Deposits.remaining(Vars.world.tile(8, 8)) == 0 && Deposits.remaining(null) == 0);
         for (int i = 0; i < 100; i++) Deposits.update();
         check(Deposits.all.get(t1.pos()).amount + Deposits.all.get(t2.pos()).amount == 7);
         for (int i = 0; i < 6; i++) cycle(d);

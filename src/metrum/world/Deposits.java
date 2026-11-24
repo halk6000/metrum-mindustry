@@ -1,13 +1,19 @@
 package metrum.world;
 
+import arc.Core;
 import arc.Events;
 import arc.func.Cons;
+import arc.graphics.Color;
+import arc.graphics.g2d.Draw;
+import arc.graphics.g2d.Font;
 import arc.math.Mathf;
+import arc.scene.ui.layout.Scl;
 import arc.struct.IntFloatMap;
 import arc.struct.IntIntMap;
 import arc.struct.IntMap;
 import arc.struct.ObjectSet;
 import arc.struct.Seq;
+import arc.util.Align;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -17,9 +23,12 @@ import mindustry.game.EventType.ResetEvent;
 import mindustry.game.EventType.Trigger;
 import mindustry.gen.Groups;
 import mindustry.gen.Unit;
+import mindustry.graphics.Layer;
+import mindustry.graphics.Pal;
 import mindustry.io.SaveFileReader;
 import mindustry.io.SaveVersion;
 import mindustry.type.Item;
+import mindustry.ui.Fonts;
 import mindustry.world.Block;
 import mindustry.world.Tile;
 import mindustry.world.blocks.environment.OreBlock;
@@ -56,9 +65,46 @@ public class Deposits {
     public static void load() {
         SaveVersion.addCustomChunk("metrum-deposits-v1", new Chunk());
         Events.on(ResetEvent.class, e -> clear());
+        Events.run(Trigger.draw, Deposits::drawHovered);
         Events.run(Trigger.update, () -> {
             if (Vars.state.isPlaying() && !Vars.net.client() && all.size > 0) update();
         });
+    }
+
+    /** Stock of the ore tile, or the stock left under the whole building standing on it; 0 = no deposit. */
+    public static int remaining(Tile tile) {
+        if (tile == null) return 0;
+        if (tile.build == null || tile.build.tile == null) return all.containsKey(tile.pos()) ? all.get(tile.pos()).amount : 0;
+        Item mined = tile.build instanceof Drill.DrillBuild ? ((Drill.DrillBuild) tile.build).dominantItem : null;
+        int total = 0;
+        for (Tile t : tile.build.tile.getLinkedTilesAs(tile.build.block, new Seq<>())) {
+            Deposit d = all.get(t.pos());
+            if (d != null && (mined == null || d.item == mined)) total += d.amount;
+        }
+        return total;
+    }
+
+    /** Shows the remaining stock above the hovered deposit tile or drill. */
+    private static void drawHovered() {
+        // clients only know the stock from the moment they joined, so they get no misleading number
+        if (Vars.headless || !Vars.state.isGame() || Vars.net.client() || all.size == 0 || Core.scene.hasMouse()) return;
+        Tile tile = Vars.world.tileWorld(Core.input.mouseWorldX(), Core.input.mouseWorldY());
+        int amount = remaining(tile);
+        if (amount <= 0) return;
+        float x = tile.build == null ? tile.worldx() : tile.build.x;
+        float y = (tile.build == null ? tile.worldy() + Vars.tilesize / 2f : tile.build.y + tile.build.block.size * Vars.tilesize / 2f) + 6f;
+        Draw.z(Layer.overlayUI);
+        Font font = Fonts.outline;
+        boolean ints = font.usesIntegerPositions();
+        float scaleX = font.getScaleX(), scaleY = font.getScaleY();
+        font.setUseIntegerPositions(false);
+        font.getData().setScale(0.25f / Scl.scl(1f));
+        font.setColor(Pal.accent);
+        font.draw(Core.bundle.format("metrum.deposit.left", amount), x, y, Align.center);
+        font.setColor(Color.white);
+        font.getData().setScale(scaleX, scaleY);
+        font.setUseIntegerPositions(ints);
+        Draw.reset();
     }
 
     public static void clear() {
