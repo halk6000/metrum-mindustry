@@ -51,11 +51,23 @@ public class DrawSalvager extends DrawBlock {
         }
         Draw.color(edge);
         Fill.square(x, y, 7.8f);
+        // Raised rim: light from the upper left, recessed crushing chamber.
+        Draw.color(bright);
+        Fill.rect(x, y + 7f, 14f, 0.7f);
+        Fill.rect(x - 7f, y, 0.7f, 14f);
+        Draw.color(Color.darkGray);
+        Fill.rect(x, y - 7f, 14f, 1f);
+        Fill.rect(x + 7f, y, 1f, 14f);
         Draw.color(metal);
         Fill.rect(x, y + 6f, 13f, 2f);
         Fill.rect(x, y - 6f, 13f, 2f);
         Fill.rect(x - 6f, y, 2f, 10f);
         Fill.rect(x + 6f, y, 2f, 10f);
+        Draw.color(bright);
+        for (int side = -1; side <= 1; side += 2) {
+            Fill.square(x + side * 5.5f, y + 5.7f, 0.5f);
+            Fill.square(x + side * 5.5f, y - 5.7f, 0.5f);
+        }
         for (int side = -1; side <= 1; side += 2) {
             float cx = x + side * 2.7f;
             Draw.color(metal);

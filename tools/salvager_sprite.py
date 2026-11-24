@@ -26,10 +26,17 @@ if advanced:
         for y in (-4, 4):
             rect(x, y, 2, 1, "#82b9b0")
 rect(0, 0, 15.6, 15.6, "#30343c")
+rect(0, 7, 14, 0.7, "#a6adb8")
+rect(-7, 0, 0.7, 14, "#a6adb8")
+rect(0, -7, 14, 1, "#3f3f3f")
+rect(7, 0, 1, 14, "#3f3f3f")
 for y in (-6, 6):
     rect(0, y, 13, 2, "#656b76")
 for x in (-6, 6):
     rect(x, 0, 2, 10, "#656b76")
+for x in (-5.5, 5.5):
+    for y in (-5.7, 5.7):
+        rect(x, y, 1, 1, "#a6adb8")
 for x in (-2.7, 2.7):
     cx, cy = (x+half)*4, half*4
     draw.ellipse((cx-10, cy-10, cx+10, cy+10), fill="#656b76")
