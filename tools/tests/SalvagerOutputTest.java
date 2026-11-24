@@ -224,7 +224,28 @@ public class SalvagerOutputTest {
         check(furnace.items.total() == 0 && belt.items.get(MetrumItems.steel) == 2,
             "smelter recovery must preserve both steel items");
         check(!furnace.dump(MetrumItems.steel), "empty smelter must not duplicate steel");
-        System.out.println("OK: smelter delivery and blocked conveyor recovery; salvager consumption and restart; 100 cycles ("
+        separator.progress = 0.375f;
+        separator.seed = 12345;
+        b.items.clear();
+        b.items.add(MetrumItems.iron, 7);
+        java.io.ByteArrayOutputStream saved = new java.io.ByteArrayOutputStream();
+        separator.writeAll(arc.util.io.Writes.get(new java.io.DataOutputStream(saved)));
+        mindustry.world.blocks.production.Separator.SeparatorBuild restored =
+            (mindustry.world.blocks.production.Separator.SeparatorBuild) b.block.buildType.get();
+        restored.block = b.block;
+        restored.team = b.team;
+        restored.items = new ItemModule();
+        restored.liquids = new mindustry.world.modules.LiquidModule();
+        restored.power = new mindustry.world.modules.PowerModule();
+        restored.readAll(arc.util.io.Reads.get(new java.io.DataInputStream(
+            new java.io.ByteArrayInputStream(saved.toByteArray()))), separator.version());
+        check(restored.progress == 0.375f && restored.seed == 12345,
+            "save/load must preserve progress and random sequence");
+        check(restored.items.get(MetrumItems.iron) == 7, "save/load must preserve stored iron");
+        restored.offload(MetrumItems.iron);
+        check(restored.items.get(MetrumItems.iron) == 9,
+            "restored building must retain double iron output");
+        System.out.println("OK: save/load, smelter delivery and blockage recovery; salvager consumption and restart; 100 cycles ("
             + ironRolls + " iron / " + sandRolls + " sand rolls)");
     }
 }

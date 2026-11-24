@@ -9,12 +9,13 @@ Wprowadzone zmiany:
 - Podkręcony odzyskiwacz: cykl 20 kroków (jak zwykły), 1 skała na cykl; wynik to 2 żelaza (80%) albo 1 piasek (20%). Rezerwuje miejsce na całą partię.
 
 Potwierdzone automatycznie:
+- Zapis i odczyt stanu odzyskiwacza w pamięci: magazyn, postęp, stan losowania i podwójne żelazo po odczycie.
 - Liczby produktów, zużycie jednej skały na zakończenie cyklu oraz oba wyniki losowania.
 - Przekazywanie żelaza, piasku i stali do rzeczywistego obiektu taśmy Mindustry.
 - Zachowanie produktów przy blokadzie wyjścia i wydawanie ich po odblokowaniu.
 - Podkręcony odzyskiwacz podczas pracy: 9 pary/s i zapotrzebowanie 180 prądu/s; pełny magazyn zatrzymuje zużycie, a zwolnienie miejsca wznawia produkcję.
 
-Granice weryfikacji: test ustawia świat i warunki programowo. Nie sprawdza interfejsu gry, istniejącego zapisu, zapisu/odczytu budynków ani symulacji nieaktywnego sektora. Odblokowanie taśmy jest symulowane; test sprawdza mechanizm wydawania, nie cały transport w czasie. Huta przechodzi test zakończenia receptury i przekazywania stali; jej kod nie został zmieniony.
+Granice weryfikacji: test ustawia świat i warunki programowo. Nie sprawdza interfejsu gry, istniejącego zapisu ani symulacji nieaktywnego sektora. Odblokowanie taśmy jest symulowane; test sprawdza mechanizm wydawania, nie cały transport w czasie. Huta przechodzi test zakończenia receptury i przekazywania stali; jej kod nie został zmieniony.
 
 # Szybki test w grze (~10 min)
 
