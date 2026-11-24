@@ -19,6 +19,7 @@ import static mindustry.type.ItemStack.with;
 public class MetrumProduction {
     public static Block graphiteDecompressor, graphiteDecompressorOverclocked,
         ammoFactory, steamFurnace, largeSteamFurnace, salvagerOverclocked, salvagerAdvanced, arcFurnaceOverclocked, heatInverter, magmaForge, plasmaIonizer, stoneCrusher, infusionSmelter, salvager;
+    public static metrum.world.OpenPitMine openPitMine;
 
     private static final Color flame = Color.valueOf("fdb380");
 
@@ -123,6 +124,17 @@ public class MetrumProduction {
             consumeItem(MetrumItems.pieceRock);
             consumeLiquid(Liquids.water, 0.33f);
             outputItem = new ItemStack(Items.sand, 5);
+        }};
+
+        // digs 1% per step; every step may reveal underground resources (discovery amounts are weights)
+        openPitMine = new metrum.world.OpenPitMine("open-pit-mine") {{
+            requirements(Category.production, with(Items.beryllium, 1000, MetrumItems.steel, 200));
+            size = 4;
+            stepTime = metrum.Balance.f("pit.stepSeconds", 10f) * 60f;
+            discoveryChance = metrum.Balance.f("pit.discoveryChance", 0.2f);
+            minDiscovery = metrum.Balance.i("pit.minDiscovery", 50);
+            maxDiscovery = metrum.Balance.i("pit.maxDiscovery", 200);
+            discoveries = with(Items.beryllium, 30, Items.coal, 20, Items.scrap, 20, Items.tungsten, 15, Items.thorium, 10, Items.copper, 5);
         }};
 
         infusionSmelter = new GenericCrafter("infusion-smelter") {{

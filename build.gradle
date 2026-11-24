@@ -56,8 +56,22 @@ tasks.register('steamEngineTest', JavaExec) {
     classpath = files(compileSteamEngineTest.flatMap { it.destinationDirectory }) + sourceSets.main.output + files(gameJar)
     mainClass = 'SteamEngineGroupTest'
 }
+// Open-pit mine: timing, discoveries, completion and save/load.
+def compileOpenPitTest = tasks.register('compileOpenPitTest', JavaCompile) {
+    dependsOn classes
+    source = files('tools/tests/OpenPitMineTest.java')
+    classpath = sourceSets.main.output + files(gameJar)
+    destinationDirectory = layout.buildDirectory.dir('open-pit-test-classes')
+}
+tasks.register('openPitTest', JavaExec) {
+    group = 'verification'
+    description = 'Checks open-pit mine timing, discoveries, completion and save/load.'
+    dependsOn compileOpenPitTest
+    classpath = files(compileOpenPitTest.flatMap { it.destinationDirectory }) + sourceSets.main.output + files(gameJar)
+    mainClass = 'OpenPitMineTest'
+}
 tasks.named('check') {
-    dependsOn 'salvagerTest', 'steamEngineTest'
+    dependsOn 'salvagerTest', 'steamEngineTest', 'openPitTest'
 }
 
 // gradlew deploy: build and install into the game (same file name the in-game importer uses)
