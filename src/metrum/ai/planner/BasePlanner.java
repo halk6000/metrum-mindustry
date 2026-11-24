@@ -45,6 +45,7 @@ public class BasePlanner {
 
     public static void init() {
         EconomyGoals.init();
+        AbandonedBuilds.init();
         Events.run(Trigger.update, BasePlanner::update);
         Events.on(mindustry.game.EventType.UnitDestroyEvent.class, e -> {
             if (Vars.net.client() || !isBuilderFlag(e.unit.flag) || e.unit.plans.isEmpty()) return;
@@ -183,6 +184,7 @@ public class BasePlanner {
         if (!Vars.state.isPlaying() || Vars.net.client() || !active()) return;
         lastPlannerTick = Time.time;
         EconomyGoals.restore();
+        AbandonedBuilds.restore();
         miningDemand.entrySet().removeIf(e -> !e.getKey().isValid()
             || e.getKey().items.get(e.getValue().item) >= e.getValue().amount);
         deferredDemand.keySet().removeIf(core -> !core.isValid() || core.team != Vars.state.rules.waveTeam);

@@ -59,6 +59,14 @@ public class BuilderQueueTest {
         check(!BasePlanner.restoreBuildQueue(unit,backup));
         unit.buildPlan().rotation=3;
         check(backup.first().rotation==1);
-        System.out.println("OK: saved plan order, rotations, demolition, controller restoration, queue continuation, reserved materials, released materials, invalid batch cancellation, constructor replacement queue");
+        bytes.reset(); out.i(1); out.i(42); out.i(mindustry.game.Team.crux.id); out.i(backup.size);
+        for(BuildPlan plan:backup) TypeIO.writePlan(out,plan);
+        new AbandonedBuilds().read(new DataInputStream(new ByteArrayInputStream(bytes.toByteArray())));
+        check(AbandonedBuilds.pending.size==1 && AbandonedBuilds.pending.first().position==42);
+        check(AbandonedBuilds.pending.first().plans.size==2 && AbandonedBuilds.pending.first().plans.first().block==drill);
+        byte[] broken=java.util.Arrays.copyOf(bytes.toByteArray(),bytes.size()-1);
+        try { new AbandonedBuilds().read(new DataInputStream(new ByteArrayInputStream(broken))); throw new AssertionError(); }
+        catch(EOFException expected) { check(AbandonedBuilds.pending.isEmpty()); }
+        System.out.println("OK: saved plan order, rotations, demolition, controller restoration, queue continuation, reserved materials, released materials, invalid batch cancellation, constructor replacement queue, saved abandoned queue, truncated save");
     }
 }
