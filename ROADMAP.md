@@ -106,3 +106,5 @@
 - [ ] Optymalizacja ciasnej bazy (ustalenie użytkownika): gdy brakuje miejsca na budowę, sprawdzić faktyczną ciągłość transportu i mediów, naprawiać przerwy oraz skracać zbędne trasy; demontaż tylko po potwierdzeniu zachowania dostaw. Nie powielać rur przy niskim poziomie wody w odbiorniku.
 
 - [ ] Rzeczywista budowa przez drony (korekta użytkownika): zastąpić natychmiastowe setNet kolejką BuildPlan i pobieraniem materiałów przez silnik. Pierwszy etap: mury z dedykowanym MetrumBuilderAI. Pozostałe: wiertnice, transport, prąd, rury, fabryki, wieżyczki, magazynki i rozbiórka. Licznik planera nie jest licznikiem ukończonych budów.
+
+- [ ] Rozpoznanie i ekspansja gospodarcza (uwaga użytkownika 24.11): drony szukają brakujących zasobów poza bezpośrednim otoczeniem rdzenia, odkrywają teren i zakładają połączone placówki; używać maszyn Metrum, uwzględnić wolfram i unikać zależności wymagających wolframu do uruchomienia jego pierwszego źródła. Dalsza symulacja przy nieobecności gracza pozostaje osobnym zadaniem.

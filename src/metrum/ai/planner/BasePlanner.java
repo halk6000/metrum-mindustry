@@ -900,6 +900,24 @@ public class BasePlanner {
         Block chosen = Blocks.plasmaBore, duct = Blocks.duct;
         Tile ore = findOreSpot(core, chosen, 30);
         ItemStack demand = miningDemand.get(core);
+        // Consider modded wall drills as well as the vanilla plasma bore.
+        for (Block candidate : Vars.content.blocks()) {
+            if (!(candidate instanceof mindustry.world.blocks.production.BeamDrill) || candidate == chosen
+                || !candidate.environmentBuildable() || !canSupportDrill(core, candidate)) continue;
+            Tile alternative = findOreSpot(core, candidate, 30);
+            if (alternative == null) continue;
+            int direction = faceWall(alternative, candidate, core, minedResources(core));
+            Item candidateItem = wallOreInDirection(alternative,
+                (mindustry.world.blocks.production.BeamDrill) candidate, direction);
+            boolean wanted = demand != null && candidateItem == demand.item;
+            boolean currentWanted = ore != null && demand != null && wallOreInDirection(ore,
+                (mindustry.world.blocks.production.BeamDrill) chosen,
+                faceWall(ore, chosen, core, minedResources(core))) == demand.item;
+            if (ore == null || !canSupportDrill(core, chosen) || (wanted && !currentWanted)) {
+                chosen = candidate;
+                ore = alternative;
+            }
+        }
         if (ore == null || demand != null) {
             for (Block candidate : Vars.content.blocks()) {
                 if (!(candidate instanceof mindustry.world.blocks.production.Drill) || !candidate.environmentBuildable()) continue;
