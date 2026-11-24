@@ -153,7 +153,23 @@ public class SalvagerOutputTest {
         check(Math.abs(b.block.consPower.requestedPower(b) * 60f - 180f) < 0.01f,
             "running power demand must be 180 per second");
         check(b.items.get(MetrumItems.pieceRock) < 10, "powered operation must complete cycles");
-        System.out.println("OK: steam and power demand during operation; 100 cycles ("
+        b.items.clear();
+        b.items.add(MetrumItems.pieceRock, 10);
+        b.items.add(MetrumItems.iron, 20);
+        steamBefore = b.liquids.get(MetrumLiquids.steam);
+        float progressBefore = separator.progress;
+        for (int tick = 0; tick < 60; tick++) {
+            b.updateConsumption();
+            separator.updateTile();
+            check(b.block.consPower.requestedPower(b) == 0f,
+                "full storage must not request power");
+        }
+        check(b.liquids.get(MetrumLiquids.steam) == steamBefore,
+            "full storage must not consume steam");
+        check(b.items.get(MetrumItems.pieceRock) == 10 && b.items.get(MetrumItems.iron) == 20,
+            "full storage must not consume rock or produce more iron");
+        check(separator.progress == progressBefore, "full storage must pause crafting progress");
+        System.out.println("OK: running consumption, zero consumption with full storage; 100 cycles ("
             + ironRolls + " iron / " + sandRolls + " sand rolls)");
     }
 }
