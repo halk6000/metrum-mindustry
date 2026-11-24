@@ -22,6 +22,7 @@ public class MetrumBuilderAI extends mindustry.ai.types.BuilderAI {
                 core -> BasePlanner.builderHomeFlag(core) == unit.flag);
             mindustry.type.ItemStack demand = home == null ? null : BasePlanner.miningDemand.get(home);
             if (demand != null && unit.canMine(demand.item)
+                && metrum.ai.SmartMining.canStoreMined(unit.closestCore(), demand.item)
                 && mindustry.Vars.indexer.findClosestOre(unit, demand.item) != null) return demand.item;
             return super.desired();
         }

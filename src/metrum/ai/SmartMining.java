@@ -82,6 +82,10 @@ public class SmartMining {
         for (Unit u : units) modes.put(u.id, mode);
     }
 
+    public static boolean canStoreMined(mindustry.gen.Building core, Item item) {
+        return core != null && core.items != null && item != null
+            && core.items.get(item) < core.getMaximumAccepted(item);
+    }
     /** MinerAI whose ore choice follows the selected mode */
     public static class SmartMinerAI extends MinerAI {
         float retarget;
@@ -100,7 +104,7 @@ public class SmartMining {
             int m = mode(unit);
             if (m >= 0) return Vars.content.item(m);
             // re-evaluated every 2 s
-            if ((retarget -= arc.util.Time.delta) > 0f && targetItem != null) return targetItem;
+            if ((retarget -= arc.util.Time.delta) > 0f && targetItem != null && canStoreMined(unit.closestCore(), targetItem)) return targetItem;
             retarget = 120f;
             return m == leastStored ? leastStoredOre() : nearestOre();
         }
@@ -111,7 +115,7 @@ public class SmartMining {
             Item best = null;
             int bestAmount = Integer.MAX_VALUE;
             for (Item it : unit.type.mineItems) {
-                if (!unit.canMine(it) || Vars.indexer.findClosestOre(unit, it) == null) continue;
+                if (!unit.canMine(it) || !canStoreMined(core, it) || Vars.indexer.findClosestOre(unit, it) == null) continue;
                 int amount = core == null ? 0 : core.items.get(it);
                 if (best == null || amount < bestAmount
                     || (amount == bestAmount && it.localizedName.compareToIgnoreCase(best.localizedName) < 0)) {
@@ -122,7 +126,7 @@ public class SmartMining {
             // hysteresis: keep the current ore unless another one is clearly scarcer,
             // so drones don't flip-flop every 2 s when stocks are close
             if (targetItem != null && best != null && targetItem != best && core != null
-                && unit.canMine(targetItem) && core.items.get(targetItem) <= bestAmount + 20) return targetItem;
+                && unit.canMine(targetItem) && canStoreMined(core, targetItem) && core.items.get(targetItem) <= bestAmount + 20) return targetItem;
             return best;
         }
 
@@ -130,7 +134,7 @@ public class SmartMining {
             Item best = null;
             float bestDst = Float.MAX_VALUE;
             for (Item it : unit.type.mineItems) {
-                if (!unit.canMine(it)) continue;
+                if (!unit.canMine(it) || !canStoreMined(unit.closestCore(), it)) continue;
                 Tile t = Vars.indexer.findClosestOre(unit, it);
                 if (t != null && unit.dst(t) < bestDst) {
                     bestDst = unit.dst(t);
