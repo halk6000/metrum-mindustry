@@ -54,6 +54,7 @@ public class BuilderQueueTest {
         arc.struct.Seq<BuildPlan> backup=BasePlanner.copyBuildQueue(unit);
         unit.plans.clear();
         check(backup.size==2);
+        check(BasePlanner.planMaterials(backup).get(iron)==9);
         check(BasePlanner.restoreBuildQueue(unit,backup));
         check(unit.plans.size==2 && unit.buildPlan().block==drill);
         check(!BasePlanner.restoreBuildQueue(unit,backup));
@@ -64,6 +65,7 @@ public class BuilderQueueTest {
         new AbandonedBuilds().read(new DataInputStream(new ByteArrayInputStream(bytes.toByteArray())));
         check(AbandonedBuilds.pending.size==1 && AbandonedBuilds.pending.first().position==42);
         check(AbandonedBuilds.pending.first().plans.size==2 && AbandonedBuilds.pending.first().plans.first().block==drill);
+        check(BasePlanner.planMaterials(AbandonedBuilds.pending.first().plans).get(iron)==9);
         byte[] broken=java.util.Arrays.copyOf(bytes.toByteArray(),bytes.size()-1);
         try { new AbandonedBuilds().read(new DataInputStream(new ByteArrayInputStream(broken))); throw new AssertionError(); }
         catch(EOFException expected) { check(AbandonedBuilds.pending.isEmpty()); }

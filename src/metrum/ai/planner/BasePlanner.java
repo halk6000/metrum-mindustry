@@ -291,9 +291,13 @@ public class BasePlanner {
     }
 
     static java.util.Map<Item, Integer> queuedBuildReserve(mindustry.gen.Unit builder) {
+        return planMaterials(builder == null ? null : builder.plans);
+    }
+
+    static java.util.Map<Item, Integer> planMaterials(Iterable<BuildPlan> plans) {
         java.util.Map<Item, Integer> reserve = new java.util.HashMap<>();
-        if (builder == null) return reserve;
-        for (BuildPlan plan : builder.plans) {
+        if (plans == null) return reserve;
+        for (BuildPlan plan : plans) {
             if (plan.breaking || plan.block == null) continue;
             for (ItemStack cost : plan.block.requirements) {
                 int amount = Math.round(cost.amount * Vars.state.rules.buildCostMultiplier);
@@ -316,6 +320,10 @@ public class BasePlanner {
             reserve.put(cost.item, reserve.getOrDefault(cost.item, 0) + amount);
         }
         for (java.util.Map.Entry<Item, Integer> cost : queuedBuildReserve(assignedBuilder(core)).entrySet()) {
+            reserve.put(cost.getKey(), reserve.getOrDefault(cost.getKey(), 0) + cost.getValue());
+        }
+        // Keep the dead constructor's remaining jobs funded until they transfer to its replacement.
+        for (java.util.Map.Entry<Item, Integer> cost : planMaterials(abandonedPlans.get(core)).entrySet()) {
             reserve.put(cost.getKey(), reserve.getOrDefault(cost.getKey(), 0) + cost.getValue());
         }
         return reserve;
