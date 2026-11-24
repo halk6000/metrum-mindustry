@@ -446,6 +446,7 @@ public class BasePlanner {
         return new Seq<>();
     }
     static boolean waterLineConnected(Building from, Building to) {
+        if (from.team != to.team) return false;
         Block conduit = Blocks.reinforcedConduit;
         java.util.Set<Building> visited = new java.util.HashSet<>();
         java.util.ArrayDeque<Building> queue = new java.util.ArrayDeque<>();
