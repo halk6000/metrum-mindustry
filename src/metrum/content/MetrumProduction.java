@@ -176,6 +176,7 @@ public class MetrumProduction {
             consumeItem(MetrumItems.pieceRock);
             consumeLiquid(MetrumLiquids.steam, 0.15f);
             results = with(MetrumItems.iron, 80, Items.sand, 20);
+            drawer = new metrum.world.DrawSalvager() {{ overclocked = true; }};
             buildType = () -> new SeparatorBuild() {
                 @Override
                 public boolean shouldConsume() {
