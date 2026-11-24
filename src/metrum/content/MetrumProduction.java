@@ -215,6 +215,7 @@ public class MetrumProduction {
             consumeItem(MetrumItems.pieceRock);
             consumeLiquid(MetrumLiquids.steam, 0.12f);
             results = with(MetrumItems.iron, 2, Items.sand, 3);
+            drawer = new metrum.world.DrawSalvager();
         }};
     }
 
