@@ -91,11 +91,19 @@
 - [ ] **Zmiana nazwy planety Ferrox → Metonia** we wszystkich nazwach widocznych w grze, lokalizacjach PL/EN, opisach, drzewie technologii, mapie planet, dokumentacji i testach. Zachować dotychczasowy przemysłowy/rdzawy charakter planety, gospodarkę AI, rozwój sektorów i wsparcie międzysektorowe.
 - [ ] **Migracja techniczna nazwy**: przed zmianą wewnętrznego identyfikatora planety sprawdzić zgodność istniejących zapisów kampanii, sektorów i powiązanych danych; nie zmieniać go bez strategii migracji. Wcześniejsze wpisy „Ferrox” w historii realizacji roadmapy opisują dawną nazwę i nie oznaczają cofnięcia wykonanej pracy.
 
+### Metonia — kopalnia odkrywkowa i złoża wyczerpywalne
+- [ ] **Kopalnia odkrywkowa (koszt przykładowy: 1000 berylu + 200 stali)**: co 10 s dodaje 1% postępu. Każdy 1% daje niezależnie 20% szansy na zdarzenie odkrycia podziemnych surowców, maksymalnie 200 jednostek zasobu na zdarzenie; odkrycia kumulują się (np. 600 berylu i 400 toru).
+- [ ] **Menu odkrytych złóż**: podczas pracy kopalnia pokazuje sumy znalezionych surowców; przy 100% postępu kopalnia się zawala i odsłania/rozsypuje odkryte złoża wokół swojej lokalizacji.
+- [ ] **Wyczerpywalne złoża**: po zawaleniu można stawiać zwykłe wiertnice na ujawnionych polach. Złoża mają ograniczony zapas, maleją podczas wydobycia i znikają po wyczerpaniu. Zapewnić zapis i odczyt pozostałych ilości oraz synchronizację sieciową; moduł mechaniki może być wewnętrzną biblioteką Metrum.
+- [ ] **Balans kopalni**: brak gwarancji zwrotu kosztów, ryzyko niepożądanych surowców, odpowiednie rozmieszczanie odkryć i obsługa braku wolnych pól wokół kopalni.
 ### Venoms Issland — planeta bioewolucji i toksycznej chemii
 - [ ] **Nowa planeta Venoms Issland**: mroczny klimat, dominujący fiolet, biologiczne środowisko i odrębny charakter od przemysłowej Metonii; przygotować świat, mapy, oprawę, drzewo technologii oraz unikalne surowce i płyny.
 - [ ] **Naziemne drony pajęcze / skorpionopodobne**: jednostki nastawione na zatruwanie przeciwników, ataki kwasowe (plucie kwasem) i walkę z wykorzystaniem efektów toksycznych; zaprojektować ich role, rozwój, animacje i sposób przeciwdziałania.
 - [ ] **Bioegzystencja i ewolucja budynków**: budynki biologiczne mogą ewoluować w nowe formy po spełnieniu określonych warunków (np. dostęp do substancji, środowisko, czas lub wykonane działania); zdefiniować warunki, etapy, koszty i konsekwencje ewolucji w rozgrywce.
 - [ ] **Niebezpieczne związki toksyczne i wybuchowe**: stworzyć mechanikę substancji o szkodliwych właściwościach, ich produkcji, przechowywania i wykorzystania w walce; błędne połączenia lub niewłaściwe warunki mogą prowadzić do skażenia, uszkodzeń albo wybuchów. Dokładne receptury i reguły pozostają do zaprojektowania.
+- [ ] **Badania autorskie: grzybowe feromony** — po pokonaniu wrogich jednostek gracz pozyskuje feromony jako zasób badań. Silniejsze jednostki dostarczają więcej feromonów; ustalić tabelę nagród, zbieranie, przechowywanie i wydawanie.
+- [ ] **Drzewko bio-badań** — feromony odblokowują budynki ewolucyjne i mutacje ekonomiczne/bojowe; rozwój ma wynikać z walki oraz ewolucji, a nie wyłącznie standardowych kosztów surowcowych.
+- [ ] **Mutacje — przykłady do wdrożenia i testów**: gospodarcza „Wiertnice +20% prędkości wydobycia” (dla wszystkich wiertnic objętych mutacją); bojowa „Jednostki z atakami obszarowymi emitują toksyczne zarodniki o obrażeniach równych 30% bazowych obrażeń ataku”. Doprecyzować naliczanie obrażeń w czasie, możliwość kumulacji i działanie na cele odporne na truciznę.
 - [ ] **Balans i testy Venoms Issland**: zapewnić czytelność zagrożeń, możliwość obrony przed kwasem i truciznami oraz sensowną progresję ewolucji bez blokad rozwoju sektora.
 
 ## Repo
