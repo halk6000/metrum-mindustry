@@ -1,3 +1,4 @@
 @echo off
 cd /d "%~dp0"
-python toolsalance_editor.py
+python "toolsalance_editor.py"
+if errorlevel 1 pause
