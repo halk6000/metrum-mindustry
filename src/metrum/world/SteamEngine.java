@@ -43,6 +43,25 @@ public class SteamEngine extends PowerGenerator {
     public class SteamEngineBuild extends GeneratorBuild implements HeatBlock {
         public float warmup;
 
+        /** Current connected component; rebuilt on demand so splits cannot retain stale members. */
+        public arc.struct.Seq<SteamEngineBuild> connectedEngines() {
+            arc.struct.Seq<SteamEngineBuild> group = new arc.struct.Seq<>();
+            arc.struct.ObjectSet<SteamEngineBuild> visited = new arc.struct.ObjectSet<>();
+            group.add(this);
+            visited.add(this);
+            for (int index = 0; index < group.size; index++) {
+                SteamEngineBuild current = group.get(index);
+                for (mindustry.gen.Building neighbour : current.proximity) {
+                    if (neighbour instanceof SteamEngineBuild && neighbour.block == block
+                        && neighbour.team == team) {
+                        SteamEngineBuild engine = (SteamEngineBuild) neighbour;
+                        if (visited.add(engine)) group.add(engine);
+                    }
+                }
+            }
+            return group;
+        }
+
         @Override
         public void updateTile() {
             // efficiency comes from the steam consumer; the engine heats up / cools down gradually
