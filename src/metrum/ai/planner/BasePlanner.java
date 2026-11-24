@@ -275,6 +275,7 @@ public class BasePlanner {
         if (drills < 2 && buildDrillLine(core, level)) return true;
         if ((!hasGenerator(core) || (hasPowerDeficit(core) && !hasIdleGenerator(core))) && buildPower(core)) return true;
         if (!powerGridDone(core) && extendPowerGrid(core)) return true;
+        if (hasWaterDeficit(core) && !hasIdleGenerator(core) && buildPower(core)) return true;
         if (pipeWater(core)) return true;
         if (drills < 2) return false; // do not spend the bootstrap budget on factories or defences
         ItemStack demand = miningDemand.get(core);
@@ -1105,7 +1106,32 @@ public class BasePlanner {
             if (totalCost < bestCost) { best = block; bestCost = totalCost; }
         }
         return best;
-    }    static boolean canSupplyWater(Building source) {
+    }    static float thermalWaterRate(Building source) {
+        if (!source.enabled || !(source instanceof mindustry.world.blocks.power.ThermalGenerator.ThermalGeneratorBuild)) return 0f;
+        mindustry.world.blocks.power.ThermalGenerator generator = (mindustry.world.blocks.power.ThermalGenerator) source.block;
+        if (generator.outputLiquid == null || generator.outputLiquid.liquid != mindustry.content.Liquids.water) return 0f;
+        return generator.outputLiquid.amount * ((mindustry.world.blocks.power.ThermalGenerator.ThermalGeneratorBuild) source).productionEfficiency
+            * source.timeScale();
+    }
+
+    static float requiredWaterRate(Building consumer) {
+        if (!consumer.enabled) return 0f;
+        float result = 0f;
+        for (mindustry.world.consumers.Consume consume : consumer.block.nonOptionalConsumers) {
+            if (consume instanceof mindustry.world.consumers.ConsumeLiquid
+                && ((mindustry.world.consumers.ConsumeLiquid) consume).liquid == mindustry.content.Liquids.water)
+                result += ((mindustry.world.consumers.ConsumeLiquid) consume).amount * consumer.timeScale();
+        }
+        return result;
+    }
+
+    static boolean hasWaterDeficit(CoreBuild core) {
+        float[] rates = {0f, 0f};
+        Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
+            b -> b.liquids != null, b -> { rates[0] += thermalWaterRate(b); rates[1] += requiredWaterRate(b); });
+        return rates[1] > rates[0] + 0.001f;
+    }
+    static boolean canSupplyWater(Building source) {
         if (!source.block.outputsLiquid || source.liquids == null) return false;
         if (source.liquids.get(mindustry.content.Liquids.water) > 1f) return true;
         if (source.block instanceof mindustry.world.blocks.power.ThermalGenerator) {
