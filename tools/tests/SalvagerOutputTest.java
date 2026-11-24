@@ -169,7 +169,20 @@ public class SalvagerOutputTest {
         check(b.items.get(MetrumItems.pieceRock) == 10 && b.items.get(MetrumItems.iron) == 20,
             "full storage must not consume rock or produce more iron");
         check(separator.progress == progressBefore, "full storage must pause crafting progress");
-        System.out.println("OK: running consumption, zero consumption with full storage; 100 cycles ("
+        b.items.remove(MetrumItems.iron, 2);
+        check(b.shouldConsume(), "freeing two slots must allow automatic restart");
+        int rockBefore = b.items.get(MetrumItems.pieceRock);
+        for (int tick = 0; tick < 21; tick++) {
+            b.updateConsumption();
+            separator.updateTile();
+        }
+        check(b.items.get(MetrumItems.pieceRock) == rockBefore - 1,
+            "freeing space must resume production without manual activation");
+        check(b.liquids.get(MetrumLiquids.steam) < steamBefore,
+            "resumed production must consume steam again");
+        check(b.items.get(MetrumItems.iron) + b.items.get(Items.sand) <= 20,
+            "resumed batch must fit in output storage");
+        System.out.println("OK: running consumption, blocked storage and automatic restart; 100 cycles ("
             + ironRolls + " iron / " + sandRolls + " sand rolls)");
     }
 }
