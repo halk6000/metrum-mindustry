@@ -490,7 +490,15 @@ public class BasePlanner {
         return false;
     }
     /** Repair one missing pipe before considering a whole new water line. */
-    static boolean repairWaterGap(CoreBuild core, Seq<Building> sources, Seq<Building> destinations) {
+    /** Valid only during one planning call, which ends immediately after any world mutation. */
+    static class WaterConnections {
+        private final java.util.Map<Building, java.util.Map<Building, Boolean>> results = new java.util.HashMap<>();
+        boolean connected(Building from, Building to) {
+            return results.computeIfAbsent(from, ignored -> new java.util.HashMap<>())
+                .computeIfAbsent(to, ignored -> waterLineConnected(from, to));
+        }
+    }
+    static boolean repairWaterGap(CoreBuild core, Seq<Building> sources, Seq<Building> destinations, WaterConnections connections) {
         Block conduit = Blocks.reinforcedConduit;
         if (destinations.isEmpty()) return false;
         for (Building source : sources) {
@@ -509,7 +517,7 @@ public class BasePlanner {
                     Tile output = next.tile.nearby(next.rotation);
                     if (output == gap) continue; // opposing pipes would not form a working connection
                 }
-                if (!destinations.contains(to -> next == to || waterLineConnected(next, to))) continue;
+                if (!destinations.contains(to -> next == to || connections.connected(next, to))) continue;
                 if (!pay(core, conduit.requirements)) return false;
                 gap.setNet(conduit, core.team, direction);
                 return true;
@@ -518,7 +526,7 @@ public class BasePlanner {
         return false;
     }
     /** Reuse an existing downstream line across a short straight break instead of laying a parallel route. */
-    static boolean repairStraightWaterGap(CoreBuild core, Seq<Building> sources, Seq<Building> destinations) {
+    static boolean repairStraightWaterGap(CoreBuild core, Seq<Building> sources, Seq<Building> destinations, WaterConnections connections) {
         if (destinations.isEmpty()) return false;
         Block conduit = Blocks.reinforcedConduit;
         for (Building source : sources) {
@@ -539,7 +547,7 @@ public class BasePlanner {
                 if (next.block != conduit && !destinations.contains(next)) break;
                 if (next.block == conduit && !waterCompatible(next)) break;
                 if (next.block == conduit && next.rotation == (source.rotation + 2) % 4) break;
-                if (!destinations.contains(to -> next == to || waterLineConnected(next, to))) break;
+                if (!destinations.contains(to -> next == to || connections.connected(next, to))) break;
                 if (!payBatch(core, conduit.requirements, gaps.size)) return false;
                 for (Tile gap : gaps) {
                     gap.setNet(conduit, core.team, source.rotation);
@@ -550,7 +558,7 @@ public class BasePlanner {
         return false;
     }
     /** Search at most six missing tiles, allowing bends while preserving the old downstream route. */
-    static boolean repairBentWaterGap(CoreBuild core, Seq<Building> sources, Seq<Building> destinations) {
+    static boolean repairBentWaterGap(CoreBuild core, Seq<Building> sources, Seq<Building> destinations, WaterConnections connections) {
         if (destinations.isEmpty() || sources.isEmpty()) return false;
         Block conduit = Blocks.reinforcedConduit;
         int first = Math.floorMod(bentRepairCursor.getOrDefault(core, 0), sources.size);
@@ -578,7 +586,7 @@ public class BasePlanner {
                         if (next.block != conduit && !destinations.contains(next)) continue;
                         if (next.block == conduit && !waterCompatible(next)) continue;
                         if (next.block == conduit && next.tile.nearby(next.rotation) == tail) continue;
-                        if (!destinations.contains(to -> next == to || waterLineConnected(next, to))) continue;
+                        if (!destinations.contains(to -> next == to || connections.connected(next, to))) continue;
                         if (!payBatch(core, conduit.requirements, path.size)) return false;
                         for (int i = 0; i < path.size; i++) {
                             Tile t = path.get(i);
@@ -597,6 +605,7 @@ public class BasePlanner {
         return false;
     }
     static boolean pipeWater(CoreBuild core) {
+        WaterConnections connections = new WaterConnections();
         mindustry.type.Liquid water = mindustry.content.Liquids.water;
         Seq<Building> sources = new Seq<>(), destinations = new Seq<>();
         Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
@@ -606,10 +615,10 @@ public class BasePlanner {
             b -> b.block.consumesLiquid(water) && b.liquids != null && b.liquids.get(water) < 1f,
             destinations::add);
         // Low liquid level is not proof of a missing line: do not build parallel duplicates.
-        destinations.removeAll(to -> sources.contains(from -> waterLineConnected(from, to)));
-        if (repairWaterGap(core, sources, destinations)) return true;
-        if (repairStraightWaterGap(core, sources, destinations)) return true;
-        if (repairBentWaterGap(core, sources, destinations)) return true;
+        destinations.removeAll(to -> sources.contains(from -> connections.connected(from, to)));
+        if (repairWaterGap(core, sources, destinations, connections)) return true;
+        if (repairStraightWaterGap(core, sources, destinations, connections)) return true;
+        if (repairBentWaterGap(core, sources, destinations, connections)) return true;
         Seq<Building[]> pairs = new Seq<>();
         for (Building from : sources) for (Building to : destinations) {
             if (from != to) pairs.add(new Building[]{from, to});
