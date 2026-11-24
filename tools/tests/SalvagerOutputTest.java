@@ -245,7 +245,24 @@ public class SalvagerOutputTest {
         restored.offload(MetrumItems.iron);
         check(restored.items.get(MetrumItems.iron) == 9,
             "restored building must retain double iron output");
-        System.out.println("OK: save/load, smelter delivery and blockage recovery; salvager consumption and restart; 100 cycles ("
+        // Separator revision 0 stores progress and warmup but omits the trailing seed.
+        byte[] legacyBytes = java.util.Arrays.copyOf(saved.toByteArray(), saved.size() - 4);
+        mindustry.world.blocks.production.Separator.SeparatorBuild legacy =
+            (mindustry.world.blocks.production.Separator.SeparatorBuild) b.block.buildType.get();
+        legacy.block = b.block;
+        legacy.team = b.team;
+        legacy.items = new ItemModule();
+        legacy.liquids = new mindustry.world.modules.LiquidModule();
+        legacy.power = new mindustry.world.modules.PowerModule();
+        java.io.ByteArrayInputStream legacyInput = new java.io.ByteArrayInputStream(legacyBytes);
+        legacy.readAll(arc.util.io.Reads.get(new java.io.DataInputStream(legacyInput)), (byte) 0);
+        check(legacyInput.available() == 0, "legacy reader must consume exactly the revision 0 payload");
+        check(legacy.progress == 0.375f && legacy.items.get(MetrumItems.iron) == 7,
+            "legacy format must preserve progress and inventory");
+        legacy.offload(MetrumItems.iron);
+        check(legacy.items.get(MetrumItems.iron) == 9,
+            "legacy-loaded building must use the updated double iron output");
+        System.out.println("OK: current and legacy save/load, smelter delivery; salvager consumption and restart; 100 cycles ("
             + ironRolls + " iron / " + sandRolls + " sand rolls)");
     }
 }
