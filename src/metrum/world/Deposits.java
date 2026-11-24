@@ -61,13 +61,23 @@ public class Deposits {
     private static IntFloatMap drillProgress = new IntFloatMap();
     private static IntFloatMap unitTimers = new IntFloatMap();
     private static IntIntMap unitTiles = new IntIntMap();
+    /** packed drill position -> items per second when the sector was saved */
+    static final IntFloatMap awayRates = new IntFloatMap();
+    static int savedSeconds = -1;
 
     public static void load() {
         SaveVersion.addCustomChunk("metrum-deposits-v1", new Chunk());
+        SaveVersion.addCustomChunk("metrum-deposits-away-v1", new AwayChunk());
         Events.on(ResetEvent.class, e -> clear());
         Events.run(Trigger.draw, Deposits::drawHovered);
         Events.run(Trigger.update, () -> {
-            if (Vars.state.isPlaying() && !Vars.net.client() && all.size > 0) update();
+            if (!Vars.state.isPlaying() || Vars.net.client()) return;
+            if (awayRates.size > 0) {
+                // drills have counted their ore by now
+                if (Vars.state.isCampaign() && savedSeconds >= 0) mineAway(Vars.universe.seconds() - savedSeconds);
+                awayRates.clear();
+            }
+            if (all.size > 0) update();
         });
     }
 
@@ -108,10 +118,23 @@ public class Deposits {
     }
 
     public static void clear() {
+        awayRates.clear();
+        savedSeconds = -1;
         all.clear();
         drillProgress.clear();
         unitTimers.clear();
         unitTiles.clear();
+    }
+
+    /** Charges the time spent on other sectors, at the rates the drills had when the player left. */
+    public static void mineAway(int seconds) {
+        if (seconds <= 0) return;
+        for (IntFloatMap.Entry e : awayRates.entries()) {
+            Tile tile = Vars.world.tile(e.key);
+            if (tile == null || !(tile.build instanceof Drill.DrillBuild)) continue;
+            Drill.DrillBuild drill = (Drill.DrillBuild) tile.build;
+            if (drill.dominantItem != null) mined(drill, (int) Math.min((double) e.value * seconds, 100000));
+        }
     }
 
     /** ore block dropping this item, or null when the item can't form a deposit */
@@ -252,6 +275,40 @@ public class Deposits {
         unitTiles = tiles;
     }
 
+    /** Universe time and drill rates at the moment of saving; kept apart so that older saves still load. */
+    public static class AwayChunk implements SaveFileReader.CustomChunk {
+        @Override
+        public boolean writeNet() {
+            return false;
+        }
+
+        @Override
+        public void write(DataOutput out) throws IOException {
+            ObjectSet<Drill.DrillBuild> drills = new ObjectSet<>();
+            for (IntMap.Entry<Deposit> e : all.entries()) {
+                Tile tile = Vars.world.tile(e.key);
+                if (tile != null && tile.build instanceof Drill.DrillBuild) drills.add((Drill.DrillBuild) tile.build);
+            }
+            out.writeInt(Vars.universe == null ? -1 : Vars.universe.seconds());
+            out.writeInt(drills.size);
+            for (Drill.DrillBuild d : drills) {
+                out.writeInt(d.tile.pos());
+                out.writeFloat(d.lastDrillSpeed * 60f * d.timeScale());
+            }
+        }
+
+        @Override
+        public void read(DataInput in) throws IOException {
+            awayRates.clear();
+            savedSeconds = in.readInt();
+            int count = in.readInt();
+            for (int i = 0; i < count; i++) {
+                int pos = in.readInt();
+                awayRates.put(pos, in.readFloat());
+            }
+        }
+    }
+
     public static class Chunk implements SaveFileReader.CustomChunk {
         @Override
         public void write(DataOutput out) throws IOException {
@@ -265,7 +322,7 @@ public class Deposits {
 
         @Override
         public void read(DataInput in) throws IOException {
-            clear();
+            all.clear();
             int count = in.readInt();
             for (int i = 0; i < count; i++) {
                 int pos = in.readInt();

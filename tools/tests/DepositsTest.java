@@ -101,6 +101,19 @@ public class DepositsTest {
         cycle(d);
         check(Deposits.all.size == 0 && removed[0] == 2 && t1.drop() == null && t2.drop() == null);
 
+        // Absence: charged by saved rate and time, never below zero, nothing for idle drills or no time away.
+        chunk.read(new DataInputStream(new ByteArrayInputStream(save)));
+        t1.setOverlayQuiet(oreBlock);
+        t2.setOverlayQuiet(oreBlock);
+        Deposits.AwayChunk away = new Deposits.AwayChunk();
+        for (float[] c : new float[][]{{0f, 500, 7}, {0.01f, 0, 7}, {0.01f, 500, 2}, {0.01f, 9000000, 0}}) {
+            d.lastDrillSpeed = c[0] / 60f;
+            ByteArrayOutputStream rates = new ByteArrayOutputStream();
+            away.write(new DataOutputStream(rates));
+            away.read(new DataInputStream(new ByteArrayInputStream(rates.toByteArray())));
+            Deposits.mineAway((int) c[1]);
+            check(Math.abs(stock(ore) - c[2]) <= (c[2] == 2 ? 1 : 0));
+        }
         // Burst drills mine one item per ore tile in each cycle.
         BurstDrill burst = new BurstDrill("test-burst");
         burst.size = 2;
