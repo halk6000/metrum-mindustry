@@ -218,10 +218,28 @@ public class BasePlanner {
     static boolean step(CoreBuild core, AiLevel level) {
         mindustry.gen.Unit builder = assignedBuilder(core);
         if (builder != null && !builder.plans.isEmpty()) return stalled("konstruktor realizuje plan budowy");
+        if (builder != null && resumeConstruction(core, builder)) return true;
         // Early exits in the construction plan must still allow safe space reclamation.
         return buildStep(core, level) || clearUnusedWaterPipes(core);
     }
 
+    static boolean canResumeConstruction(mindustry.world.blocks.ConstructBlock.ConstructBuild site, mindustry.gen.Unit builder) {
+        return site.team == builder.team && site.current != null && site.wasConstructing && !site.activeDeconstruct
+            && (site.lastBuilder == null || site.lastBuilder == builder || site.lastBuilder.dead());
+    }
+
+    static boolean resumeConstruction(CoreBuild core, mindustry.gen.Unit builder) {
+        Building[] nearest = {null};
+        Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
+            b -> b instanceof mindustry.world.blocks.ConstructBlock.ConstructBuild && b.closestCore() == core
+                && canResumeConstruction((mindustry.world.blocks.ConstructBlock.ConstructBuild) b, builder),
+            b -> { if (nearest[0] == null || builder.dst2(b) < builder.dst2(nearest[0])) nearest[0] = b; });
+        if (nearest[0] == null) return false;
+        mindustry.world.blocks.ConstructBlock.ConstructBuild site =
+            (mindustry.world.blocks.ConstructBlock.ConstructBuild) nearest[0];
+        builder.addBuild(new BuildPlan(site.tileX(), site.tileY(), site.rotation, site.current, site.lastConfig));
+        return true;
+    }
     static boolean buildStep(CoreBuild core, AiLevel level) {
         int drills = count(core, b -> b.block instanceof mindustry.world.blocks.production.BeamDrill
             || b.block instanceof mindustry.world.blocks.production.Drill);
