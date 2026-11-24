@@ -100,6 +100,28 @@ public class SteamEngineGroupTest {
         check(near((used(a, steam) + used(b, steam)) * 60f, 22.8f));
         b.proximity.add(c); c.proximity.add(b);
         check(near(b.heat(), 13.2f) && near(power(b), 1.1f) && near(used(b, steam), 0.19f));
+        // The whole group heats through whichever engines touch a real heat crafter.
+        Vars.state.updateId++;
+        mindustry.world.blocks.production.HeatCrafter crucible = new mindustry.world.blocks.production.HeatCrafter("test-crucible");
+        crucible.size = 3;
+        crucible.heatRequirement = 10f;
+        block.size = 2;
+        mindustry.world.blocks.production.HeatCrafter.HeatCrafterBuild h = crucible.new HeatCrafterBuild();
+        h.block = crucible;
+        h.team = Team.sharded;
+        h.tile = new mindustry.world.Tile(0, 0);
+        a.tile = b.tile = c.tile = new mindustry.world.Tile(0, 0);
+        a.x = 20f; b.x = 36f; c.x = -20f; // a and c flush with the crucible, b behind a
+        a.proximity.add(h); h.proximity.add(a);
+        for (SteamEngine.SteamEngineBuild m : row) m.warmup = 1f;
+        check(near(h.calculateHeat(new float[4]), 39.6f));
+        Vars.state.updateId++;
+        c.proximity.add(h); h.proximity.add(c);
+        check(near(h.calculateHeat(new float[4]), 39.6f)); // second contact does not duplicate heat
+        Vars.state.updateId++;
+        a.proximity.clear(); b.proximity.clear(); c.proximity.clear(); h.proximity.clear();
+        a.proximity.add(h); h.proximity.add(a);
+        check(near(h.calculateHeat(new float[4]), 12f));
         // Output follows the steam actually supplied, also when it arrives in bursts.
         check(near(settled(a, 0.2f, 0.2f), 0.2f) && Math.abs(settled(a, 0.6f, 0f) - 0.3f) < 0.03f);
         check(settled(a, 1f, 1f) > 0.48f && near(settled(a, 0f, 0f), 0f));

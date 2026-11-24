@@ -10,6 +10,7 @@ import arc.util.io.Writes;
 import mindustry.content.Fx;
 import mindustry.graphics.Layer;
 import mindustry.world.blocks.heat.HeatBlock;
+import mindustry.world.blocks.heat.HeatConsumer;
 import mindustry.world.blocks.power.PowerGenerator;
 import mindustry.world.meta.Stat;
 import mindustry.world.meta.StatUnit;
@@ -48,6 +49,9 @@ public class SteamEngine extends PowerGenerator {
         public float steamSupply;
         /** tick of the last steam levelling, see SharedSteamConsumer */
         public long lastBalance = -1;
+        /** heat handed to each neighbour, recomputed for the whole group once per tick */
+        private float sharedHeat;
+        private long lastHeat = -1;
 
         /** Current connected component; rebuilt on demand so splits cannot retain stale members. */
         public arc.struct.Seq<SteamEngineBuild> connectedEngines() {
@@ -94,11 +98,43 @@ public class SteamEngine extends PowerGenerator {
         }
 
         /** heat ramps up in steps: 3 -> 6 -> 9 -> 12 as the engine spins up */
-        @Override
-        public float heat() {
+        public float ownHeat() {
             if (warmup < 0.05f) return 0f;
             int stage = Math.min(4, 1 + (int) (warmup * 4f));
             return heatOutput / 4f * stage * outputMultiplier();
+        }
+
+        /** true when a block that needs heat touches this engine */
+        public boolean heatOutlet() {
+            for (mindustry.gen.Building neighbour : proximity) {
+                if (neighbour.team == team && neighbour instanceof HeatConsumer
+                    && ((HeatConsumer) neighbour).heatRequirement() > 0f) return true;
+            }
+            return false;
+        }
+
+        /**
+         * The group heats like one machine: its total heat leaves through the engines touching heat consumers,
+         * split between them so that several outlets never multiply the heat.
+         */
+        @Override
+        public float heat() {
+            if (!grouped()) return ownHeat();
+            long tick = mindustry.Vars.state.updateId;
+            if (lastHeat != tick) {
+                arc.struct.Seq<SteamEngineBuild> group = connectedEngines();
+                float total = 0f;
+                int outlets = 0;
+                for (SteamEngineBuild member : group) {
+                    total += member.ownHeat();
+                    if (member.heatOutlet()) outlets++;
+                }
+                for (SteamEngineBuild member : group) {
+                    member.sharedHeat = outlets == 0 ? member.ownHeat() : member.heatOutlet() ? total / outlets : 0f;
+                    member.lastHeat = tick;
+                }
+            }
+            return sharedHeat;
         }
 
         @Override

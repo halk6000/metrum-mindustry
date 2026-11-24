@@ -135,6 +135,6 @@
 - Złoża Starego Wąwozu są rozmieszczone ręcznie: mają być skąpe, lecz wystarczające na pierwsze walki. Nie dosypywać losowych rud ani zwiększać złóż jako obejścia problemów gospodarki AI.
 
 ## Ustalenia użytkownika — maszyny parowe i stapiacz
-- [x] Sąsiadujące maszyny parowe tworzą grupę ze wspólnym wejściem/wyjściem. Premia grupy: +10% generacji prądu i ciepła, -5% zużycia pary, naliczana raz. Dwie maszyny po 12 pary/s: 22,8 pary/s; po 12 ciepła: 26,4. Obsłużyć podział i łączenie grup bez duplikacji zasobów.
+- [x] Sąsiadujące maszyny parowe tworzą grupę ze wspólnym wejściem/wyjściem. Premia grupy: +10% generacji prądu i ciepła, -5% zużycia pary, naliczana raz. Dwie maszyny po 12 pary/s: 22,8 pary/s; po 12 ciepła: 26,4. Obsłużyć podział i łączenie grup bez duplikacji zasobów. Grupa oddaje łączne ciepło jak jedna maszyna, także gdy odbiornik dotyka tylko jednej z maszyn; premia stała.
 - [ ] Prymitywny stapiacz skał 2x2: 1 skała + 1 węgiel -> 12 żużlu, pobór 300 PW. Budowa ze skały, żelaza i wskazanego przez użytkownika krzemienia (brak takiego surowca w obecnym modzie; do wyjaśnienia, czy chodzi o krzem). Czas cyklu i ilości materiałów budowy nieustalone.
 - [ ] W kolejnych etapach okresowo sprawdzać origin/main:ROADMAP.md przez git fetch; nie nadpisywać zmian użytkownika ani lokalnej pracy AI.
