@@ -37,7 +37,37 @@ public class SalvagerOutputTest {
         check(b.items.total() == 20 && !b.shouldConsume(), "full output must stop");
         b.items.remove(MetrumItems.iron, 1);
         check(!b.shouldConsume(), "one free slot must not start a double batch");
-        System.out.println("OK: double iron, single sand, storage boundaries");
+        // A limited receiver models a belt that becomes blocked mid-batch.
+        final int[] freeSlots = {2};
+        Building receiver = new Building() {
+            @Override
+            public boolean acceptItem(Building source, mindustry.type.Item item) {
+                return freeSlots[0] > 0;
+            }
+            @Override
+            public void handleItem(Building source, mindustry.type.Item item) {
+                freeSlots[0]--;
+                items.add(item, 1);
+            }
+        };
+        receiver.items = new ItemModule();
+        b.proximity.add(receiver);
+        b.items.clear();
+        b.offload(MetrumItems.iron);
+        check(receiver.items.get(MetrumItems.iron) == 2 && b.items.total() == 0,
+            "open receiver must get both iron items");
+        receiver.items.clear();
+        freeSlots[0] = 1;
+        b.offload(MetrumItems.iron);
+        check(receiver.items.get(MetrumItems.iron) == 1 && b.items.get(MetrumItems.iron) == 1,
+            "partially blocked receiver must leave the second iron in storage");
+        b.items.clear();
+        receiver.items.clear();
+        freeSlots[0] = 1;
+        b.offload(Items.sand);
+        check(receiver.items.get(Items.sand) == 1 && b.items.total() == 0,
+            "sand must be delivered once");
+        System.out.println("OK: batch sizes, storage boundaries, open and partially blocked receiver");
     }
 }
 
