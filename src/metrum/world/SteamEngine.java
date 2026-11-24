@@ -44,6 +44,8 @@ public class SteamEngine extends PowerGenerator {
 
     public class SteamEngineBuild extends GeneratorBuild implements HeatBlock {
         public float warmup;
+        /** recent steam satisfaction, smoothed so liquid arriving in bursts does not stall the engine */
+        public float steamSupply;
 
         /** Current connected component; rebuilt on demand so splits cannot retain stale members. */
         public arc.struct.Seq<SteamEngineBuild> connectedEngines() {
@@ -83,7 +85,8 @@ public class SteamEngine extends PowerGenerator {
         @Override
         public void updateTile() {
             // efficiency comes from the steam consumer; the engine heats up / cools down gradually
-            warmup = Mathf.approachDelta(warmup, efficiency > 0f ? 1f : 0f, warmupSpeed);
+            steamSupply = Mathf.lerpDelta(steamSupply, Mathf.clamp(efficiency), 0.05f);
+            warmup = Mathf.approachDelta(warmup, steamSupply, warmupSpeed);
             productionEfficiency = warmup * outputMultiplier();
             if (warmup > 0.5f && Mathf.chance(0.03 * Time.delta)) Fx.steam.at(x + Mathf.range(size * 3f), y + Mathf.range(size * 3f));
         }
@@ -121,6 +124,7 @@ public class SteamEngine extends PowerGenerator {
         public void read(Reads read, byte revision) {
             super.read(read, revision);
             warmup = read.f();
+            steamSupply = warmup;
         }
     }
 }

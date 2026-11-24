@@ -28,6 +28,16 @@ public class SteamEngineGroupTest {
         new metrum.world.SharedSteamConsumer(steam, 0.2f).update(b);
         return 1f - b.liquids.get(steam);
     }
+    /** warmup reached after a long run; efficiency alternates between the two values */
+    static float settled(SteamEngine.SteamEngineBuild b, float even, float odd) {
+        ((SteamEngine) b.block).warmupSpeed = 0.004f;
+        for (int i = 0; i < 2000; i++) {
+            b.efficiency = i % 2 == 0 ? even : odd;
+            if (b.warmup > 0.49f) b.warmup = 0.49f; // stay below the particle threshold
+            b.updateTile();
+        }
+        return b.warmup;
+    }
     public static void main(String[] args) {
         Vars.content = new ContentLoader();
         SteamEngine block = new SteamEngine("test-engine");
@@ -69,6 +79,9 @@ public class SteamEngineGroupTest {
         check(near((used(a, steam) + used(b, steam)) * 60f, 22.8f));
         b.proximity.add(c); c.proximity.add(b);
         check(near(b.heat(), 13.2f) && near(power(b), 1.1f) && near(used(b, steam), 0.19f));
+        // Output follows the steam actually supplied, also when it arrives in bursts.
+        check(near(settled(a, 0.2f, 0.2f), 0.2f) && Math.abs(settled(a, 0.6f, 0f) - 0.3f) < 0.03f);
+        check(settled(a, 1f, 1f) > 0.48f && near(settled(a, 0f, 0f), 0f));
         System.out.println("OK: isolated, chained, cyclic, split and enemy engine groups");
     }
 }
