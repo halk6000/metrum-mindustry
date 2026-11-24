@@ -52,6 +52,7 @@ public class MetrumProduction {
             consumeItem(Items.coal);
             consumeLiquid(Liquids.water, 0.5f);
             outputLiquid = new LiquidStack(MetrumLiquids.steam, 2f);
+            drawer = new metrum.world.DrawSteamBoiler();
         }};
 
         // Heat inverter: accepts heat (Erekir heaters) on one side, boils water into steam.

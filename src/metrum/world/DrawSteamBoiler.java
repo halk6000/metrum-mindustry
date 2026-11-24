@@ -28,6 +28,20 @@ public class DrawSteamBoiler extends DrawBlock {
     public void draw(Building build) {
         float x = build.x, y = build.y;
         float stroke = Lines.getStroke();
+        if (build.block.size == 3) {
+            Draw.color(edge);
+            Fill.square(x, y, 11.8f);
+            Draw.color(metal);
+            Fill.rect(x, y + 9f, 20f, 3f);
+            Fill.rect(x, y - 9f, 20f, 3f);
+            for (int side : new int[]{-1, 1}) {
+                Draw.color(metal);
+                Fill.rect(x + side * 10f, y, 2f, 18f);
+                Draw.color(highlight);
+                float travel = Mathf.sin(build.totalProgress() + side * 9f, 6f, 2f) * build.warmup();
+                Fill.rect(x + side * 10f, y + travel, 3f, 4f);
+            }
+        }
         Draw.color(edge);
         Fill.square(x, y, 7.8f);
         Draw.color(metal);
