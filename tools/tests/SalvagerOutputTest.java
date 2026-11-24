@@ -67,7 +67,37 @@ public class SalvagerOutputTest {
         b.offload(Items.sand);
         check(receiver.items.get(Items.sand) == 1 && b.items.total() == 0,
             "sand must be delivered once");
-        System.out.println("OK: batch sizes, storage boundaries, open and partially blocked receiver");
+        Vars.world = new mindustry.core.World();
+        Vars.world.tiles = new mindustry.world.Tiles(8, 8);
+        for (int x = 0; x < 8; x++) for (int y = 0; y < 8; y++)
+            Vars.world.tiles.set(x, y, new mindustry.world.Tile(x, y));
+        b.tile = Vars.world.tile(2, 2);
+        b.tile.build = b;
+        mindustry.world.blocks.distribution.Conveyor conveyor =
+            (mindustry.world.blocks.distribution.Conveyor) mindustry.content.Blocks.conveyor;
+        conveyor.init();
+        mindustry.world.blocks.distribution.Conveyor.ConveyorBuild belt = conveyor.new ConveyorBuild();
+        belt.block = conveyor;
+        belt.team = b.team;
+        belt.tile = Vars.world.tile(4, 2);
+        belt.tile.build = belt;
+        belt.rotation = 0;
+        belt.items = new ItemModule();
+        b.proximity.clear();
+        b.proximity.add(belt);
+        b.items.clear();
+        b.offload(MetrumItems.iron);
+        check(belt.items.get(MetrumItems.iron) >= 1, "actual conveyor must receive iron");
+        check(belt.items.get(MetrumItems.iron) + b.items.get(MetrumItems.iron) == 2,
+            "actual conveyor must preserve both iron items");
+        belt.items.clear();
+        belt.len = 0;
+        belt.minitem = 1f;
+        b.items.clear();
+        b.offload(Items.sand);
+        check(belt.items.get(Items.sand) == 1 && b.items.total() == 0,
+            "actual conveyor must receive exactly one sand");
+        System.out.println("OK: batch sizes, storage boundaries, receivers and actual conveyor");
     }
 }
 
