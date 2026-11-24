@@ -245,6 +245,18 @@ public class BasePlanner {
         return false; // no construction progress; step() may reclaim unused pipe space
     }
 
+    static java.util.Map<Item, Integer> queuedBuildReserve(mindustry.gen.Unit builder) {
+        java.util.Map<Item, Integer> reserve = new java.util.HashMap<>();
+        if (builder == null) return reserve;
+        for (BuildPlan plan : builder.plans) {
+            if (plan.breaking || plan.block == null) continue;
+            for (ItemStack cost : plan.block.requirements) {
+                int amount = Math.round(cost.amount * Vars.state.rules.buildCostMultiplier);
+                reserve.put(cost.item, reserve.getOrDefault(cost.item, 0) + amount);
+            }
+        }
+        return reserve;
+    }
     /** Keep startup mining and power affordable before spending shared minerals on ammunition. */
     public static java.util.Map<Item, Integer> economicReserve(CoreBuild core) {
         java.util.Map<Item, Integer> reserve = new java.util.HashMap<>();
@@ -257,6 +269,9 @@ public class BasePlanner {
         for (int i = 0; i < blocks.length; i++) for (ItemStack cost : blocks[i].requirements) {
             int amount = quantities[i] * Math.round(cost.amount * Vars.state.rules.buildCostMultiplier);
             reserve.put(cost.item, reserve.getOrDefault(cost.item, 0) + amount);
+        }
+        for (java.util.Map.Entry<Item, Integer> cost : queuedBuildReserve(assignedBuilder(core)).entrySet()) {
+            reserve.put(cost.getKey(), reserve.getOrDefault(cost.getKey(), 0) + cost.getValue());
         }
         return reserve;
     }

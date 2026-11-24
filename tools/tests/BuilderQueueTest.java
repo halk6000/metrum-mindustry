@@ -34,10 +34,15 @@ public class BuilderQueueTest {
         Unit unit=UnitEntity.create(); unit.type=new UnitType("test-builder"); unit.plans=loaded;
         unit.controller(new MetrumBuilderAI());
         check(unit.plans==loaded && unit.plans.size==3 && unit.buildPlan().block==drill);
+        mindustry.type.Item iron=new mindustry.type.Item("test-iron");
+        drill.requirements=new mindustry.type.ItemStack[]{new mindustry.type.ItemStack(iron,7)};
+        duct.requirements=new mindustry.type.ItemStack[]{new mindustry.type.ItemStack(iron,2)};
+        check(BasePlanner.queuedBuildReserve(unit).get(iron)==9);
         unit.plans.removeFirst();
+        check(BasePlanner.queuedBuildReserve(unit).get(iron)==2);
         check(unit.buildPlan().block==duct);
         unit.controller(new MetrumBuilderAI());
         check(unit.plans.size==2 && unit.buildPlan().block==duct);
-        System.out.println("OK: saved plan order, rotations, demolition, controller restoration, queue continuation");
+        System.out.println("OK: saved plan order, rotations, demolition, controller restoration, queue continuation, reserved materials, released materials");
     }
 }
