@@ -136,7 +136,24 @@ public class SalvagerOutputTest {
         check(((mindustry.world.blocks.production.Separator) b.block).craftTime
             == ((mindustry.world.blocks.production.Separator) MetrumProduction.salvager).craftTime,
             "overclocked salvager must use the normal cycle duration");
-        System.out.println("OK: output, blockage recovery, 100 full cycles consuming one rock each ("
+        b.items.clear();
+        b.items.add(MetrumItems.pieceRock, 10);
+        b.liquids.add(MetrumLiquids.steam, 30f);
+        b.power = new mindustry.world.modules.PowerModule();
+        b.power.status = 1f;
+        separator.progress = 0f;
+        arc.util.Time.delta = 1f;
+        float steamBefore = b.liquids.get(MetrumLiquids.steam);
+        for (int tick = 0; tick < 60; tick++) {
+            b.updateConsumption();
+            separator.updateTile();
+        }
+        check(Math.abs(steamBefore - b.liquids.get(MetrumLiquids.steam) - 9f) < 0.01f,
+            "one second of operation must consume nine steam");
+        check(Math.abs(b.block.consPower.requestedPower(b) * 60f - 180f) < 0.01f,
+            "running power demand must be 180 per second");
+        check(b.items.get(MetrumItems.pieceRock) < 10, "powered operation must complete cycles");
+        System.out.println("OK: steam and power demand during operation; 100 cycles ("
             + ironRolls + " iron / " + sandRolls + " sand rolls)");
     }
 }
