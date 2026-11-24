@@ -70,9 +70,15 @@ public class DrawSalvager extends DrawBlock {
         }
         if (overclocked) {
             Draw.color(accent);
-            Fill.rect(x - 6f, y + 4f, 2f, 2f);
-            Fill.rect(x + 6f, y - 4f, 2f, 2f);
-            Fill.rect(x, y + 6f, 7f, 1f);
+            Fill.rect(x - 6f, y, 2f, 10f);
+            Fill.rect(x + 6f, y, 2f, 10f);
+            Fill.rect(x, y + 6f, 11f, 2f);
+            Draw.color(edge);
+            Lines.stroke(0.8f);
+            for (int mark = -1; mark <= 1; mark++) {
+                float mx = x + mark * 3f;
+                Lines.line(mx - 0.6f, y + 5.2f, mx + 0.6f, y + 6.8f);
+            }
             Draw.color(edge);
             Fill.rect(x, y - 6f, 6f, 2.5f);
             Draw.color(bright);

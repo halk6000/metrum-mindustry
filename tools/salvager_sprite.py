@@ -37,9 +37,12 @@ for x in (-2.7, 2.7):
     draw.line((cx, cy-9, cx, cy+9), fill="#a6adb8", width=2)
     draw.ellipse((cx-3, cy-3, cx+3, cy+3), fill="#c5a66b")
 if overclocked:
-    rect(-6, 4, 2, 2, "#c5a66b")
-    rect(6, -4, 2, 2, "#c5a66b")
-    rect(0, 6, 7, 1, "#c5a66b")
+    rect(-6, 0, 2, 10, "#c5a66b")
+    rect(6, 0, 2, 10, "#c5a66b")
+    rect(0, 6, 11, 2, "#c5a66b")
+    for x in (-3, 0, 3):
+        draw.line(((x-0.6+half)*4, (half-5.2)*4,
+                   (x+0.6+half)*4, (half-6.8)*4), fill="#30343c", width=3)
     rect(0, -6, 6, 2.5, "#30343c")
     for x in (-1.5, 0, 1.5):
         rect(x, -6, 0.5, 2, "#a6adb8")
