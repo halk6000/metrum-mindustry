@@ -70,8 +70,22 @@ tasks.register('openPitTest', JavaExec) {
     classpath = files(compileOpenPitTest.flatMap { it.destinationDirectory }) + sourceSets.main.output + files(gameJar)
     mainClass = 'OpenPitMineTest'
 }
+// Exhaustible deposits: mining, exhaustion and save/load.
+def compileDepositsTest = tasks.register('compileDepositsTest', JavaCompile) {
+    dependsOn classes
+    source = files('tools/tests/DepositsTest.java')
+    classpath = sourceSets.main.output + files(gameJar)
+    destinationDirectory = layout.buildDirectory.dir('deposits-test-classes')
+}
+tasks.register('depositsTest', JavaExec) {
+    group = 'verification'
+    description = 'Checks exhaustible deposits: mining, exhaustion and save/load.'
+    dependsOn compileDepositsTest
+    classpath = files(compileDepositsTest.flatMap { it.destinationDirectory }) + sourceSets.main.output + files(gameJar)
+    mainClass = 'DepositsTest'
+}
 tasks.named('check') {
-    dependsOn 'salvagerTest', 'steamEngineTest', 'openPitTest'
+    dependsOn 'salvagerTest', 'steamEngineTest', 'openPitTest', 'depositsTest'
 }
 
 // gradlew deploy: build and install into the game (same file name the in-game importer uses)

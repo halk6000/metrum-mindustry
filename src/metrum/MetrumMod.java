@@ -23,6 +23,7 @@ public class MetrumMod extends Mod {
         FuelSystem.load();
         BoostSystem.load();
         metrum.modular.Loadouts.load();
+        metrum.world.Deposits.load();
         MetrumItems.load();
         MetrumLiquids.load();
         MetrumBlocks.load();

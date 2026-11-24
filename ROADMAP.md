@@ -92,7 +92,7 @@
 - [ ] **Migracja techniczna nazwy**: przed zmianą wewnętrznego identyfikatora planety sprawdzić zgodność istniejących zapisów kampanii, sektorów i powiązanych danych; nie zmieniać go bez strategii migracji. Wcześniejsze wpisy „Ferrox” w historii realizacji roadmapy opisują dawną nazwę i nie oznaczają cofnięcia wykonanej pracy.
 
 ### Metonia — kopalnia odkrywkowa i złoża wyczerpywalne
-- Stan: etap 1 gotowy (blok 4x4, badanie po kruszarce i stali, postęp, odkrycia, menu, zapis). Pozostało: zawalenie i wyczerpywalne złoża; do tego czasu kopalnia zatrzymuje się na 100% i zachowuje odkrycia.
+- Stan: etap 1 gotowy (blok 4x4, badanie po kruszarce i stali, postęp, odkrycia, menu, zapis). Etap 2 gotowy: mechanizm wyczerpywalnych złóż z zapisem (metrum.world.Deposits). Pozostało: zawalenie i rozsypanie złóż; do tego czasu kopalnia zatrzymuje się na 100% i zachowuje odkrycia.
 - [ ] **Kopalnia odkrywkowa (koszt przykładowy: 1000 berylu + 200 stali)**: co 10 s dodaje 1% postępu. Każdy 1% daje niezależnie 20% szansy na zdarzenie odkrycia podziemnych surowców, maksymalnie 200 jednostek zasobu na zdarzenie; odkrycia kumulują się (np. 600 berylu i 400 toru).
 - [ ] **Menu odkrytych złóż**: podczas pracy kopalnia pokazuje sumy znalezionych surowców; przy 100% postępu kopalnia się zawala i odsłania/rozsypuje odkryte złoża wokół swojej lokalizacji.
 - [ ] **Wyczerpywalne złoża**: po zawaleniu można stawiać zwykłe wiertnice na ujawnionych polach. Złoża mają ograniczony zapas, maleją podczas wydobycia i znikają po wyczerpaniu. Zapewnić zapis i odczyt pozostałych ilości oraz synchronizację sieciową; moduł mechaniki może być wewnętrzną biblioteką Metrum.
