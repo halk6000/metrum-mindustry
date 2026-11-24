@@ -719,7 +719,7 @@ public class BasePlanner {
         mindustry.type.Liquid water = mindustry.content.Liquids.water;
         Seq<Building> sources = new Seq<>(), destinations = new Seq<>();
         Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
-            b -> b.liquids != null && b.block.outputsLiquid && b.liquids.get(water) > 1f, sources::add);
+            b -> canSupplyWater(b), sources::add);
         if (sources.isEmpty()) return false;
         Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
             b -> b.block.consumesLiquid(water) && b.liquids != null && b.liquids.get(water) < 1f,
@@ -1105,7 +1105,17 @@ public class BasePlanner {
             if (totalCost < bestCost) { best = block; bestCost = totalCost; }
         }
         return best;
-    }    static boolean canSupportDrill(CoreBuild core, Block drill) {
+    }    static boolean canSupplyWater(Building source) {
+        if (!source.block.outputsLiquid || source.liquids == null) return false;
+        if (source.liquids.get(mindustry.content.Liquids.water) > 1f) return true;
+        if (source.block instanceof mindustry.world.blocks.power.ThermalGenerator) {
+            mindustry.type.LiquidStack output = ((mindustry.world.blocks.power.ThermalGenerator) source.block).outputLiquid;
+            return source.enabled && source.efficiency > 0f && output != null
+                && output.liquid == mindustry.content.Liquids.water && output.amount > 0f;
+        }
+        return false;
+    }
+    static boolean canSupportDrill(CoreBuild core, Block drill) {
         float multiplier = Vars.state.rules.buildCostMultiplier;
         for (ItemStack cost : drill.requirements) {
             if (core.items.get(cost.item) < Math.round(cost.amount * multiplier)) return false;
@@ -1116,7 +1126,7 @@ public class BasePlanner {
             mindustry.type.Liquid liquid = ((mindustry.world.consumers.ConsumeLiquid) consume).liquid;
             // The current pipe planner supplies water only, so gas-dependent drills must wait.
             if (liquid != mindustry.content.Liquids.water) return false;
-            if (count(core, b -> b.block.outputsLiquid && b.liquids != null && b.liquids.get(liquid) > 1f) == 0) return false;
+            if (count(core, b -> canSupplyWater(b)) == 0) return false;
         }
         return true;
     }

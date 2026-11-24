@@ -47,6 +47,14 @@ public class WaterConnectionTest {
         side.liquids.clear(); check(BasePlanner.waterSiteSafe(candidate,Team.crux));
         side.liquids.add(oil,1f); side.team=Team.sharded;
         check(BasePlanner.waterSiteSafe(candidate,Team.crux));
+        mindustry.world.blocks.power.ThermalGenerator generator=new mindustry.world.blocks.power.ThermalGenerator("test-water-source");
+        generator.outputsLiquid=true; generator.outputLiquid=new mindustry.type.LiquidStack(mindustry.content.Liquids.water,0.01f);
+        Building source=Building.create(); source.block=generator; source.enabled=true; source.efficiency=1f;
+        source.liquids=new mindustry.world.modules.LiquidModule();
+        check(BasePlanner.canSupplyWater(source));
+        source.enabled=false; check(!BasePlanner.canSupplyWater(source)); source.enabled=true;
+        source.efficiency=0f; check(!BasePlanner.canSupplyWater(source));
+        source.liquids.add(mindustry.content.Liquids.water,2f); check(BasePlanner.canSupplyWater(source));
         System.out.println("OK: straight, opposing, broken, foreign target, corner, cycle, water, foreign liquid, mixed liquids, side contacts");
     }
 }
