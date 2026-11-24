@@ -85,6 +85,19 @@
 - [ ] **Wsparcie międzysektorowe jako efekt rozwoju**: sektory wroga rozwijają własne zaplecze i wysyłają posiłki zależnie od swoich możliwości; gracz ma analogiczny mechanizm przygotowania i wysyłania jednostek. Zdobycie sektora osłabia sieć wsparcia przeciwnika.
 - [ ] **Balans trudności**: Ferrox docelowo trudniejszy od Erekiru dzięki kumulującemu się rozwojowi wrogich sektorów i wsparciu międzysektorowemu, nie przez samo podbijanie HP lub obrażeń. Przetestować scenariusze: łatwe AI + rozwinięta baza, trudne AI + młoda baza.
 
+## Planowane: nowe planety i mechaniki
+
+### Metonia (dotychczasowa nazwa: Ferrox)
+- [ ] **Zmiana nazwy planety Ferrox → Metonia** we wszystkich nazwach widocznych w grze, lokalizacjach PL/EN, opisach, drzewie technologii, mapie planet, dokumentacji i testach. Zachować dotychczasowy przemysłowy/rdzawy charakter planety, gospodarkę AI, rozwój sektorów i wsparcie międzysektorowe.
+- [ ] **Migracja techniczna nazwy**: przed zmianą wewnętrznego identyfikatora planety sprawdzić zgodność istniejących zapisów kampanii, sektorów i powiązanych danych; nie zmieniać go bez strategii migracji. Wcześniejsze wpisy „Ferrox” w historii realizacji roadmapy opisują dawną nazwę i nie oznaczają cofnięcia wykonanej pracy.
+
+### Venoms Issland — planeta bioewolucji i toksycznej chemii
+- [ ] **Nowa planeta Venoms Issland**: mroczny klimat, dominujący fiolet, biologiczne środowisko i odrębny charakter od przemysłowej Metonii; przygotować świat, mapy, oprawę, drzewo technologii oraz unikalne surowce i płyny.
+- [ ] **Naziemne drony pajęcze / skorpionopodobne**: jednostki nastawione na zatruwanie przeciwników, ataki kwasowe (plucie kwasem) i walkę z wykorzystaniem efektów toksycznych; zaprojektować ich role, rozwój, animacje i sposób przeciwdziałania.
+- [ ] **Bioegzystencja i ewolucja budynków**: budynki biologiczne mogą ewoluować w nowe formy po spełnieniu określonych warunków (np. dostęp do substancji, środowisko, czas lub wykonane działania); zdefiniować warunki, etapy, koszty i konsekwencje ewolucji w rozgrywce.
+- [ ] **Niebezpieczne związki toksyczne i wybuchowe**: stworzyć mechanikę substancji o szkodliwych właściwościach, ich produkcji, przechowywania i wykorzystania w walce; błędne połączenia lub niewłaściwe warunki mogą prowadzić do skażenia, uszkodzeń albo wybuchów. Dokładne receptury i reguły pozostają do zaprojektowania.
+- [ ] **Balans i testy Venoms Issland**: zapewnić czytelność zagrożeń, możliwość obrony przed kwasem i truciznami oraz sensowną progresję ewolucji bez blokad rozwoju sektora.
+
 ## Repo
 - GitHub (publiczne): https://github.com/halk6000/metrum-mindustry
 
