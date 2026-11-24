@@ -44,6 +44,12 @@ public class BaseExpander {
             {Blocks.scathe, Blocks.smite, Blocks.titan, Blocks.reinforcedSurgeWallLarge},
         };
         Events.run(Trigger.update, BaseExpander::update);
+        Events.on(mindustry.game.EventType.BlockBuildEndEvent.class, e -> {
+            if (e.breaking || Vars.net.client() || !supplyEnabled() || e.team != Vars.state.rules.waveTeam) return;
+            Building building = e.tile.build;
+            if (building instanceof mindustry.world.blocks.defense.turrets.ItemTurret.ItemTurretBuild
+                && !placed.contains(building)) placed.add(building);
+        });
         Events.on(mindustry.game.EventType.WorldLoadEvent.class, e -> {
             placed.clear();
             timer = supplyTimer = boostTimer = 0f;

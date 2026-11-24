@@ -345,6 +345,10 @@ public class BasePlanner {
         return true;
     }
     static boolean queueConstructionBatch(CoreBuild core, Seq<BuildPlan> plans) {
+        return queueConstructionBatch(core, plans, false);
+    }
+
+    static boolean queueConstructionBatch(CoreBuild core, Seq<BuildPlan> plans, boolean protectReserve) {
         mindustry.gen.Unit builder = assignedBuilder(core);
         if (builder == null || !builder.plans.isEmpty() || plans.isEmpty()) return false;
         java.util.Map<Item, Long> total = new java.util.HashMap<>();
@@ -355,8 +359,9 @@ public class BasePlanner {
                 total.put(cost.item, total.getOrDefault(cost.item, 0L) + amount);
             }
         }
+        java.util.Map<Item, Integer> reserve = protectReserve ? economicReserve(core) : java.util.Collections.emptyMap();
         for (java.util.Map.Entry<Item, Long> cost : total.entrySet()) {
-            if (core.items.get(cost.getKey()) < cost.getValue())
+            if ((long) core.items.get(cost.getKey()) - reserve.getOrDefault(cost.getKey(), 0) < cost.getValue())
                 return stalled("brak materiałów na cały plan: " + cost.getKey().localizedName);
         }
         for (BuildPlan plan : plans) builder.addBuild(plan);
@@ -736,9 +741,7 @@ public class BasePlanner {
             float a = ang + arc.math.Mathf.range(55f), d = arc.math.Mathf.random(9f, 16f) * Vars.tilesize;
             Tile t = Vars.world.tileWorld(core.x + arc.math.Angles.trnsx(a, d), core.y + arc.math.Angles.trnsy(a, d));
             if (t == null || !Build.validPlace(turret, core.team, t.x, t.y, 0, false)) continue;
-            if (!payExpansion(core, turret.requirements)) return false;
-            t.setNet(turret, core.team, 0);
-            if (t.build == null) return true;
+            Seq<BuildPlan> plans = Seq.with(new BuildPlan(t.x, t.y, 0, turret));
             if (level.turretMagazines) {
                 int back = Math.floorMod(Math.round((a + 180f) / 90f), 4);
                 for (int turn : new int[]{0, 1, 3, 2}) {
@@ -750,14 +753,16 @@ public class BasePlanner {
                     Tile m = Vars.world.tile(t.x + arc.math.geom.Geometry.d4x(dir) * distance,
                         t.y + arc.math.geom.Geometry.d4y(dir) * distance);
                     if (m == null || !Build.validPlace(magazine, core.team, m.x, m.y, 0, false)) continue;
-                    if (!payExpansion(core, magazine.requirements)) break;
-                    m.setNet(magazine, core.team, 0);
+                    plans.add(new BuildPlan(m.x, m.y, 0, magazine));
                     break;
                 }
             }
-            // Every turret needs ammo; the magazine option only controls extra storage.
-            metrum.ai.BaseExpander.placed.add(t.build);
-            return true;
+            if (queueConstructionBatch(core, plans, true)) return true;
+            if (plans.size > 1) {
+                plans.pop(); // optional magazine must not prevent an affordable turret
+                return queueConstructionBatch(core, plans, true);
+            }
+            return false;
         }
         return false;
     }
