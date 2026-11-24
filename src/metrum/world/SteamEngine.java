@@ -21,6 +21,8 @@ import mindustry.world.meta.StatUnit;
 public class SteamEngine extends PowerGenerator {
     public float heatOutput = 6f;
     public float warmupSpeed = 0.004f;
+    /** flat group bonus: applied once, regardless of how many engines are connected */
+    public float groupOutputMultiplier = 1.1f, groupSteamMultiplier = 0.95f;
 
     public SteamEngine(String name) {
         super(name);
@@ -62,11 +64,27 @@ public class SteamEngine extends PowerGenerator {
             return group;
         }
 
+        /** Any matching neighbour means a group of at least two; no need to walk the whole group. */
+        public boolean grouped() {
+            for (mindustry.gen.Building neighbour : proximity) {
+                if (neighbour instanceof SteamEngineBuild && neighbour.block == block && neighbour.team == team) return true;
+            }
+            return false;
+        }
+
+        public float outputMultiplier() {
+            return grouped() ? groupOutputMultiplier : 1f;
+        }
+
+        public float steamMultiplier() {
+            return grouped() ? groupSteamMultiplier : 1f;
+        }
+
         @Override
         public void updateTile() {
             // efficiency comes from the steam consumer; the engine heats up / cools down gradually
             warmup = Mathf.approachDelta(warmup, efficiency > 0f ? 1f : 0f, warmupSpeed);
-            productionEfficiency = warmup;
+            productionEfficiency = warmup * outputMultiplier();
             if (warmup > 0.5f && Mathf.chance(0.03 * Time.delta)) Fx.steam.at(x + Mathf.range(size * 3f), y + Mathf.range(size * 3f));
         }
 
@@ -75,7 +93,7 @@ public class SteamEngine extends PowerGenerator {
         public float heat() {
             if (warmup < 0.05f) return 0f;
             int stage = Math.min(4, 1 + (int) (warmup * 4f));
-            return heatOutput / 4f * stage;
+            return heatOutput / 4f * stage * outputMultiplier();
         }
 
         @Override

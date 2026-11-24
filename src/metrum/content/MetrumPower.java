@@ -48,6 +48,8 @@ public class MetrumPower {
         steamEngine.size = 2;
         steamEngine.powerProduction = metrum.Balance.f("steamEngine.powerPerSecond", 600f) / 60f;
         steamEngine.heatOutput = metrum.Balance.f("steamEngine.heat", 12f);
+        steamEngine.groupOutputMultiplier = metrum.Balance.f("steamEngine.groupOutput", 1.1f);
+        steamEngine.groupSteamMultiplier = metrum.Balance.f("steamEngine.groupSteam", 0.95f);
         steamEngine.consume(new metrum.world.SharedSteamConsumer(MetrumLiquids.steam,
             metrum.Balance.f("steamEngine.steamPerSecond", 12f) / 60f));
 

@@ -16,7 +16,7 @@ public class SharedSteamConsumer extends ConsumeLiquid {
         float available = 0f;
         for (SteamEngine.SteamEngineBuild member : ((SteamEngine.SteamEngineBuild) build).connectedEngines())
             available += member.liquids.get(liquid);
-        float required = amount * build.edelta();
+        float required = amount * ((SteamEngine.SteamEngineBuild) build).steamMultiplier() * build.edelta();
         return required <= 0f ? 0f : Math.min(1f, available / required);
     }
 
@@ -26,7 +26,7 @@ public class SharedSteamConsumer extends ConsumeLiquid {
             super.update(build);
             return;
         }
-        float remaining = amount * build.edelta();
+        float remaining = amount * ((SteamEngine.SteamEngineBuild) build).steamMultiplier() * build.edelta();
         for (SteamEngine.SteamEngineBuild member : ((SteamEngine.SteamEngineBuild) build).connectedEngines()) {
             float taken = Math.min(remaining, member.liquids.get(liquid));
             member.liquids.remove(liquid, taken);
