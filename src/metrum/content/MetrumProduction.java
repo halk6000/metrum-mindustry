@@ -166,6 +166,13 @@ public class MetrumProduction {
             results = with(MetrumItems.iron, 80, Items.sand, 20);
             buildType = () -> new SeparatorBuild() {
                 @Override
+                public boolean shouldConsume() {
+                    // Reserve room for the whole iron batch when the belts are blocked.
+                    return super.shouldConsume()
+                        && items.total() - items.get(MetrumItems.pieceRock) <= itemCapacity - 2;
+                }
+
+                @Override
                 public void offload(mindustry.type.Item item) {
                     super.offload(item);
                     if (item == MetrumItems.iron) super.offload(item);
