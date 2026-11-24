@@ -40,7 +40,9 @@ public class SteamEngine extends PowerGenerator {
     @Override
     public void setBars() {
         super.setBars();
-        addBar("heat", (SteamEngineBuild b) -> new mindustry.ui.Bar("bar.heat", mindustry.graphics.Pal.lightOrange, () -> b.warmup));
+        addBar("heat", (SteamEngineBuild b) -> new mindustry.ui.Bar(
+            () -> arc.Core.bundle.format("metrum.steamengine.heat", arc.util.Strings.autoFixed(b.groupHeat(), 1), b.connectedEngines().size),
+            () -> mindustry.graphics.Pal.lightOrange, () -> b.warmup));
     }
 
     public class SteamEngineBuild extends GeneratorBuild implements HeatBlock {
@@ -102,6 +104,13 @@ public class SteamEngine extends PowerGenerator {
             if (warmup < 0.05f) return 0f;
             int stage = Math.min(4, 1 + (int) (warmup * 4f));
             return heatOutput / 4f * stage * outputMultiplier();
+        }
+
+        /** combined heat of the connected group */
+        public float groupHeat() {
+            float total = 0f;
+            for (SteamEngineBuild member : connectedEngines()) total += member.ownHeat();
+            return total;
         }
 
         /** true when a block that needs heat touches this engine */

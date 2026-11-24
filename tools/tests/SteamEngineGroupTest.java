@@ -114,7 +114,7 @@ public class SteamEngineGroupTest {
         a.x = 20f; b.x = 36f; c.x = -20f; // a and c flush with the crucible, b behind a
         a.proximity.add(h); h.proximity.add(a);
         for (SteamEngine.SteamEngineBuild m : row) m.warmup = 1f;
-        check(near(h.calculateHeat(new float[4]), 39.6f));
+        check(near(h.calculateHeat(new float[4]), 39.6f) && near(b.groupHeat(), 39.6f));
         Vars.state.updateId++;
         c.proximity.add(h); h.proximity.add(c);
         check(near(h.calculateHeat(new float[4]), 39.6f)); // second contact does not duplicate heat
