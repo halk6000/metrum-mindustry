@@ -10,6 +10,7 @@ import mindustry.world.draw.DrawBlock;
 /** Twin crushing rollers driven by the separator's working progress. */
 public class DrawSalvager extends DrawBlock {
     public boolean overclocked;
+    public boolean advanced;
     private final Color edge = Color.valueOf("30343c"), metal = Color.valueOf("656b76"),
         bright = Color.valueOf("a6adb8"), accent = Color.valueOf("c5a66b");
 
@@ -27,6 +28,26 @@ public class DrawSalvager extends DrawBlock {
     @Override
     public void draw(Building build) {
         float x = build.x, y = build.y, stroke = Lines.getStroke();
+        if (advanced) {
+            Draw.color(edge);
+            Fill.square(x, y, 11.8f);
+            Draw.color(metal);
+            Fill.rect(x, y + 9f, 21f, 3f);
+            Fill.rect(x, y - 9f, 21f, 3f);
+            for (int side = -1; side <= 1; side += 2) {
+                float cx = x + side * 9.5f;
+                Draw.color(metal);
+                Fill.rect(cx, y, 3.5f, 13f);
+                Draw.color(bright);
+                Fill.circle(cx, y, 1.6f);
+                Draw.color(edge);
+                Lines.stroke(0.6f);
+                Lines.lineAngleCenter(cx, y, side * build.totalProgress() * 2f, 2.8f);
+                Draw.color(Color.valueOf("82b9b0"));
+                Fill.rect(cx, y + 4f, 2f, 1f);
+                Fill.rect(cx, y - 4f, 2f, 1f);
+            }
+        }
         Draw.color(edge);
         Fill.square(x, y, 7.8f);
         Draw.color(metal);

@@ -204,6 +204,7 @@ public class MetrumProduction {
             consumeItem(MetrumItems.pieceRock);
             consumeLiquid(MetrumLiquids.steam, 0.2f);
             results = with(MetrumItems.iron, 60, Items.sand, 20, Items.beryllium, 15, Items.tungsten, 5);
+            drawer = new metrum.world.DrawSalvager() {{ advanced = true; }};
         }};
 
         salvager = new Separator("salvager") {{
