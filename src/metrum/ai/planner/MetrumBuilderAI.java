@@ -2,7 +2,20 @@ package metrum.ai.planner;
 
 /** Follow explicit planner jobs without vanilla BuilderAI replacing the unit's queue. */
 public class MetrumBuilderAI extends mindustry.ai.types.BuilderAI {
+    private boolean enteringIdle = true;
     private final metrum.ai.SmartMining.SmartMinerAI idleMiner = new metrum.ai.SmartMining.SmartMinerAI() {
+        @Override
+        public void updateMovement() {
+            mindustry.gen.Building core = unit.closestCore();
+            // Vanilla MinerAI clears cargo even when the core cannot accept the whole delivery.
+            if (!mining && unit.stack.amount > 0 && core != null
+                && core.acceptStack(unit.stack.item, unit.stack.amount, unit) < unit.stack.amount) {
+                unit.mineTile = null;
+                moveTo(core, unit.type.range * 0.8f);
+                return;
+            }
+            super.updateMovement();
+        }
         @Override
         protected mindustry.type.Item desired() {
             mindustry.world.blocks.storage.CoreBlock.CoreBuild home = unit.team.cores().find(
@@ -18,9 +31,14 @@ public class MetrumBuilderAI extends mindustry.ai.types.BuilderAI {
     public void updateMovement() {
         if (unit.plans.isEmpty()) {
             idleMiner.unit(unit);
+            if (enteringIdle) {
+                idleMiner.mining = unit.stack.amount == 0;
+                enteringIdle = false;
+            }
             idleMiner.updateMovement(); // normal mining, carrying capacity and delivery to the core
             return;
         }
+        enteringIdle = true;
         unit.mineTile = null; // explicit construction always preempts mining
         idleMiner.ore = null;
         idleMiner.targetItem = null;

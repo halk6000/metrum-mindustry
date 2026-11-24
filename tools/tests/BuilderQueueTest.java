@@ -46,7 +46,9 @@ public class BuilderQueueTest {
         unit.plans.clear();
         unit.plans.addLast(new BuildPlan(99,99,0,drill));
         unit.plans.addLast(new BuildPlan(5,5,0,duct));
+        unit.stack = new mindustry.type.ItemStack(iron,5);
         ((MetrumBuilderAI)unit.controller()).updateMovement();
+        check(unit.stack.item==iron && unit.stack.amount==5);
         check(unit.plans.isEmpty());
         check(BasePlanner.queuedBuildReserve(unit).isEmpty());
         unit.plans.addLast(new BuildPlan(4,5,1,drill));
