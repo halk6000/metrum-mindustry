@@ -717,13 +717,11 @@ public class BasePlanner {
                 Tile origin = Vars.world.tile(duct.x + arc.math.geom.Geometry.d4x(dir) * distance,
                     duct.y + arc.math.geom.Geometry.d4y(dir) * distance);
                 if (origin == null || !Build.validPlace(factory, core.team, origin.x, origin.y, 0, false)) continue;
-                if (!payExpansion(core, factory.requirements, router.requirements)) return false;
-                Item carried = ((mindustry.world.blocks.distribution.Duct.DuctBuild) candidate).current;
-                duct.setNet(router, core.team, rot);
-                // Replacing a live duct must preserve the item currently travelling through it.
-                if (carried != null && duct.build != null) duct.build.handleItem(candidate, carried);
-                origin.setNet(factory, core.team, 0);
-                return true;
+                if (!Build.validPlace(router, core.team, duct.x, duct.y, rot, false)) continue;
+                // Complete the consumer first, then replace the duct using the game's normal construction path.
+                Seq<BuildPlan> plans = Seq.with(new BuildPlan(origin.x, origin.y, 0, factory),
+                    new BuildPlan(duct.x, duct.y, rot, router));
+                return queueConstructionBatch(core, plans, true);
             }
         }
         return false;
