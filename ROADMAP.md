@@ -108,3 +108,7 @@
 - [ ] Rzeczywista budowa przez drony (korekta użytkownika): zastąpić natychmiastowe setNet kolejką BuildPlan i pobieraniem materiałów przez silnik. Pierwszy etap: mury z dedykowanym MetrumBuilderAI. Pozostałe: wiertnice, transport, prąd, rury, fabryki, wieżyczki, magazynki i rozbiórka. Licznik planera nie jest licznikiem ukończonych budów.
 
 - [ ] Rozpoznanie i ekspansja gospodarcza (uwaga użytkownika 24.11): drony szukają brakujących zasobów poza bezpośrednim otoczeniem rdzenia, odkrywają teren i zakładają połączone placówki; używać maszyn Metrum, uwzględnić wolfram i unikać zależności wymagających wolframu do uruchomienia jego pierwszego źródła. Dalsza symulacja przy nieobecności gracza pozostaje osobnym zadaniem.
+
+## Mapa użytkownika — aktualizacja 24.11
+- [x] Zaimportowano Stary Wąwóz zapisany 24.11 o 08:34 z katalogu map Steam do obu nazw mapy w assets/maps; kolejny JAR i wydanie mają zawierać tę wersję.
+- Złoża Starego Wąwozu są rozmieszczone ręcznie: mają być skąpe, lecz wystarczające na pierwsze walki. Nie dosypywać losowych rud ani zwiększać złóż jako obejścia problemów gospodarki AI.
