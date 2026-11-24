@@ -38,6 +38,15 @@ public class WaterConnectionTest {
         Building turn=place(2,2,Blocks.reinforcedConduit,0), cornerTarget=place(3,2,consumer,0);
         check(BasePlanner.waterLineConnected(a,cornerTarget));
         turn.rotation=3; check(!BasePlanner.waterLineConnected(a,target));
-        System.out.println("OK: straight, opposing, broken, foreign target, corner, cycle, water, foreign liquid, mixed liquids");
+        Building side=place(5,5,Blocks.reinforcedConduit,0);
+        side.block.hasLiquids=true; side.liquids=new mindustry.world.modules.LiquidModule();
+        Tile candidate=Vars.world.tile(5,4);
+        side.liquids.add(oil,1f); check(!BasePlanner.waterSiteSafe(candidate,Team.crux));
+        side.liquids.clear(); side.liquids.add(mindustry.content.Liquids.water,1f);
+        check(BasePlanner.waterSiteSafe(candidate,Team.crux));
+        side.liquids.clear(); check(BasePlanner.waterSiteSafe(candidate,Team.crux));
+        side.liquids.add(oil,1f); side.team=Team.sharded;
+        check(BasePlanner.waterSiteSafe(candidate,Team.crux));
+        System.out.println("OK: straight, opposing, broken, foreign target, corner, cycle, water, foreign liquid, mixed liquids, side contacts");
     }
 }
