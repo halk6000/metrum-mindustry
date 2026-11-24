@@ -153,17 +153,24 @@ public class MetrumProduction {
             drawer = new DrawMulti(new DrawDefault(), new DrawGlowRegion() {{ color = Color.valueOf("ffc46b"); }});
         }};
 
-        // overclocked 2x2: twice as fast as the Salvager; 80% iron / 20% sand (~2 iron per Salvager cycle)
+        // Same cycle as the Salvager; each iron roll yields two items, sand yields one.
         salvagerOverclocked = new Separator("salvager-overclocked") {{
             requirements(Category.crafting, with(MetrumItems.pieceRock, 40, Items.graphite, 80, Items.silicon, 40, MetrumItems.steel, 20));
             size = 2;
-            craftTime = 10f;
+            craftTime = 20f;
             itemCapacity = 20;
             liquidCapacity = 40f;
             consumePower(3f);
             consumeItem(MetrumItems.pieceRock);
             consumeLiquid(MetrumLiquids.steam, 0.15f);
             results = with(MetrumItems.iron, 80, Items.sand, 20);
+            buildType = () -> new SeparatorBuild() {
+                @Override
+                public void offload(mindustry.type.Item item) {
+                    super.offload(item);
+                    if (item == MetrumItems.iron) super.offload(item);
+                }
+            };
         }};
 
         // advanced 3x3: also recovers beryllium and tungsten - iron 60% / sand 20% / beryllium 15% / tungsten 5%
