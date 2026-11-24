@@ -136,6 +136,7 @@ public class MetrumProduction {
             consumeItems(with(MetrumItems.iron, 2, Items.coal, 1));
             consumeLiquid(MetrumLiquids.steam, 0.33f);
             outputItem = new ItemStack(MetrumItems.steel, 2);
+            drawer = new metrum.world.DrawInfusionSmelter();
         }};
 
         // overclocked silicon arc furnace 3x3: 1 graphite + 2 sand -> 6 silicon, 450 power/s, 95% of vanilla time;
