@@ -30,6 +30,7 @@ public class BasePlanner {
     public static final Seq<mindustry.type.Planet> planets = new Seq<>();
     static float timer;
     static float miningBonusTimer = 60f;
+    static final java.util.Map<CoreBuild, Integer> bentRepairCursor = new java.util.HashMap<>();
     static float lastPlannerTick = -1000f;
     static int completedSteps;
     static String failureReason;
@@ -58,6 +59,7 @@ public class BasePlanner {
             miningBonusTimer = 60f;
             plannerAction = "oczekiwanie na pierwszą próbę";
             builderTimers.clear();
+            bentRepairCursor.clear();
             miningDemand.clear();
             deferredDemand.clear();
 
@@ -130,6 +132,7 @@ public class BasePlanner {
             }
         });
         builderTimers.keySet().removeIf(core -> !core.isValid() || core.team != team);
+        bentRepairCursor.keySet().removeIf(core -> !core.isValid() || core.team != team);
         for (CoreBuild core : team.cores()) {
             if (hasBuilder(core)) {
                 builderTimers.put(core, 0f);
@@ -548,9 +551,14 @@ public class BasePlanner {
     }
     /** Search at most six missing tiles, allowing bends while preserving the old downstream route. */
     static boolean repairBentWaterGap(CoreBuild core, Seq<Building> sources, Seq<Building> destinations) {
-        if (destinations.isEmpty()) return false;
+        if (destinations.isEmpty() || sources.isEmpty()) return false;
         Block conduit = Blocks.reinforcedConduit;
-        for (Building source : sources) {
+        int first = Math.floorMod(bentRepairCursor.getOrDefault(core, 0), sources.size);
+        // Bound expensive searches, rotating through candidates so later pipe ends are not starved.
+        for (int attempt = 0; attempt < Math.min(8, sources.size); attempt++) {
+            int index = (first + attempt) % sources.size;
+            bentRepairCursor.put(core, (index + 1) % sources.size);
+            Building source = sources.get(index);
             if (source.block != conduit || !waterCompatible(source)) continue;
             Tile start = source.tile.nearby(source.rotation);
             if (start == null || start.block() != Blocks.air
@@ -568,7 +576,7 @@ public class BasePlanner {
                     if (next != null) {
                         if (next == source || next.team != core.team || path.size < 2) continue;
                         if (next.block != conduit && !destinations.contains(next)) continue;
-                if (next.block == conduit && !waterCompatible(next)) continue;
+                        if (next.block == conduit && !waterCompatible(next)) continue;
                         if (next.block == conduit && next.tile.nearby(next.rotation) == tail) continue;
                         if (!destinations.contains(to -> next == to || waterLineConnected(next, to))) continue;
                         if (!payBatch(core, conduit.requirements, path.size)) return false;
