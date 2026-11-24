@@ -206,7 +206,25 @@ public class SalvagerOutputTest {
             "smelter must deliver steel to the actual conveyor");
         check(belt.items.get(MetrumItems.steel) + furnace.items.get(MetrumItems.steel) == 2,
             "smelter must preserve both produced steel items");
-        System.out.println("OK: smelter steel delivery; salvager consumption, blockage and restart; 100 cycles ("
+        furnace.items.clear();
+        furnace.items.add(MetrumItems.iron, 2);
+        furnace.items.add(Items.coal, 1);
+        belt.items.clear();
+        belt.len = 3;
+        belt.minitem = 0f;
+        furnace.craft();
+        check(furnace.items.get(MetrumItems.steel) == 2 && belt.items.total() == 0,
+            "blocked conveyor must leave both steel items in the smelter");
+        check(!furnace.dump(MetrumItems.steel), "blocked conveyor must refuse stored steel");
+        belt.len = 0;
+        belt.minitem = 1f;
+        check(furnace.dump(MetrumItems.steel), "unblocked conveyor must receive stored steel");
+        belt.minitem = 1f;
+        check(furnace.dump(MetrumItems.steel), "second stored steel must also transfer");
+        check(furnace.items.total() == 0 && belt.items.get(MetrumItems.steel) == 2,
+            "smelter recovery must preserve both steel items");
+        check(!furnace.dump(MetrumItems.steel), "empty smelter must not duplicate steel");
+        System.out.println("OK: smelter delivery and blocked conveyor recovery; salvager consumption and restart; 100 cycles ("
             + ironRolls + " iron / " + sandRolls + " sand rolls)");
     }
 }
