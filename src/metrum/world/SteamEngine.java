@@ -46,6 +46,8 @@ public class SteamEngine extends PowerGenerator {
         public float warmup;
         /** recent steam satisfaction, smoothed so liquid arriving in bursts does not stall the engine */
         public float steamSupply;
+        /** tick of the last steam levelling, see SharedSteamConsumer */
+        public long lastBalance = -1;
 
         /** Current connected component; rebuilt on demand so splits cannot retain stale members. */
         public arc.struct.Seq<SteamEngineBuild> connectedEngines() {

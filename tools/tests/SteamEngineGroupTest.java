@@ -40,6 +40,7 @@ public class SteamEngineGroupTest {
     }
     public static void main(String[] args) {
         Vars.content = new ContentLoader();
+        Vars.state = new mindustry.core.GameState();
         SteamEngine block = new SteamEngine("test-engine");
         SteamEngine.SteamEngineBuild a = engine(block, Team.sharded),
             b = engine(block, Team.sharded), c = engine(block, Team.sharded),
@@ -65,10 +66,30 @@ public class SteamEngineGroupTest {
         check(consumer.efficiency(b) == 1f);
         check(consumer.efficiency(a) == 0f);
         consumer.update(b);
-        check(Math.abs(c.liquids.get(steam) - 0.81f) < 0.0001f);
+        check(near(b.liquids.get(steam), 0.31f) && near(c.liquids.get(steam), 0.5f));
+        // After a split nobody can reach the other half any more.
         b.proximity.remove(c, true); c.proximity.remove(b, true);
-        check(consumer.efficiency(b) == 0f);
-        check(Math.abs(c.liquids.get(steam) - 0.81f) < 0.0001f);
+        b.liquids.clear();
+        Vars.state.updateId++;
+        check(consumer.efficiency(b) == 0f && near(c.liquids.get(steam), 0.5f));
+        // Scarce steam piped into one end is shared equally and conserved.
+        a.proximity.clear(); b.proximity.clear(); c.proximity.clear();
+        a.proximity.add(b); b.proximity.add(a); b.proximity.add(c); c.proximity.add(b);
+        SteamEngine.SteamEngineBuild[] row = {a, b, c};
+        float[] burned = new float[3];
+        for (SteamEngine.SteamEngineBuild m : row) m.liquids.clear();
+        for (int tick = 0; tick < 100; tick++) {
+            Vars.state.updateId++;
+            c.liquids.add(steam, 0.2f);
+            for (int k = 0; k < 3; k++) {
+                consumer.efficiency(row[k]);
+                float before = row[k].liquids.get(steam);
+                consumer.update(row[k]);
+                burned[k] += before - row[k].liquids.get(steam);
+            }
+        }
+        check(near(burned[0], burned[1]) && near(burned[1], burned[2]));
+        check(Math.abs(burned[0] + burned[1] + burned[2] - 20f) < 0.01f);
         // Bonus: lost after a split, flat for two or three engines, never shared with enemies.
         block.heatOutput = 12f;
         for (SteamEngine.SteamEngineBuild m : new SteamEngine.SteamEngineBuild[]{a, b, c, enemy}) { m.warmup = 1f; m.proximity.clear(); }
