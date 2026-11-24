@@ -328,6 +328,21 @@ public class BasePlanner {
         }) > 0;
     }
 
+    /** Queue real construction; the engine consumes resources as the drone builds, not here. */
+    static boolean queueConstruction(CoreBuild core, Block block, Tile site, int rotation) {
+        mindustry.gen.Unit builder = assignedBuilder(core);
+        if (builder == null || !builder.plans.isEmpty()) return stalled("konstruktor zajęty lub niedostępny");
+        if (site == null || !Build.validPlace(block, core.team, site.x, site.y, rotation, false)) return false;
+        for (ItemStack cost : block.requirements) {
+            int needed = Math.round(cost.amount * Vars.state.rules.buildCostMultiplier);
+            if (core.items.get(cost.item) < needed) {
+                miningDemand.putIfAbsent(core, new ItemStack(cost.item, needed));
+                return stalled("brak: " + cost.item.localizedName + " (" + core.items.get(cost.item) + "/" + needed + ")");
+            }
+        }
+        builder.addBuild(new mindustry.entities.units.BuildPlan(site.x, site.y, rotation, block));
+        return true;
+    }
     static boolean buildPower(CoreBuild core) {
         Block gen = Blocks.turbineCondenser;
         Tile best = null;
@@ -341,9 +356,7 @@ public class BasePlanner {
             if (d < bestDst) { bestDst = d; best = t; }
         }
         if (best == null) return stalled("geoterma: brak wolnego miejsca na wyziewie");
-        if (!pay(core, gen.requirements)) return stalled("geoterma: brak surowców");
-        best.setNet(gen, core.team, 0);
-        return true;
+        return queueConstruction(core, gen, best, 0);
     }
 
     /** beam nodes on a lattice (every 8 tiles) between generators and consumers; nodes auto-link in straight lines */
@@ -373,9 +386,7 @@ public class BasePlanner {
                     || (dy >= min && dy <= max && (dx == min - 1 || dx == max + 1)))) continue;
                 Tile t = Vars.world.tile(endpoint.tileX() + dx, endpoint.tileY() + dy);
                 if (t == null || t.block() != Blocks.air || !Build.validPlace(node, core.team, t.x, t.y, 0, false)) continue;
-                if (!pay(core, node.requirements)) return stalled("sieć prądu: brak surowców na węzeł");
-                t.setNet(node, core.team, 0);
-                return true;
+                return queueConstruction(core, node, t, 0);
             }
         }
         // Grow a continuous connection from a producing graph to an isolated node.
@@ -397,9 +408,7 @@ public class BasePlanner {
             if (route == null || route.isEmpty()) continue;
             for (Tile t : route) {
                 if (t.build != null) continue;
-                if (!pay(core, node.requirements)) return stalled("sieć prądu: brak surowców na węzeł");
-                t.setNet(node, core.team, 0);
-                return true;
+                return queueConstruction(core, node, t, 0);
             }
         }
         int step = 8, placed = 0;
@@ -408,9 +417,7 @@ public class BasePlanner {
                 if (Math.abs(dx) != r && Math.abs(dy) != r) continue;
                 Tile t = Vars.world.tile(core.tileX() + dx, core.tileY() + dy);
                 if (t == null || t.block() != Blocks.air || !Build.validPlace(node, core.team, t.x, t.y, 0, false)) continue;
-                if (!pay(core, node.requirements)) return placed > 0 || stalled("sieć prądu: brak surowców na węzeł");
-                t.setNet(node, core.team, 0);
-                placed++;
+                return queueConstruction(core, node, t, 0);
             }
         }
         return placed > 0 || stalled("sieć prądu: brak dostępnego miejsca na dalsze węzły");
