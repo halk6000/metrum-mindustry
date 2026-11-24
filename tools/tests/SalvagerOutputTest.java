@@ -114,7 +114,30 @@ public class SalvagerOutputTest {
         check(b.items.total() == 0 && belt.items.get(MetrumItems.iron) == 2,
             "unblocking must drain the batch without losing items");
         check(!b.dump(MetrumItems.iron), "empty storage must not create extra iron");
-        System.out.println("OK: batch sizes, storage boundaries, conveyor delivery and recovery after blockage");
+        b.proximity.clear();
+        b.liquids = new mindustry.world.modules.LiquidModule();
+        mindustry.world.blocks.production.Separator.SeparatorBuild separator =
+            (mindustry.world.blocks.production.Separator.SeparatorBuild) b;
+        int ironRolls = 0, sandRolls = 0;
+        for (int seed = 0; seed < 100; seed++) {
+            b.items.clear();
+            b.items.add(MetrumItems.pieceRock, 3);
+            separator.seed = seed;
+            separator.progress = 1f;
+            b.efficiency = 0f; // Complete the prepared cycle without advancing the next one.
+            separator.updateTile();
+            check(b.items.get(MetrumItems.pieceRock) == 2, "each completed cycle must consume one rock");
+            int iron = b.items.get(MetrumItems.iron), sand = b.items.get(Items.sand);
+            check((iron == 2 && sand == 0) || (iron == 0 && sand == 1),
+                "a full cycle must produce either two iron or one sand");
+            if (iron == 2) ironRolls++; else sandRolls++;
+        }
+        check(ironRolls > 0 && sandRolls > 0, "full cycles must exercise both possible results");
+        check(((mindustry.world.blocks.production.Separator) b.block).craftTime
+            == ((mindustry.world.blocks.production.Separator) MetrumProduction.salvager).craftTime,
+            "overclocked salvager must use the normal cycle duration");
+        System.out.println("OK: output, blockage recovery, 100 full cycles consuming one rock each ("
+            + ironRolls + " iron / " + sandRolls + " sand rolls)");
     }
 }
 
