@@ -31,7 +31,7 @@ public class BuilderQueueTest {
         check(loaded.size==3 && loaded.get(0).block==drill && loaded.get(0).rotation==1);
         check(loaded.get(1).block==duct && loaded.get(1).x==5 && !loaded.get(1).breaking);
         check(loaded.get(2).breaking && loaded.get(2).x==6);
-        Unit unit=UnitEntity.create(); unit.type=new UnitType("test-builder"); unit.plans=loaded;
+        Unit unit=UnitEntity.create(); unit.type=new UnitType("test-builder"); unit.type.buildSpeed=1f; unit.plans=loaded;
         unit.controller(new MetrumBuilderAI());
         check(unit.plans==loaded && unit.plans.size==3 && unit.buildPlan().block==drill);
         mindustry.type.Item iron=new mindustry.type.Item("test-iron");
@@ -49,6 +49,16 @@ public class BuilderQueueTest {
         ((MetrumBuilderAI)unit.controller()).updateMovement();
         check(unit.plans.isEmpty());
         check(BasePlanner.queuedBuildReserve(unit).isEmpty());
-        System.out.println("OK: saved plan order, rotations, demolition, controller restoration, queue continuation, reserved materials, released materials, invalid batch cancellation");
+        unit.plans.addLast(new BuildPlan(4,5,1,drill));
+        unit.plans.addLast(new BuildPlan(5,5,0,duct));
+        arc.struct.Seq<BuildPlan> backup=BasePlanner.copyBuildQueue(unit);
+        unit.plans.clear();
+        check(backup.size==2);
+        check(BasePlanner.restoreBuildQueue(unit,backup));
+        check(unit.plans.size==2 && unit.buildPlan().block==drill);
+        check(!BasePlanner.restoreBuildQueue(unit,backup));
+        unit.buildPlan().rotation=3;
+        check(backup.first().rotation==1);
+        System.out.println("OK: saved plan order, rotations, demolition, controller restoration, queue continuation, reserved materials, released materials, invalid batch cancellation, constructor replacement queue");
     }
 }

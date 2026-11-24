@@ -31,6 +31,7 @@ public class BasePlanner {
     public static final Seq<mindustry.type.Planet> planets = new Seq<>();
     static float timer;
     static float miningBonusTimer = 60f;
+    static final java.util.Map<CoreBuild, Seq<BuildPlan>> abandonedPlans = new java.util.HashMap<>();
     static final java.util.Map<CoreBuild, Integer> bentRepairCursor = new java.util.HashMap<>();
     static float lastPlannerTick = -1000f;
     static int completedSteps;
@@ -45,6 +46,11 @@ public class BasePlanner {
     public static void init() {
         EconomyGoals.init();
         Events.run(Trigger.update, BasePlanner::update);
+        Events.on(mindustry.game.EventType.UnitDestroyEvent.class, e -> {
+            if (Vars.net.client() || !isBuilderFlag(e.unit.flag) || e.unit.plans.isEmpty()) return;
+            CoreBuild home = e.unit.team.cores().find(core -> builderHomeFlag(core) == e.unit.flag);
+            if (home != null) abandonedPlans.put(home, copyBuildQueue(e.unit));
+        });
         Events.on(mindustry.game.EventType.ClientLoadEvent.class, e -> {
             arc.Core.scene.table(t -> {
                 t.top().right().marginTop(110f).marginRight(8f);
@@ -60,6 +66,7 @@ public class BasePlanner {
             miningBonusTimer = 60f;
             plannerAction = "oczekiwanie na pierwszą próbę";
             builderTimers.clear();
+            abandonedPlans.clear();
             bentRepairCursor.clear();
             miningDemand.clear();
             deferredDemand.clear();
@@ -126,6 +133,21 @@ public class BasePlanner {
             && u.controller() instanceof mindustry.ai.types.BuilderAI && u.flag == builderHomeFlag(core));
     }
 
+    static Seq<BuildPlan> copyBuildQueue(mindustry.gen.Unit builder) {
+        Seq<BuildPlan> copy = new Seq<>();
+        for (BuildPlan plan : builder.plans) copy.add(plan.copy());
+        return copy;
+    }
+
+    static boolean restoreBuildQueue(mindustry.gen.Unit builder, Seq<BuildPlan> plans) {
+        if (builder == null || !builder.plans.isEmpty() || plans == null || plans.isEmpty()) return false;
+        for (BuildPlan plan : plans) builder.addBuild(plan.copy());
+        return true;
+    }
+
+    static void restoreAbandonedPlans(CoreBuild core, mindustry.gen.Unit builder) {
+        if (restoreBuildQueue(builder, abandonedPlans.get(core))) abandonedPlans.remove(core);
+    }
     static void keepBuilder(Team team) {
         mindustry.gen.Groups.unit.each(u -> {
             if (u.team != team || u.type != metrum.content.MetrumUnits.monoMetT1 || u.dead() || u.isPlayer()) return;
@@ -139,8 +161,10 @@ public class BasePlanner {
         });
         builderTimers.keySet().removeIf(core -> !core.isValid() || core.team != team);
         bentRepairCursor.keySet().removeIf(core -> !core.isValid() || core.team != team);
+        abandonedPlans.keySet().removeIf(core -> !core.isValid() || core.team != team);
         for (CoreBuild core : team.cores()) {
             if (hasBuilder(core)) {
+                restoreAbandonedPlans(core, assignedBuilder(core));
                 builderTimers.put(core, 0f);
                 continue;
             }
@@ -151,6 +175,7 @@ public class BasePlanner {
             mindustry.gen.Unit u = metrum.content.MetrumUnits.monoMetT1.spawn(team, core.x, core.y);
             u.flag = builderHomeFlag(core);
             u.controller(new MetrumBuilderAI());
+            restoreAbandonedPlans(core, u);
             mindustry.content.Fx.spawn.at(u);
         }
     }
