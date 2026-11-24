@@ -42,8 +42,22 @@ tasks.register('salvagerTest', JavaExec) {
     classpath = files(compileSalvagerTest.flatMap { it.destinationDirectory }) + sourceSets.main.output + files(gameJar)
     mainClass = 'SalvagerOutputTest'
 }
+// Steam engine groups: sharing, bonus, splitting and scarce supply.
+def compileSteamEngineTest = tasks.register('compileSteamEngineTest', JavaCompile) {
+    dependsOn classes
+    source = files('tools/tests/SteamEngineGroupTest.java')
+    classpath = sourceSets.main.output + files(gameJar)
+    destinationDirectory = layout.buildDirectory.dir('steam-engine-test-classes')
+}
+tasks.register('steamEngineTest', JavaExec) {
+    group = 'verification'
+    description = 'Checks steam engine groups: sharing, bonus, splitting and scarce supply.'
+    dependsOn compileSteamEngineTest
+    classpath = files(compileSteamEngineTest.flatMap { it.destinationDirectory }) + sourceSets.main.output + files(gameJar)
+    mainClass = 'SteamEngineGroupTest'
+}
 tasks.named('check') {
-    dependsOn 'salvagerTest'
+    dependsOn 'salvagerTest', 'steamEngineTest'
 }
 
 // gradlew deploy: build and install into the game (same file name the in-game importer uses)
