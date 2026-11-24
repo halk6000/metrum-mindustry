@@ -15,6 +15,14 @@ public class MetrumBuilderAI extends mindustry.ai.types.BuilderAI {
                 return;
             }
         }
+        if (plan.breaking && tile != null && tile.block() == mindustry.content.Blocks.tungstenWall) {
+            mindustry.world.blocks.storage.CoreBlock.CoreBuild home = unit.team.cores().find(
+                core -> BasePlanner.builderHomeFlag(core) == unit.flag);
+            if (home == null || !BasePlanner.wallNeedsOpening(home, tile)) {
+                unit.plans.removeFirst();
+                return;
+            }
+        }
         unit.updateBuilding = true;
         moveTo(plan, unit.type.buildRange * 0.8f);
         unit.lookAt(plan);

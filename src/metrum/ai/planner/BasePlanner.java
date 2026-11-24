@@ -764,27 +764,37 @@ public class BasePlanner {
 
     // ---------- step 6: wall ring; leaves a gap where the fire is heaviest (all AI levels) ----------
 
+    static float wallGapAngle(CoreBuild core) {
+        int best = -1;
+        float max = 0f;
+        float[] fire = fireByCore.computeIfAbsent(core, ignored -> new float[12]);
+        for (int i = 0; i < fire.length; i++) if (fire[i] > max) { max = fire[i]; best = i; }
+        Building enemy = Vars.state.rules.defaultTeam.core();
+        return best >= 0 ? best * 30f + 15f : (enemy != null ? core.angleTo(enemy) : 0f);
+    }
+
+    static boolean wallNeedsOpening(CoreBuild core, Tile tile) {
+        return tile != null && tile.block() == Blocks.tungstenWall && tile.team() == core.team
+            && Math.abs(core.dst(tile) - 20f * Vars.tilesize) <= Vars.tilesize
+            && arc.math.Angles.angleDist(core.angleTo(tile), wallGapAngle(core)) < 12f;
+    }
     static boolean buildWalls(CoreBuild core, AiLevel level) {
         Block wall = Blocks.tungstenWall;
         mindustry.gen.Unit builder = assignedBuilder(core);
         if (builder == null || !builder.plans.isEmpty()) return false;
         float radius = 20f * Vars.tilesize;
         // where to leave the gap: sector with the most recorded damage, else towards the player's core
-        int best = -1;
-        float max = 0f;
-        float[] fire = fireByCore.computeIfAbsent(core, ignored -> new float[12]);
-        for (int i = 0; i < fire.length; i++) if (fire[i] > max) { max = fire[i]; best = i; }
-        Building enemy = Vars.state.rules.defaultTeam.core();
-        float gapAngle = best >= 0 ? best * 30f + 15f : (enemy != null ? core.angleTo(enemy) : 0f);
+        float gapAngle = wallGapAngle(core);
         float gapHalf = 12f; // ~3 tiles wide at radius 20
         // A new fire direction can move the passage onto walls built during earlier cycles.
         int cleared = 0;
-        for (int dx = -21; dx <= 21; dx++) for (int dy = -21; dy <= 21; dy++) {
+        for (int dx = -21; dx <= 21 && cleared < 6; dx++) for (int dy = -21; dy <= 21 && cleared < 6; dy++) {
             Tile t = Vars.world.tile(core.tileX() + dx, core.tileY() + dy);
             if (t == null || t.block() != wall || t.team() != core.team) continue;
             if (Math.abs(core.dst(t) - radius) > Vars.tilesize) continue;
             if (arc.math.Angles.angleDist(core.angleTo(t), gapAngle) >= gapHalf) continue;
-            t.setNet(Blocks.air, core.team, 0);
+            if (!Build.validBreak(core.team, t.x, t.y)) continue;
+            builder.addBuild(new BuildPlan(t.x, t.y));
             cleared++;
         }
         if (cleared > 0) return true;
