@@ -445,8 +445,13 @@ public class BasePlanner {
         }
         return new Seq<>();
     }
+    static boolean waterCompatible(Building pipe) {
+        return pipe.liquids == null || pipe.liquids.sum((liquid, amount) ->
+            liquid == mindustry.content.Liquids.water ? 0f : amount) <= 0.001f;
+    }
     static boolean waterLineConnected(Building from, Building to) {
         if (from.team != to.team) return false;
+        if (from.block == Blocks.reinforcedConduit && !waterCompatible(from)) return false;
         Block conduit = Blocks.reinforcedConduit;
         java.util.Set<Building> visited = new java.util.HashSet<>();
         java.util.ArrayDeque<Building> queue = new java.util.ArrayDeque<>();
@@ -454,7 +459,7 @@ public class BasePlanner {
         else {
             if (from.proximity.contains(to)) return true;
             for (Building adjacent : from.proximity) {
-                if (adjacent.team == from.team && adjacent.block == conduit) {
+                if (adjacent.team == from.team && adjacent.block == conduit && waterCompatible(adjacent)) {
                     Tile output = adjacent.tile.nearby(adjacent.rotation);
                     if (output != null && output.build != from) queue.add(adjacent);
                 }
@@ -466,7 +471,7 @@ public class BasePlanner {
             Tile output = pipe.tile.nearby(pipe.rotation);
             Building next = output == null ? null : output.build;
             if (next == to) return true;
-            if (next == null || next.team != from.team || next.block != conduit) continue;
+            if (next == null || next.team != from.team || next.block != conduit || !waterCompatible(next)) continue;
             Tile nextOutput = next.tile.nearby(next.rotation);
             if (nextOutput != null && nextOutput.build != pipe) queue.add(next);
         }
@@ -477,7 +482,7 @@ public class BasePlanner {
         Block conduit = Blocks.reinforcedConduit;
         if (destinations.isEmpty()) return false;
         for (Building source : sources) {
-            if (source.block != conduit) continue;
+            if (source.block != conduit || !waterCompatible(source)) continue;
             Tile gap = source.tile.nearby(source.rotation);
             if (gap == null || gap.block() != Blocks.air
                 || !Build.validPlace(conduit, core.team, gap.x, gap.y, 0, false)) continue;
@@ -487,6 +492,7 @@ public class BasePlanner {
                 Building next = beyond == null ? null : beyond.build;
                 if (next == null || next.team != core.team) continue;
                 if (next.block != conduit && !destinations.contains(next)) continue;
+                if (next.block == conduit && !waterCompatible(next)) continue;
                 if (next.block == conduit) {
                     Tile output = next.tile.nearby(next.rotation);
                     if (output == gap) continue; // opposing pipes would not form a working connection
@@ -504,7 +510,7 @@ public class BasePlanner {
         if (destinations.isEmpty()) return false;
         Block conduit = Blocks.reinforcedConduit;
         for (Building source : sources) {
-            if (source.block != conduit) continue;
+            if (source.block != conduit || !waterCompatible(source)) continue;
             Seq<Tile> gaps = new Seq<>();
             for (int distance = 1; distance <= 7; distance++) {
                 Tile t = Vars.world.tile(source.tileX() + arc.math.geom.Geometry.d4x(source.rotation) * distance,
@@ -519,6 +525,7 @@ public class BasePlanner {
                 Building next = t.build;
                 if (gaps.size < 2 || next.team != core.team) break;
                 if (next.block != conduit && !destinations.contains(next)) break;
+                if (next.block == conduit && !waterCompatible(next)) break;
                 if (next.block == conduit && next.rotation == (source.rotation + 2) % 4) break;
                 if (!destinations.contains(to -> next == to || waterLineConnected(next, to))) break;
                 if (!payBatch(core, conduit.requirements, gaps.size)) return false;
@@ -535,7 +542,7 @@ public class BasePlanner {
         if (destinations.isEmpty()) return false;
         Block conduit = Blocks.reinforcedConduit;
         for (Building source : sources) {
-            if (source.block != conduit) continue;
+            if (source.block != conduit || !waterCompatible(source)) continue;
             Tile start = source.tile.nearby(source.rotation);
             if (start == null || start.block() != Blocks.air
                 || !Build.validPlace(conduit, core.team, start.x, start.y, 0, false)) continue;
@@ -552,6 +559,7 @@ public class BasePlanner {
                     if (next != null) {
                         if (next == source || next.team != core.team || path.size < 2) continue;
                         if (next.block != conduit && !destinations.contains(next)) continue;
+                if (next.block == conduit && !waterCompatible(next)) continue;
                         if (next.block == conduit && next.tile.nearby(next.rotation) == tail) continue;
                         if (!destinations.contains(to -> next == to || waterLineConnected(next, to))) continue;
                         if (!payBatch(core, conduit.requirements, path.size)) return false;
