@@ -38,6 +38,7 @@ public class MetrumProduction {
             consumeItem(Items.coal);
             consumeLiquid(Liquids.water, 0.2f);
             outputLiquid = new LiquidStack(MetrumLiquids.steam, 0.6f);
+            drawer = new metrum.world.DrawSteamBoiler();
         }};
 
         largeSteamFurnace = new GenericCrafter("large-steam-furnace") {{
