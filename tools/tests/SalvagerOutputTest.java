@@ -97,7 +97,24 @@ public class SalvagerOutputTest {
         b.offload(Items.sand);
         check(belt.items.get(Items.sand) == 1 && b.items.total() == 0,
             "actual conveyor must receive exactly one sand");
-        System.out.println("OK: batch sizes, storage boundaries, receivers and actual conveyor");
+        belt.items.clear();
+        belt.len = 3;
+        belt.minitem = 0f;
+        b.offload(MetrumItems.iron);
+        check(b.items.get(MetrumItems.iron) == 2, "blocked belt must retain the entire batch");
+        check(!b.dump(MetrumItems.iron), "blocked belt must refuse stored iron");
+        belt.len = 0;
+        belt.minitem = 1f;
+        check(b.dump(MetrumItems.iron), "unblocked belt must accept stored iron");
+        check(b.items.get(MetrumItems.iron) == 1 && belt.items.get(MetrumItems.iron) == 1,
+            "first stored iron must transfer without duplication");
+        // Simulate the belt moving its first item away from the input.
+        belt.minitem = 1f;
+        check(b.dump(MetrumItems.iron), "remaining iron must also transfer");
+        check(b.items.total() == 0 && belt.items.get(MetrumItems.iron) == 2,
+            "unblocking must drain the batch without losing items");
+        check(!b.dump(MetrumItems.iron), "empty storage must not create extra iron");
+        System.out.println("OK: batch sizes, storage boundaries, conveyor delivery and recovery after blockage");
     }
 }
 
