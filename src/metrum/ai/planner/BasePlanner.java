@@ -530,6 +530,47 @@ public class BasePlanner {
         }
         return false;
     }
+    /** Search at most six missing tiles, allowing bends while preserving the old downstream route. */
+    static boolean repairBentWaterGap(CoreBuild core, Seq<Building> sources, Seq<Building> destinations) {
+        if (destinations.isEmpty()) return false;
+        Block conduit = Blocks.reinforcedConduit;
+        for (Building source : sources) {
+            if (source.block != conduit) continue;
+            Tile start = source.tile.nearby(source.rotation);
+            if (start == null || start.block() != Blocks.air
+                || !Build.validPlace(conduit, core.team, start.x, start.y, 0, false)) continue;
+            java.util.Set<Tile> seen = new java.util.HashSet<>();
+            java.util.ArrayDeque<Seq<Tile>> queue = new java.util.ArrayDeque<>();
+            queue.add(Seq.with(start)); seen.add(start);
+            while (!queue.isEmpty()) {
+                Seq<Tile> path = queue.removeFirst();
+                Tile tail = path.peek();
+                for (int direction = 0; direction < 4; direction++) {
+                    Tile nextTile = tail.nearby(direction);
+                    if (nextTile == null) continue;
+                    Building next = nextTile.build;
+                    if (next != null) {
+                        if (next == source || next.team != core.team || path.size < 2) continue;
+                        if (next.block != conduit && !destinations.contains(next)) continue;
+                        if (next.block == conduit && next.tile.nearby(next.rotation) == tail) continue;
+                        if (!destinations.contains(to -> next == to || waterLineConnected(next, to))) continue;
+                        if (!payBatch(core, conduit.requirements, path.size)) return false;
+                        for (int i = 0; i < path.size; i++) {
+                            Tile t = path.get(i);
+                            int rotation = i + 1 < path.size ? t.relativeTo(path.get(i + 1)) : direction;
+                            t.setNet(conduit, core.team, rotation);
+                        }
+                        return true;
+                    }
+                    if (path.size >= 6 || seen.contains(nextTile) || nextTile.block() != Blocks.air
+                        || !Build.validPlace(conduit, core.team, nextTile.x, nextTile.y, 0, false)) continue;
+                    Seq<Tile> extended = new Seq<>(path); extended.add(nextTile);
+                    seen.add(nextTile); queue.addLast(extended);
+                }
+            }
+        }
+        return false;
+    }
     static boolean pipeWater(CoreBuild core) {
         mindustry.type.Liquid water = mindustry.content.Liquids.water;
         Seq<Building> sources = new Seq<>(), destinations = new Seq<>();
@@ -543,6 +584,7 @@ public class BasePlanner {
         destinations.removeAll(to -> sources.contains(from -> waterLineConnected(from, to)));
         if (repairWaterGap(core, sources, destinations)) return true;
         if (repairStraightWaterGap(core, sources, destinations)) return true;
+        if (repairBentWaterGap(core, sources, destinations)) return true;
         Seq<Building[]> pairs = new Seq<>();
         for (Building from : sources) for (Building to : destinations) {
             if (from != to) pairs.add(new Building[]{from, to});
