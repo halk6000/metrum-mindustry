@@ -150,7 +150,17 @@ public class MetrumProduction {
             boostMultiplier = 2f;
             craftEffect = Fx.none;
             updateEffect = Fx.smeltsmoke;
-            drawer = new DrawMulti(new DrawDefault(), new DrawGlowRegion() {{ color = Color.valueOf("ffc46b"); }});
+            // Keep the recognizable vanilla arc-furnace body, including its build preview.
+            drawer = new DrawMulti(
+                new DrawRegion() {{ name = "silicon-arc-furnace"; }},
+                new DrawArcSmelt() {{
+                    flameColor = Color.valueOf("ffb36b");
+                    midColor = Color.valueOf("fff0cc");
+                    flameRad = 4f;
+                    particleRad = 7f;
+                    particles = 16;
+                }}
+            );
         }};
 
         // Same cycle as the Salvager; each iron roll yields two items, sand yields one.
