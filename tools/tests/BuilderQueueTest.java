@@ -43,6 +43,12 @@ public class BuilderQueueTest {
         check(unit.buildPlan().block==duct);
         unit.controller(new MetrumBuilderAI());
         check(unit.plans.size==2 && unit.buildPlan().block==duct);
-        System.out.println("OK: saved plan order, rotations, demolition, controller restoration, queue continuation, reserved materials, released materials");
+        unit.plans.clear();
+        unit.plans.addLast(new BuildPlan(99,99,0,drill));
+        unit.plans.addLast(new BuildPlan(5,5,0,duct));
+        ((MetrumBuilderAI)unit.controller()).updateMovement();
+        check(unit.plans.isEmpty());
+        check(BasePlanner.queuedBuildReserve(unit).isEmpty());
+        System.out.println("OK: saved plan order, rotations, demolition, controller restoration, queue continuation, reserved materials, released materials, invalid batch cancellation");
     }
 }

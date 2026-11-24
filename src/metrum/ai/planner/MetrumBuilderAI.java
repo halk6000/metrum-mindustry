@@ -9,6 +9,22 @@ public class MetrumBuilderAI extends mindustry.ai.types.BuilderAI {
         mindustry.entities.units.BuildPlan plan = unit.buildPlan();
         // A queued cleanup job may become unsafe if the network changes before the drone arrives.
         mindustry.world.Tile tile = mindustry.Vars.world.tile(plan.x, plan.y);
+        if (!plan.breaking) {
+            boolean inProgress = tile != null && tile.build instanceof mindustry.world.blocks.ConstructBlock.ConstructBuild
+                && tile.build.team == unit.team
+                && ((mindustry.world.blocks.ConstructBlock.ConstructBuild) tile.build).current == plan.block;
+            boolean completed = tile != null && tile.build != null && tile.build.team == unit.team
+                && tile.block() == plan.block && tile.build.tileX() == plan.x && tile.build.tileY() == plan.y
+                && (!plan.block.rotate || tile.build.rotation == plan.rotation);
+            if (completed) { unit.plans.removeFirst(); return; }
+            if (tile == null || plan.block == null || (!inProgress
+                && !mindustry.world.Build.validPlace(plan.block, unit.team, plan.x, plan.y, plan.rotation, false))) {
+                // The rest of a route may depend on this site: cancel the batch and let the planner retry.
+                unit.plans.clear();
+                BasePlanner.plannerAction = "przeplanowanie: miejsce budowy niedostępne";
+                return;
+            }
+        }
         if (plan.breaking && tile != null && tile.block() == mindustry.content.Blocks.reinforcedConduit) {
             if (tile.build == null || !BasePlanner.unusedWaterPipes(arc.struct.Seq.with(tile.build), unit.team).contains(tile.build)) {
                 unit.plans.removeFirst();
