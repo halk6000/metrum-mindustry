@@ -361,8 +361,11 @@ public class BasePlanner {
         }
         java.util.Map<Item, Integer> reserve = protectReserve ? economicReserve(core) : java.util.Collections.emptyMap();
         for (java.util.Map.Entry<Item, Long> cost : total.entrySet()) {
-            if ((long) core.items.get(cost.getKey()) - reserve.getOrDefault(cost.getKey(), 0) < cost.getValue())
+            if ((long) core.items.get(cost.getKey()) - reserve.getOrDefault(cost.getKey(), 0) < cost.getValue()) {
+                long needed = cost.getValue() + reserve.getOrDefault(cost.getKey(), 0);
+                if (needed <= Integer.MAX_VALUE) miningDemand.putIfAbsent(core, new ItemStack(cost.getKey(), (int) needed));
                 return stalled("brak materiałów na cały plan: " + cost.getKey().localizedName);
+            }
         }
         for (BuildPlan plan : plans) builder.addBuild(plan);
         return true;
@@ -857,41 +860,26 @@ public class BasePlanner {
             }
             return false;
         }
-        if (!pay(core, drill.requirements)) return stalled("brak surowców na wiertnicę");
-
-        // beam drills face the wall they mine: place on the free tile next to the wall, rotated towards it
-        Tile site = ore;
-        site.setNet(drill, core.team, rotation);
-        if (site.build == null) return stalled("nie udało się postawić wiertnicy");
-
-        // Route through the entire drill footprint to reach a free output tile at its edge.
+        final Tile site = ore;
+        // Plan against a virtual footprint: no temporary or permanent block is spawned here.
         Seq<Tile> path = Astar.pathfind(site, core.tile, tile -> 1f,
-            t -> t.build == core || t.build == site.build ||
-                (t.block() == Blocks.air && Build.validPlace(duct, core.team, t.x, t.y, 0, false)));
-        int ductCount = 0;
-        if (path != null) for (int i = 0; i < path.size - 1; i++) {
-            if (path.get(i).build == null) ductCount++;
-        }
-        float costMultiplier = Vars.state.rules.buildCostMultiplier;
-        boolean affordable = path != null && !path.isEmpty(); // adjacent core needs no duct
-        for (ItemStack cost : duct.requirements) {
-            if (core.items.get(cost.item) < (long) Math.round(cost.amount * costMultiplier) * ductCount) affordable = false;
-        }
-        if (!affordable) {
-            // Roll back the drill too: do not strand paid equipment without a complete delivery route.
-            site.setNet(Blocks.air, core.team, 0);
-            for (ItemStack cost : drill.requirements) core.items.add(cost.item, Math.round(cost.amount * costMultiplier));
-            return stalled(path == null || path.isEmpty() ? "brak trasy do rdzenia" : "brak surowców na całą trasę");
-        }
+            t -> t.build == core || insideFootprint(t, site, drill)
+                || (t.block() == Blocks.air && Build.validPlace(duct, core.team, t.x, t.y, 0, false)));
+        if (path == null || path.isEmpty()) return stalled("brak trasy do rdzenia");
+        Seq<BuildPlan> plans = Seq.with(new BuildPlan(site.x, site.y, rotation, drill));
         for (int i = 0; i < path.size - 1; i++) {
             Tile t = path.get(i), next = path.get(i + 1);
-            if (t == site || t.build == core || t.build != null) continue;
-            if (!pay(core, duct.requirements)) break;
-            t.setNet(duct, core.team, t.relativeTo(next));
+            if (insideFootprint(t, site, drill) || t.build != null) continue;
+            plans.add(new BuildPlan(t.x, t.y, t.relativeTo(next), duct));
         }
-        return true;
+        return queueConstructionBatch(core, plans);
     }
 
+    static boolean insideFootprint(Tile tile, Tile anchor, Block block) {
+        int min = -(block.size - 1) / 2, max = block.size / 2;
+        return tile.x >= anchor.x + min && tile.x <= anchor.x + max
+            && tile.y >= anchor.y + min && tile.y <= anchor.y + max;
+    }
     static boolean stalled(String reason) {
         // Preserve the first blocker in build-order priority for this planning cycle.
         if (failureReason == null) failureReason = reason;
