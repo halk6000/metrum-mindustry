@@ -262,7 +262,29 @@ public class SalvagerOutputTest {
         legacy.offload(MetrumItems.iron);
         check(legacy.items.get(MetrumItems.iron) == 9,
             "legacy-loaded building must use the updated double iron output");
-        System.out.println("OK: current and legacy save/load, smelter delivery; salvager consumption and restart; 100 cycles ("
+        separator.warmup = 1f;
+        b.enabled = false;
+        for (int tick = 0; tick < 1200; tick++) {
+            b.updateConsumption();
+            separator.updateTile();
+        }
+        check(separator.warmup() < 0.001f, "disabled salvager animation must cool down");
+        float idleProgress = separator.totalProgress();
+        for (int tick = 0; tick < 60; tick++) {
+            b.updateConsumption();
+            separator.updateTile();
+        }
+        check(separator.totalProgress() - idleProgress < 0.01f,
+            "disabled salvager rollers must settle instead of rotating indefinitely");
+        furnace.power = new mindustry.world.modules.PowerModule();
+        furnace.warmup = 1f;
+        furnace.enabled = false;
+        for (int tick = 0; tick < 1200; tick++) {
+            furnace.updateConsumption();
+            furnace.updateTile();
+        }
+        check(furnace.warmup() < 0.001f, "disabled smelter glow and piston travel must fade");
+        System.out.println("OK: animation cooldown, current and legacy save/load, smelter delivery; 100 cycles ("
             + ironRolls + " iron / " + sandRolls + " sand rolls)");
     }
 }
