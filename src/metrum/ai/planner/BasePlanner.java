@@ -986,10 +986,8 @@ public class BasePlanner {
             Tile site = Vars.world.tile(core.tileX() + arc.math.geom.Geometry.d4x(dir) * distance,
                 core.tileY() + arc.math.geom.Geometry.d4y(dir) * distance);
             if (site == null || !Build.validPlace(producer, core.team, site.x, site.y, 0, false)) continue;
-            if (!payExpansion(core, producer.requirements, batch)) return false;
-            site.setNet(producer, core.team, 0);
-            if (site.build != null) for (ItemStack input : batch) site.build.items.add(input.item, input.amount);
-            return true;
+            // Build materials are consumed by the drone; supplyCoreProducers loads inputs only after completion.
+            return queueConstructionBatch(core, Seq.with(new BuildPlan(site.x, site.y, 0, producer)), true);
         }
         return false;
     }
