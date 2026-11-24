@@ -42,6 +42,9 @@ tasks.register('salvagerTest', JavaExec) {
     classpath = files(compileSalvagerTest.flatMap { it.destinationDirectory }) + sourceSets.main.output + files(gameJar)
     mainClass = 'SalvagerOutputTest'
 }
+tasks.named('check') {
+    dependsOn 'salvagerTest'
+}
 
 // gradlew deploy: build and install into the game (same file name the in-game importer uses)
 tasks.register('deploy', Copy) {
