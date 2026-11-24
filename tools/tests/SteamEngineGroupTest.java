@@ -29,6 +29,21 @@ public class SteamEngineGroupTest {
         check(b.connectedEngines().size == 3);
         a.proximity.clear(); b.proximity.remove(a, true); c.proximity.remove(a, true);
         check(a.connectedEngines().size == 1 && b.connectedEngines().size == 2);
+        mindustry.type.Liquid steam = new mindustry.type.Liquid("test-steam");
+        for (SteamEngine.SteamEngineBuild member : new SteamEngine.SteamEngineBuild[]{a, b, c, enemy}) {
+            member.liquids = new mindustry.world.modules.LiquidModule();
+            member.efficiency = 1f;
+        }
+        arc.util.Time.delta = 1f;
+        metrum.world.SharedSteamConsumer consumer = new metrum.world.SharedSteamConsumer(steam, 0.2f);
+        c.liquids.add(steam, 1f);
+        check(consumer.efficiency(b) == 1f);
+        check(consumer.efficiency(a) == 0f);
+        consumer.update(b);
+        check(Math.abs(c.liquids.get(steam) - 0.8f) < 0.0001f);
+        b.proximity.remove(c, true); c.proximity.remove(b, true);
+        check(consumer.efficiency(b) == 0f);
+        check(Math.abs(c.liquids.get(steam) - 0.8f) < 0.0001f);
         System.out.println("OK: isolated, chained, cyclic, split and enemy engine groups");
     }
 }

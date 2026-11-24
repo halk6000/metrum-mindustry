@@ -48,7 +48,8 @@ public class MetrumPower {
         steamEngine.size = 2;
         steamEngine.powerProduction = metrum.Balance.f("steamEngine.powerPerSecond", 600f) / 60f;
         steamEngine.heatOutput = metrum.Balance.f("steamEngine.heat", 12f);
-        steamEngine.consumeLiquid(MetrumLiquids.steam, metrum.Balance.f("steamEngine.steamPerSecond", 12f) / 60f);
+        steamEngine.consume(new metrum.world.SharedSteamConsumer(MetrumLiquids.steam,
+            metrum.Balance.f("steamEngine.steamPerSecond", 12f) / 60f));
 
         fusionReactor = new metrum.world.FusionReactor("fusion-reactor");
         fusionReactor.requirements(Category.power, with(MetrumItems.tungstenCarbide, 300, MetrumItems.ferrotungsten, 200, Items.surgeAlloy, 200, Items.silicon, 400, MetrumItems.steel, 400));
