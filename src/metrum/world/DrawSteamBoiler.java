@@ -10,6 +10,17 @@ import mindustry.world.draw.DrawBlock;
 
 /** Compact boiler with a firebox and a reciprocating pressure pump. */
 public class DrawSteamBoiler extends DrawBlock {
+    @Override
+    public void drawPlan(mindustry.world.Block block, mindustry.entities.units.BuildPlan plan,
+                         arc.util.Eachable<mindustry.entities.units.BuildPlan> list) {
+        Draw.rect(block.region, plan.drawx(), plan.drawy());
+    }
+
+    @Override
+    public arc.graphics.g2d.TextureRegion[] icons(mindustry.world.Block block) {
+        return new arc.graphics.g2d.TextureRegion[]{block.region};
+    }
+
     private final Color metal = Color.valueOf("656b76"), edge = Color.valueOf("30343c"),
         highlight = Color.valueOf("a6adb8"), hot = Color.valueOf("ffac64");
 
