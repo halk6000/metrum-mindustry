@@ -114,6 +114,11 @@ public class BasePlanner {
         return flag <= builderFlag && flag >= builderFlag - 4294967296d && flag == Math.rint(flag);
     }
 
+    static mindustry.gen.Unit assignedBuilder(CoreBuild core) {
+        return mindustry.gen.Groups.unit.find(u -> u.team == core.team && !u.dead()
+            && u.type == metrum.content.MetrumUnits.monoMetT1 && u.flag == builderHomeFlag(core)
+            && u.controller() instanceof MetrumBuilderAI);
+    }
     static boolean hasBuilder(CoreBuild core) {
         return mindustry.gen.Groups.unit.contains(u -> u.team == core.team
             && u.type == metrum.content.MetrumUnits.monoMetT1 && !u.dead()
@@ -127,8 +132,8 @@ public class BasePlanner {
                 CoreBuild home = u.closestCore();
                 if (home != null) u.flag = builderHomeFlag(home);
             }
-            if (isBuilderFlag(u.flag) && !(u.controller() instanceof mindustry.ai.types.BuilderAI)) {
-                u.controller(new mindustry.ai.types.BuilderAI(true, 600f));
+            if (isBuilderFlag(u.flag) && !(u.controller() instanceof MetrumBuilderAI)) {
+                u.controller(new MetrumBuilderAI());
             }
         });
         builderTimers.keySet().removeIf(core -> !core.isValid() || core.team != team);
@@ -144,7 +149,7 @@ public class BasePlanner {
             builderTimers.put(core, 0f);
             mindustry.gen.Unit u = metrum.content.MetrumUnits.monoMetT1.spawn(team, core.x, core.y);
             u.flag = builderHomeFlag(core);
-            u.controller(new mindustry.ai.types.BuilderAI(true, 600f));
+            u.controller(new MetrumBuilderAI());
             mindustry.content.Fx.spawn.at(u);
         }
     }
@@ -210,6 +215,8 @@ public class BasePlanner {
 
     /** picks the next build step in the planned order */
     static boolean step(CoreBuild core, AiLevel level) {
+        mindustry.gen.Unit builder = assignedBuilder(core);
+        if (builder != null && !builder.plans.isEmpty()) return stalled("konstruktor realizuje plan budowy");
         // Early exits in the construction plan must still allow safe space reclamation.
         return buildStep(core, level) || clearUnusedWaterPipes(core);
     }
@@ -734,6 +741,8 @@ public class BasePlanner {
 
     static boolean buildWalls(CoreBuild core, AiLevel level) {
         Block wall = Blocks.tungstenWall;
+        mindustry.gen.Unit builder = assignedBuilder(core);
+        if (builder == null || !builder.plans.isEmpty()) return false;
         float radius = 20f * Vars.tilesize;
         // where to leave the gap: sector with the most recorded damage, else towards the player's core
         int best = -1;
@@ -760,9 +769,13 @@ public class BasePlanner {
             if (Math.abs(arc.math.Angles.angleDist(a, gapAngle)) < gapHalf) continue; // the passage
             Tile t = Vars.world.tileWorld(core.x + arc.math.Angles.trnsx(a, radius), core.y + arc.math.Angles.trnsy(a, radius));
             if (t == null || t.block() != Blocks.air || !Build.validPlace(wall, core.team, t.x, t.y, 0, false)) continue;
-            if (!payExpansion(core, wall.requirements)) return placed > 0;
-            t.setNet(wall, core.team, 0);
-            placed++;
+            for (ItemStack cost : wall.requirements) {
+                if (availableForAmmo(core, cost.item) < Math.round(cost.amount * Vars.state.rules.buildCostMultiplier))
+                    return stalled("brak surowców na plan muru");
+            }
+            builder.addBuild(new mindustry.entities.units.BuildPlan(t.x, t.y, 0, wall));
+            return true; // the unit constructs it and the engine charges actual construction materials
+
         }
         return placed > 0;
     }

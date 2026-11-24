@@ -104,3 +104,5 @@
 - [ ] Gospodarka AI (ustalenie użytkownika): buduje z posiadanych zasobów jak gracz; otrzymuje bonus 50% zasobów jako rekompensatę słabszych decyzji. Wdrażać jako +50% realnego wydobycia, bez nieskończonych magazynów; nie mnożyć istniejących zapasów ponownie przy wczytaniu.
 
 - [ ] Optymalizacja ciasnej bazy (ustalenie użytkownika): gdy brakuje miejsca na budowę, sprawdzić faktyczną ciągłość transportu i mediów, naprawiać przerwy oraz skracać zbędne trasy; demontaż tylko po potwierdzeniu zachowania dostaw. Nie powielać rur przy niskim poziomie wody w odbiorniku.
+
+- [ ] Rzeczywista budowa przez drony (korekta użytkownika): zastąpić natychmiastowe setNet kolejką BuildPlan i pobieraniem materiałów przez silnik. Pierwszy etap: mury z dedykowanym MetrumBuilderAI. Pozostałe: wiertnice, transport, prąd, rury, fabryki, wieżyczki, magazynki i rozbiórka. Licznik planera nie jest licznikiem ukończonych budów.
