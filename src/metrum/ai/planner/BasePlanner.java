@@ -9,6 +9,7 @@ import mindustry.content.Blocks;
 import mindustry.game.EventType.Trigger;
 import mindustry.game.Team;
 import mindustry.gen.Building;
+import mindustry.entities.units.BuildPlan;
 import mindustry.type.Item;
 import mindustry.type.ItemStack;
 import mindustry.world.Block;
@@ -343,6 +344,24 @@ public class BasePlanner {
         builder.addBuild(new mindustry.entities.units.BuildPlan(site.x, site.y, rotation, block));
         return true;
     }
+    static boolean queueConstructionBatch(CoreBuild core, Seq<BuildPlan> plans) {
+        mindustry.gen.Unit builder = assignedBuilder(core);
+        if (builder == null || !builder.plans.isEmpty() || plans.isEmpty()) return false;
+        java.util.Map<Item, Long> total = new java.util.HashMap<>();
+        for (BuildPlan plan : plans) {
+            if (!Build.validPlace(plan.block, core.team, plan.x, plan.y, plan.rotation, false)) return false;
+            for (ItemStack cost : plan.block.requirements) {
+                long amount = Math.round(cost.amount * Vars.state.rules.buildCostMultiplier);
+                total.put(cost.item, total.getOrDefault(cost.item, 0L) + amount);
+            }
+        }
+        for (java.util.Map.Entry<Item, Long> cost : total.entrySet()) {
+            if (core.items.get(cost.getKey()) < cost.getValue())
+                return stalled("brak materiałów na cały plan: " + cost.getKey().localizedName);
+        }
+        for (BuildPlan plan : plans) builder.addBuild(plan);
+        return true;
+    }
     static boolean buildPower(CoreBuild core) {
         Block gen = Blocks.turbineCondenser;
         Tile best = null;
@@ -532,9 +551,7 @@ public class BasePlanner {
                     if (output == gap) continue; // opposing pipes would not form a working connection
                 }
                 if (!destinations.contains(to -> next == to || connections.connected(next, to))) continue;
-                if (!pay(core, conduit.requirements)) return false;
-                gap.setNet(conduit, core.team, direction);
-                return true;
+                return queueConstruction(core, conduit, gap, direction);
             }
         }
         return false;
@@ -562,11 +579,9 @@ public class BasePlanner {
                 if (next.block == conduit && !waterCompatible(next)) break;
                 if (next.block == conduit && next.rotation == (source.rotation + 2) % 4) break;
                 if (!destinations.contains(to -> next == to || connections.connected(next, to))) break;
-                if (!payBatch(core, conduit.requirements, gaps.size)) return false;
-                for (Tile gap : gaps) {
-                    gap.setNet(conduit, core.team, source.rotation);
-                }
-                return true;
+                Seq<BuildPlan> plans = new Seq<>();
+                for (Tile gap : gaps) plans.add(new BuildPlan(gap.x, gap.y, source.rotation, conduit));
+                return queueConstructionBatch(core, plans);
             }
         }
         return false;
@@ -601,13 +616,13 @@ public class BasePlanner {
                         if (next.block == conduit && !waterCompatible(next)) continue;
                         if (next.block == conduit && next.tile.nearby(next.rotation) == tail) continue;
                         if (!destinations.contains(to -> next == to || connections.connected(next, to))) continue;
-                        if (!payBatch(core, conduit.requirements, path.size)) return false;
+                        Seq<BuildPlan> plans = new Seq<>();
                         for (int i = 0; i < path.size; i++) {
                             Tile t = path.get(i);
                             int rotation = i + 1 < path.size ? t.relativeTo(path.get(i + 1)) : direction;
-                            t.setNet(conduit, core.team, rotation);
+                            plans.add(new BuildPlan(t.x, t.y, rotation, conduit));
                         }
-                        return true;
+                        return queueConstructionBatch(core, plans);
                     }
                     if (path.size >= 6 || seen.contains(nextTile) || nextTile.block() != Blocks.air
                         || !(waterSiteSafe(nextTile, core.team) && Build.validPlace(conduit, core.team, nextTile.x, nextTile.y, 0, false))) continue;
@@ -658,15 +673,13 @@ public class BasePlanner {
         for (ItemStack cost : conduit.requirements) {
             if (core.items.get(cost.item) < (long) Math.round(cost.amount * costMultiplier) * pipeCount) return false;
         }
-        int placed = 0;
+        Seq<BuildPlan> plans = new Seq<>();
         for (int i = 0; i < path.size - 1; i++) {
             Tile t = path.get(i), next = path.get(i + 1);
             if (t.build != null) continue; // inside source/target
-            if (!pay(core, conduit.requirements)) break;
-            t.setNet(conduit, core.team, t.relativeTo(next));
-            placed++;
+            plans.add(new BuildPlan(t.x, t.y, t.relativeTo(next), conduit));
         }
-        return placed > 0;
+        return queueConstructionBatch(core, plans);
     }
 
     // ---------- step 4: splitter on a resource line + a factory fed from it ----------
