@@ -858,34 +858,31 @@ public class BasePlanner {
         }
         pairs.sort((a, b) -> Float.compare(a[0].dst2(a[1]), b[0].dst2(b[1])));
         Block conduit = Blocks.reinforcedConduit;
-        Seq<Tile> path = null;
+        boolean water = liquid == mindustry.content.Liquids.water;
+        int pipeBudget = Integer.MAX_VALUE;
+        for (ItemStack cost : conduit.requirements) {
+            int perPipe = Math.round(cost.amount * Vars.state.rules.buildCostMultiplier);
+            if (perPipe > 0) pipeBudget = Math.min(pipeBudget, core.items.get(cost.item) / perPipe);
+        }
+        if (pipeBudget == 0) return false;
         for (Building[] pair : pairs) {
             Building from = pair[0], to = pair[1];
-            Seq<Tile> candidate = Astar.pathfind(from.tile, to.tile, tile -> 1f,
+            Seq<Tile> path = Astar.pathfind(from.tile, to.tile, tile -> 1f,
                 t -> t.build == from || t.build == to ||
                     (t.block() == Blocks.air && Build.validPlace(conduit, core.team, t.x, t.y, 0, false)
-                        && (liquid == mindustry.content.Liquids.water ? waterSiteSafe(t, core.team)
+                        && (water ? waterSiteSafe(t, core.team)
                             : liquidSiteSafe(t, core.team, liquid, from, to))));
-            if (candidate != null && candidate.size >= 3) {
-                path = candidate;
-                break;
+            if (path == null || path.size < 3) continue;
+            Seq<BuildPlan> plans = new Seq<>();
+            for (int i = 0; i < path.size - 1; i++) {
+                Tile t = path.get(i), next = path.get(i + 1);
+                if (t.build != null) continue;
+                plans.add(new BuildPlan(t.x, t.y, t.relativeTo(next), conduit));
             }
+            if (plans.size <= pipeBudget) return queueConstructionBatch(core, plans);
+            if (water) return false;
         }
-        if (path == null) return false;
-        int pipeCount = 0;
-        for (int i = 0; i < path.size - 1; i++) if (path.get(i).build == null) pipeCount++;
-        // Check the complete line before spending anything; partial pipes obstruct later retries.
-        float costMultiplier = Vars.state.rules.buildCostMultiplier;
-        for (ItemStack cost : conduit.requirements) {
-            if (core.items.get(cost.item) < (long) Math.round(cost.amount * costMultiplier) * pipeCount) return false;
-        }
-        Seq<BuildPlan> plans = new Seq<>();
-        for (int i = 0; i < path.size - 1; i++) {
-            Tile t = path.get(i), next = path.get(i + 1);
-            if (t.build != null) continue; // inside source/target
-            plans.add(new BuildPlan(t.x, t.y, t.relativeTo(next), conduit));
-        }
-        return queueConstructionBatch(core, plans);
+        return false;
     }
 
     // ---------- step 4: splitter on a resource line + a factory fed from it ----------
