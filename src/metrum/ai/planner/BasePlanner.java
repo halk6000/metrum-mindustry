@@ -644,8 +644,21 @@ public class BasePlanner {
 
     private static boolean buildMiningDock(CoreBuild core, Item ore) {
         Block dock = metrum.content.MetrumUnitBlocks.airMinerDock;
-        return dock != null && dock.environmentBuildable() && canTrainMiningDrone(core, ore)
-            && count(core, b -> b.block == dock) == 0 && queueCoreWorkshop(core, dock);
+        if (dock == null || !dock.environmentBuildable() || !canTrainMiningDrone(core, ore)
+            || count(core, b -> b.block == dock) > 0) return false;
+        int coreMin = -(core.block.size - 1) / 2, coreMax = core.block.size / 2;
+        int dockMin = -(dock.size - 1) / 2, dockMax = dock.size / 2;
+        for (int direction = 0; direction < 4; direction++) {
+            int dx = arc.math.geom.Geometry.d4x(direction), dy = arc.math.geom.Geometry.d4y(direction);
+            int distance = direction < 2 ? coreMax - dockMin + 1 : dockMax - coreMin + 1;
+            Tile site = Vars.world.tile(core.tileX() + dx * distance, core.tileY() + dy * distance);
+            if (site == null || !Build.validPlace(dock, core.team, site.x, site.y, direction, false)) continue;
+            int exitDistance = direction < 2 ? dockMax + 1 : 1 - dockMin;
+            Tile exit = Vars.world.tile(site.x + dx * exitDistance, site.y + dy * exitDistance);
+            if (exit == null || exit.block() != Blocks.air) continue;
+            return queueConstructionBatch(core, Seq.with(new BuildPlan(site.x, site.y, direction, dock)), true);
+        }
+        return false;
     }
 
     private static boolean canTrainMiningDrone(CoreBuild core, Item ore) {
