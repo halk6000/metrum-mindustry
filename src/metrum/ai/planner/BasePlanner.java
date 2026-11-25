@@ -415,7 +415,8 @@ public class BasePlanner {
                     && buildWallExtractor(core, Blocks.cliffCrusher)) return true;
                 if (buildDemandProducer(core, demand.item)) return true;
                 boolean explore = demand.item == mindustry.content.Items.tungsten
-                    || (demand.item == mindustry.content.Items.coal && hasRecoveryGoal(core, demand.item));
+                    || ((demand.item == mindustry.content.Items.coal || demand.item == mindustry.content.Items.sand)
+                        && hasRecoveryGoal(core, demand.item));
                 if (explore && miningDemand.get(core) == demand
                     && !minedResources(core).contains(demand.item) && buildDrillLine(core, level, true, 60)) return true;
             }
@@ -1187,7 +1188,8 @@ public class BasePlanner {
         ItemStack demand = miningDemand.get(core);
         if (demandOnly && demand != null) {
             boolean recoveryAlternative = demand.item == mindustry.content.Items.tungsten
-                || (demand.item == mindustry.content.Items.coal && hasRecoveryGoal(core, demand.item));
+                || ((demand.item == mindustry.content.Items.coal || demand.item == mindustry.content.Items.sand)
+                    && hasRecoveryGoal(core, demand.item));
             // Give local production a chance before committing to a more expensive extraction route.
             if (!recoveryAlternative || searchRadius > 30) {
                 for (java.util.Map.Entry<Item, Integer> cost : planMaterials(fallback).entrySet()) {
