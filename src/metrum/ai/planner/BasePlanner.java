@@ -657,7 +657,7 @@ public class BasePlanner {
             if (duct.next != core && (duct.next == null || !isLinkedStorage(core, duct.next))) continue;
             for (int direction = 0; direction < 4; direction++) {
                 Tile output = duct.tile.nearby(direction);
-                if (output == null || output.build != furnace || !isDedicatedSandLine(duct)
+                if (!sandOutletReady(output, furnace, duct) || !isDedicatedSandLine(duct)
                     || !Build.validPlace(duct.block, core.team, duct.tileX(), duct.tileY(), direction, false)) continue;
                 builder.addBuild(new BuildPlan(duct.tileX(), duct.tileY(), direction, duct.block));
                 return true;
@@ -679,8 +679,18 @@ public class BasePlanner {
             int direction = duct.tile.relativeTo(route.first());
             if (!Build.validPlace(duct.block, core.team, duct.tileX(), duct.tileY(), direction, false)) continue;
             if (!queueConstructionBatch(core, planSandConnector(route, deliverySteps, duct.block))) continue;
-            builder.addBuild(new BuildPlan(duct.tileX(), duct.tileY(), direction, duct.block));
+            // Rotate the live input on a later pass once the installed ducts lead to the furnace.
             return true;
+        }
+        return false;
+    }
+
+    static boolean sandOutletReady(Tile output, Building furnace, Building input) {
+        for (int steps = 0; output != null && steps < 7; steps++) {
+            Building next = output.build;
+            if (next == furnace) return true;
+            if (next == null || next == input || next.team != input.team || next.block != input.block) return false;
+            output = next.tile.nearby(next.rotation);
         }
         return false;
     }

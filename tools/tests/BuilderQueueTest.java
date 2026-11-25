@@ -36,6 +36,20 @@ public class BuilderQueueTest {
         BuildPlan outlet = connector.peek();
         check(outlet.block == duct && outlet.x == 3 && outlet.y == 2 && outlet.rotation == 1);
         check(Vars.world.tile(outlet.x, outlet.y).nearby(outlet.rotation).build == furnace);
+        mindustry.gen.Building sandInput = mindustry.gen.Building.create();
+        sandInput.block = duct;
+        for (BuildPlan segment : connector) {
+            check(!BasePlanner.sandOutletReady(route.first(), furnace, sandInput));
+            mindustry.gen.Building installed = mindustry.gen.Building.create();
+            installed.block = duct;
+            installed.tile = Vars.world.tile(segment.x, segment.y);
+            installed.tile.build = installed;
+            installed.rotation = segment.rotation;
+        }
+        check(BasePlanner.sandOutletReady(route.first(), furnace, sandInput));
+        route.get(1).build.rotation = 2;
+        check(!BasePlanner.sandOutletReady(route.first(), furnace, sandInput));
+        route.get(0).build = route.get(1).build = null;
         route.get(2).build = route.get(3).build = null;
         Queue<BuildPlan> plans=new Queue<>();
         plans.addLast(new BuildPlan(4,5,1,drill));
