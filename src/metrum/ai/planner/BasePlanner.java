@@ -1700,6 +1700,9 @@ public class BasePlanner {
         ItemStack demand = miningDemand.get(core);
         if (demand == null || core.items.get(demand.item) >= demand.amount) return;
         boolean recoveringTungsten = demand.item == mindustry.content.Items.tungsten;
+        if (hasRecoveryGoal(core, demand.item) || needsArcFurnaceSand(core, demand)) {
+            drainStoneCrusherSand(core);
+        }
         if (recoveringTungsten || needsArcFurnaceSand(core, demand)) {
             drainSalvagerByproducts(core, !recoveringTungsten);
             if (core.items.get(demand.item) >= demand.amount) return;
@@ -1769,6 +1772,26 @@ public class BasePlanner {
             core.handleStack(item, transferred, factory);
             room -= transferred;
             if (room <= 0) return;
+        }
+    }
+
+    private static void drainStoneCrusherSand(CoreBuild core) {
+        Item sand = mindustry.content.Items.sand;
+        for (Building factory : core.proximity) {
+            if (factory.block != metrum.content.MetrumProduction.stoneCrusher || factory.team != core.team
+                || factory.items == null || factory.closestCore() != core) continue;
+            int buffered = factory.items.get(sand);
+            if (buffered <= 0) continue;
+            if (coreBurnsSand(core)) {
+                Building furnace = findSandArcFurnace(core);
+                if (furnace == null) continue;
+                int missing = Math.min(requiredPerBatch(furnace, sand), furnace.getMaximumAccepted(sand))
+                    - furnace.items.get(sand);
+                if (missing > 0) furnace.items.add(sand, factory.removeStack(sand, Math.min(missing, buffered)));
+            } else {
+                int room = core.storageCapacity - core.items.get(sand);
+                if (room > 0) core.handleStack(sand, factory.removeStack(sand, Math.min(room, buffered)), factory);
+            }
         }
     }
 
