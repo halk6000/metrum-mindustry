@@ -1823,6 +1823,12 @@ public class BasePlanner {
             }
             return false;
         }
+        if (selected == metrum.content.MetrumProduction.stoneCrusher && hasRecoveryGoal(core, item)) {
+            Block scraper = metrum.content.MetrumBlocks.rockScraper;
+            if (count(core, b -> b.block == scraper && b.enabled && b.closestCore() == core) == 0) {
+                return buildWallExtractor(core, scraper);
+            }
+        }
         Tile site = findCoreWorkshopSite(core, selected);
         if (site == null && selected == metrum.content.MetrumProduction.arcFurnaceOverclocked
             && Blocks.siliconArcFurnace.environmentBuildable()) {
