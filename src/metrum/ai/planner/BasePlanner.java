@@ -983,7 +983,6 @@ public class BasePlanner {
                 plans.add(new BuildPlan(t.x, t.y, t.relativeTo(next), conduit));
             }
             if (plans.size <= pipeBudget) return queueConstructionBatch(core, plans);
-            if (water) return false;
             if (demand != null && producesItem(to.block, demand.item)) {
                 shortestDemandLine = Math.min(shortestDemandLine, plans.size);
             }
