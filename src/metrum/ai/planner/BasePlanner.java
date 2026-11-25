@@ -265,10 +265,32 @@ public class BasePlanner {
         }
 
         @Override
+        public void updateMovement() {
+            if (home.isValid() && home.team == unit.team && unit.stack.amount > 0) {
+                Item cargo = unit.stack.item;
+                ItemStack demand = miningDemand.get(home);
+                boolean hasRequestedAmount = demand != null && cargo == demand.item
+                    && unit.stack.amount >= demand.amount - home.items.get(cargo);
+                if (!mining || hasRequestedAmount || unit.stack.amount >= unit.type.itemCapacity
+                    || (demand != null && cargo != demand.item)) {
+                    mining = false;
+                    unit.mineTile = null;
+                    int accepted = home.acceptStack(cargo, unit.stack.amount, unit);
+                    if (accepted > 0 && unit.within(home, unit.type.range)) {
+                        mindustry.gen.Call.transferItemTo(unit, cargo, accepted, unit.x, unit.y, home);
+                    }
+                    moveTo(home, unit.type.range * 0.8f);
+                    return;
+                }
+            }
+            super.updateMovement();
+        }
+
+        @Override
         protected Item desired() {
             ItemStack demand = miningDemand.get(home);
             if (demand != null && unit.canMine(demand.item)
-                && metrum.ai.SmartMining.canStoreMined(unit.closestCore(), demand.item)
+                && metrum.ai.SmartMining.canStoreMined(home, demand.item)
                 && metrum.ai.SmartMining.findMineableOre(unit, demand.item) != null) return demand.item;
             return super.desired();
         }
