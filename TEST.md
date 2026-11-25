@@ -75,3 +75,5 @@ W próbie z poprawką `918cc4f` ustawiono kocioł i piec stali obok siebie przy 
 W osobnej próbie ustawiono oba warsztaty z przerwą i ręcznie zaopatrzono kocioł w wodę i węgiel. Planer wytyczył dwie rury, a dron zbudował obie. Przy 25. ticku piec miał 4,26 jednostki pary.
 
 W próbie produkcji stali warsztaty ustawiono obok siebie przy rdzeniu, kotłowi podano wodę, a piecowi zapewniono pełne zasilanie testowe. Planer podawał materiały z rdzenia. Po 161 tickach zapas stali w rdzeniu wzrósł z 0 do 2, a bufor wyjściowy pieca pozostał pusty.
+
+W próbie priorytetów ustawiono cel 30 sztuk wolframu i przygotowano 158 sztuk stali w rdzeniu. Wywołanie reguły odzyskiwacza odłożyło wolfram i ustawiło cel 160 sztuk stali. Przy 161. ticku piec dostarczył 2 sztuki stali, a planer automatycznie przywrócił pierwotny cel wolframowy.
