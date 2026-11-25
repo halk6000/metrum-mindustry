@@ -149,7 +149,8 @@ public class MetrumUnits {
         // 1D: its arc gun fires chain lightning that jumps across walls and units (Metrum chain-lightning library)
         for (Weapon w : monoMetT1d.weapons) if (w.name.equals("heal-shotgun-weapon")) {
             metrum.entities.ChainLightningBulletType chain = new metrum.entities.ChainLightningBulletType(25f);
-            chain.range = chain.rangeOverride = 110f; chain.jumps = 4; chain.jumpRange = 60f; chain.healPerJump = 12f;
+            chain.range = chain.rangeOverride = 180f; // same reach as B and C
+            chain.jumps = 4; chain.jumpRange = 60f; chain.healPerJump = 12f;
             w.bullet = chain;
             w.shoot = new mindustry.entities.pattern.ShootPattern();
         }
