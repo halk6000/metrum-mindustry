@@ -77,3 +77,5 @@ W osobnej próbie ustawiono oba warsztaty z przerwą i ręcznie zaopatrzono koci
 W próbie produkcji stali warsztaty ustawiono obok siebie przy rdzeniu, kotłowi podano wodę, a piecowi zapewniono pełne zasilanie testowe. Planer podawał materiały z rdzenia. Po 161 tickach zapas stali w rdzeniu wzrósł z 0 do 2, a bufor wyjściowy pieca pozostał pusty.
 
 W próbie priorytetów ustawiono cel 30 sztuk wolframu i przygotowano 158 sztuk stali w rdzeniu. Wywołanie reguły odzyskiwacza odłożyło wolfram i ustawiło cel 160 sztuk stali. Przy 161. ticku piec dostarczył 2 sztuki stali, a planer automatycznie przywrócił pierwotny cel wolframowy.
+
+W rozszerzonej próbie uzupełniono grafit, krzem i odłamki skał. Po dostawie brakującej stali i przywróceniu celu 30 sztuk wolframu wywołano planowanie producenta. Przy około 9,67 jednostkach pary w kotle planer dodał zaawansowany odzyskiwacz do kolejki drona. Pomiar zakończono po zakolejkowaniu budowy.
