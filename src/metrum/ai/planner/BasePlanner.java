@@ -513,6 +513,8 @@ public class BasePlanner {
     }
     static boolean buildStep(CoreBuild core, AiLevel level) {
         ItemStack currentDemand = miningDemand.get(core);
+        if (currentDemand != null && coreBurnsSand(core) && needsArcFurnaceSand(core, currentDemand)
+            && redirectSandLine(core)) return true;
         boolean waitingForSand = currentDemand != null && isSandForSilicon(core, currentDemand)
             && Time.time - lastSandForFurnace.getOrDefault(core, Float.NEGATIVE_INFINITY) < 6f * 60f;
         int drills = count(core, b -> b.block instanceof mindustry.world.blocks.production.BeamDrill
@@ -563,6 +565,52 @@ public class BasePlanner {
         if (turrets < 2 + level.ordinal() * 2 && buildTurret(core, level)) return true;
         if (buildWalls(core, level)) return true;
         return false; // no construction progress; step() may reclaim unused pipe space
+    }
+
+    private static boolean redirectSandLine(CoreBuild core) {
+        Building furnace = findSandArcFurnace(core);
+        mindustry.gen.Unit builder = assignedBuilder(core);
+        if (furnace == null || builder == null || !builder.plans.isEmpty()) return false;
+        for (Building input : furnace.proximity) {
+            if (input.team != core.team || !input.block.quickRotate
+                || !(input instanceof mindustry.world.blocks.distribution.Duct.DuctBuild)) continue;
+            mindustry.world.blocks.distribution.Duct.DuctBuild duct = (mindustry.world.blocks.distribution.Duct.DuctBuild) input;
+            if (duct.next != core && (duct.next == null || !isLinkedStorage(core, duct.next))) continue;
+            for (int direction = 0; direction < 4; direction++) {
+                Tile output = duct.tile.nearby(direction);
+                if (output == null || output.build != furnace || !isDedicatedSandLine(duct)
+                    || !Build.validPlace(duct.block, core.team, duct.tileX(), duct.tileY(), direction, false)) continue;
+                builder.addBuild(new BuildPlan(duct.tileX(), duct.tileY(), direction, duct.block));
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isDedicatedSandLine(mindustry.world.blocks.distribution.Duct.DuctBuild duct) {
+        java.util.Set<Building> visited = new java.util.HashSet<>();
+        Item sand = mindustry.content.Items.sand;
+        while (visited.add(duct)) {
+            if (duct.current != null && duct.current != sand) return false;
+            Building source = null;
+            for (Building adjacent : duct.proximity) {
+                if (adjacent.team != duct.team || adjacent == duct.next || !adjacent.block.outputsItems()) continue;
+                if (adjacent instanceof mindustry.world.blocks.distribution.Duct.DuctBuild
+                    && ((mindustry.world.blocks.distribution.Duct.DuctBuild) adjacent).next != duct) continue;
+                if (source != null) return false;
+                source = adjacent;
+            }
+            if (source == null) return false;
+            if (source.block instanceof mindustry.world.blocks.production.WallCrafter) {
+                return ((mindustry.world.blocks.production.WallCrafter) source.block).output == sand;
+            }
+            if (source instanceof mindustry.world.blocks.production.Drill.DrillBuild) {
+                return ((mindustry.world.blocks.production.Drill.DrillBuild) source).dominantItem == sand;
+            }
+            if (!(source instanceof mindustry.world.blocks.distribution.Duct.DuctBuild)) return false;
+            duct = (mindustry.world.blocks.distribution.Duct.DuctBuild) source;
+        }
+        return false;
     }
 
     private static boolean buildMiningDock(CoreBuild core, Item ore) {

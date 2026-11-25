@@ -91,7 +91,9 @@ public class MetrumBuilderAI extends mindustry.ai.types.BuilderAI {
                 return;
             }
             mindustry.world.blocks.storage.CoreBlock.CoreBuild core = unit.closestCore();
-            if ((!inProgress || stalledTime >= stallDelay) && core != null
+            boolean rotating = tile.build != null && tile.build.team == unit.team && tile.block() == plan.block
+                && tile.build.tile == tile && plan.block.quickRotate;
+            if (!rotating && (!inProgress || stalledTime >= stallDelay) && core != null
                 && !mindustry.Vars.state.rules.isInfiniteResources(unit.team)) {
                 float multiplier = mindustry.Vars.state.rules.buildCostMultiplier;
                 for (mindustry.type.ItemStack cost : plan.block.requirements) {
