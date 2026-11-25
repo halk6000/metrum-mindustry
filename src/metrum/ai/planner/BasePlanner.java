@@ -926,10 +926,29 @@ public class BasePlanner {
             destinations::add);
         // Low liquid level is not proof of a missing line: do not build parallel duplicates.
         destinations.removeAll(to -> sources.contains(from -> connections.connected(from, to)));
+        ItemStack demand = miningDemand.get(core);
+        if (demand != null && hasRecoveryGoal(core, demand.item)) {
+            Seq<Building> boilers = new Seq<>();
+            for (Building destination : destinations) {
+                if (destination.enabled && destination.block == metrum.content.MetrumProduction.steamFurnace) {
+                    boilers.add(destination);
+                }
+            }
+            if (!boilers.isEmpty()) {
+                if (queueWaterLine(core, sources, boilers, connections)) return true;
+                destinations.removeAll(boilers::contains);
+            }
+        }
+        return queueWaterLine(core, sources, destinations, connections);
+    }
+
+    private static boolean queueWaterLine(CoreBuild core, Seq<Building> sources, Seq<Building> destinations,
+                                          WaterConnections connections) {
+        if (destinations.isEmpty()) return false;
         if (repairWaterGap(core, sources, destinations, connections)) return true;
         if (repairStraightWaterGap(core, sources, destinations, connections)) return true;
         if (repairBentWaterGap(core, sources, destinations, connections)) return true;
-        return queueLiquidLine(core, sources, destinations, water);
+        return queueLiquidLine(core, sources, destinations, mindustry.content.Liquids.water);
     }
 
     static boolean pipeSteam(CoreBuild core) {
