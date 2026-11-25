@@ -1506,6 +1506,7 @@ public class BasePlanner {
         boolean recoveryNeedsSteam = demand.item == metrum.content.MetrumItems.steel
             || demand.item == mindustry.content.Items.tungsten;
         java.util.Map<Item, Integer> reserve = economicReserve(core);
+        if (isSandForSilicon(core, demand)) bufferArcFurnaceGraphite(core, reserve);
         workshops: for (Building factory : coreWorkshops(core, demand.item)) {
             if (factory.team != core.team || !factory.enabled || factory.items == null
                 || factory.closestCore() != core) continue;
@@ -1539,6 +1540,18 @@ public class BasePlanner {
                 factory.items.add(input.getKey(), missing);
             }
         }
+    }
+
+    private static void bufferArcFurnaceGraphite(CoreBuild core, java.util.Map<Item, Integer> reserve) {
+        Building furnace = findSandArcFurnace(core);
+        if (furnace == null) return;
+        Item graphite = mindustry.content.Items.graphite;
+        int batch = requiredPerBatch(furnace, graphite);
+        int missing = batch - furnace.items.get(graphite);
+        if (missing <= 0 || batch > furnace.getMaximumAccepted(graphite)
+            || core.items.get(graphite) - reserve.getOrDefault(graphite, 0) < missing) return;
+        core.items.remove(graphite, missing);
+        furnace.items.add(graphite, missing);
     }
     static boolean buildDemandProducer(CoreBuild core, Item item) {
         if (item == mindustry.content.Items.silicon && coreWorkshops(core, item).contains(factory -> factory.team == core.team
