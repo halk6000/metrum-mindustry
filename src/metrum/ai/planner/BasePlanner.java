@@ -1399,8 +1399,8 @@ public class BasePlanner {
             && (factory.block == Blocks.siliconArcFurnace
                 || factory.block == metrum.content.MetrumProduction.arcFurnaceOverclocked))) return false;
         Block ready = findProducer(core, item);
-        final Block producer = ready != null ? ready : findProducer(core, item, true);
-        if (producer == null) {
+        Block selected = ready != null ? ready : findProducer(core, item, true);
+        if (selected == null) {
             if (item == mindustry.content.Items.tungsten) {
                 prioritizeMissingWorkshop(core, metrum.content.MetrumProduction.salvagerAdvanced);
             } else if (item == metrum.content.MetrumItems.steel) {
@@ -1412,6 +1412,15 @@ public class BasePlanner {
             }
             return false;
         }
+        Tile site = findCoreWorkshopSite(core, selected);
+        if (site == null && selected == metrum.content.MetrumProduction.arcFurnaceOverclocked
+            && Blocks.siliconArcFurnace.environmentBuildable()) {
+            selected = Blocks.siliconArcFurnace;
+            site = findCoreWorkshopSite(core, selected);
+            if (site != null && prioritizeWorkshopMaterials(core, selected)) return false;
+        }
+        if (site == null && isSiliconArcFurnace(selected)) blockedSiliconSites.add(core);
+        final Block producer = selected;
         if (count(core, b -> b.block == producer) > 0) return false;
         java.util.Map<Item, Integer> inputs = new java.util.HashMap<>();
         for (mindustry.world.consumers.Consume consume : producer.nonOptionalConsumers) {
@@ -1437,7 +1446,7 @@ public class BasePlanner {
             prioritizeProducerDependency(core, input.item, needed);
             return false;
         }
-        return queueCoreWorkshop(core, producer);
+        return site != null && queueConstructionBatch(core, Seq.with(new BuildPlan(site.x, site.y, 0, producer)), true);
     }
 
     private static Seq<Building> coreWorkshops(CoreBuild core, Item item) {
@@ -1474,6 +1483,11 @@ public class BasePlanner {
     }
 
     static boolean queueCoreWorkshop(CoreBuild core, Block producer) {
+        Tile site = findCoreWorkshopSite(core, producer);
+        return site != null && queueConstructionBatch(core, Seq.with(new BuildPlan(site.x, site.y, 0, producer)), true);
+    }
+
+    private static Tile findCoreWorkshopSite(CoreBuild core, Block producer) {
         mindustry.type.Liquid steam = metrum.content.MetrumLiquids.steam;
         boolean needsSteam = steam != null && producer.consumesLiquid(steam);
         boolean scanCoreEdge = needsSteam || isSiliconArcFurnace(producer);
@@ -1491,23 +1505,19 @@ public class BasePlanner {
                 if (site == null || !Build.validPlace(producer, core.team, site.x, site.y, 0, false)) continue;
                 if (fallback == null) fallback = site;
                 if (!needsSteam) {
-                    if (offset == 0) return queueConstructionBatch(core, Seq.with(new BuildPlan(site.x, site.y, 0, producer)), true);
+                    if (offset == 0) return site;
                     continue;
                 }
                 for (arc.math.geom.Point2 edge : mindustry.world.Edges.getEdges(producer.size)) {
                     Tile adjacent = Vars.world.tile(site.x + edge.x, site.y + edge.y);
                     if (adjacent != null && adjacent.build != null && adjacent.build.team == core.team
                         && isSteamSource(adjacent.build)) {
-                        return queueConstructionBatch(core, Seq.with(new BuildPlan(site.x, site.y, 0, producer)), true);
+                        return site;
                     }
                 }
             }
         }
-        if (fallback == null && isSiliconArcFurnace(producer)) {
-            fallback = findLinkedWorkshopSite(core, producer);
-            if (fallback == null) blockedSiliconSites.add(core);
-        }
-        return fallback != null && queueConstructionBatch(core, Seq.with(new BuildPlan(fallback.x, fallback.y, 0, producer)), true);
+        return fallback == null && isSiliconArcFurnace(producer) ? findLinkedWorkshopSite(core, producer) : fallback;
     }
 
     private static Tile findLinkedWorkshopSite(CoreBuild core, Block producer) {
