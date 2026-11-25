@@ -60,6 +60,27 @@ public class BridgeFlowTest {
         metrum.world.FilteredDuctBridgeBuild.installOnDuctBridge();
         Blocks.ductBridge.init();
         checkFlow(Blocks.ductBridge);
+        Blocks.graphitePress.init();
+        checkFrontOutput(bridge);
+        checkFrontOutput(Blocks.ductBridge);
+    }
+
+    static void checkFrontOutput(Block bridge) {
+        Vars.world.tiles.fill();
+        Building end = place(bridge, 5, 3, 0);
+        Building press = place(Blocks.graphitePress, 6, 3, 0);
+        int capacity = press.getMaximumAccepted(Items.coal);
+        press.items.add(Items.coal, capacity - 1);
+        end.items.add(Items.coal, 2);
+        for (int tick = 0; tick < 30; tick++) end.updateTile();
+        if (press.items.get(Items.coal) != capacity || end.items.get(Items.coal) != 1) {
+            throw new AssertionError(bridge.name + " lost coal while the press was full");
+        }
+        press.items.remove(Items.coal, 1);
+        for (int tick = 0; tick < 30; tick++) end.updateTile();
+        if (press.items.get(Items.coal) != capacity || end.items.total() != 0) {
+            throw new AssertionError(bridge.name + " failed to resume delivery to the press");
+        }
     }
 
     static void checkFlow(Block bridge) {
