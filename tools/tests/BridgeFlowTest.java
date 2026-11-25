@@ -56,8 +56,13 @@ public class BridgeFlowTest {
                 }
             }
         }
-        Vars.world.tiles.fill();
+        checkFlow(bridge);
+        Blocks.ductBridge.init();
+        checkFlow(Blocks.ductBridge);
+    }
 
+    static void checkFlow(Block bridge) {
+        Vars.world.tiles.fill();
         Building feed = place(Blocks.container, 2, 1, 1);
         Building start = place(bridge, 2, 2, 0);
         Building middle = place(bridge, 5, 2, 0);
@@ -84,10 +89,18 @@ public class BridgeFlowTest {
                 end.updateTile();
                 unloader.updateTile();
             }
-            int expectedSide = phase == 0 ? ballast + 5 : 15;
-            if (sent != 20 || side.items.get(Items.graphite) != expectedSide
-                || side.items.total() != expectedSide || forward.items.get(Items.graphite) != 5
-                || forward.items.get(Items.beryllium) != 10 * (phase + 1)
+            int storedBallast = phase == 0 ? ballast : 0;
+            int diverted = side.items.get(Items.graphite) - storedBallast;
+            int batches = phase + 1;
+            System.out.println(bridge.name + " phase " + phase + ": side graphite "
+                + diverted
+                + ", forward graphite " + forward.items.get(Items.graphite));
+            if (bridge instanceof ColorDuctBridge && diverted != (phase == 0 ? 5 : 15)) {
+                throw new AssertionError("Circuit bridge lost side priority");
+            }
+            if (sent != 20 || diverted <= 0 || side.items.total() != diverted + storedBallast
+                || diverted + forward.items.get(Items.graphite) != 10 * batches
+                || forward.items.get(Items.beryllium) != 10 * batches
                 || start.items.total() + middle.items.total() + end.items.total() != 0) {
                 throw new AssertionError("Incorrect delivery after phase " + phase);
             }
