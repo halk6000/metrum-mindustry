@@ -1681,7 +1681,8 @@ public class BasePlanner {
     }
 
     private static boolean buildWallExtractor(CoreBuild core, Block scraper, boolean requestMaterials) {
-        if (scraper == null || !scraper.environmentBuildable() || count(core, b -> b.block == scraper) > 0) return false;
+        if (scraper == null || !scraper.environmentBuildable() || hasQueuedBlock(core, scraper)
+            || count(core, b -> b.block == scraper) > 0) return false;
         if (requestMaterials && prioritizeWorkshopMaterials(core, scraper)) return false;
         if (!requestMaterials && !canSupportDrill(core, scraper)) return false;
         Seq<BuildPlan> sites = new Seq<>();
