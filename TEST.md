@@ -71,3 +71,5 @@ Powtórka z odczytem rdzenia co tick potwierdziła dwie dostawy berylu. Przy 8. 
 Przy ręcznie ustawionym planie routera kanałowego i zerowym zapasie berylu dron zaczął wydobycie ze ściany przy 4. ticku, dostarczył 11 sztuk do rdzenia przy 142. ticku i ukończył router przy 173. ticku. Przed poprawką wyszukiwania złóż plan kanału z pustym rdzeniem tkwił w kolejce przez 1200 ticków.
 
 W próbie z poprawką `918cc4f` ustawiono kocioł i piec stali obok siebie przy rdzeniu oraz uzupełniono wodę w kotle. Planer pobrał z rdzenia węgiel dla obu warsztatów, w tym jedną sztukę dla kotła. Po 4 tickach piec stali miał 1,2 jednostki pary. Próba obejmowała bezpośredni przepływ między budynkami.
+
+W osobnej próbie ustawiono oba warsztaty z przerwą i ręcznie zaopatrzono kocioł w wodę i węgiel. Planer wytyczył dwie rury, a dron zbudował obie. Przy 25. ticku piec miał 4,26 jednostki pary.
