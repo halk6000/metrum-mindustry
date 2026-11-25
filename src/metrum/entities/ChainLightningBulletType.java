@@ -20,7 +20,6 @@ import mindustry.gen.Bullet;
 import mindustry.gen.Healthc;
 import mindustry.gen.Unit;
 import mindustry.graphics.Drawf;
-import mindustry.graphics.Layer;
 import mindustry.type.StatusEffect;
 
 /**
@@ -58,7 +57,7 @@ public class ChainLightningBulletType extends BulletType {
         }
         Drawf.light(e.x, e.y, to.getX(), to.getY(), 24f * e.fout(), e.color, 0.6f);
         Draw.reset();
-    }).layer(Layer.bullet + 1f);
+    }).layer(AboveShip.layer);
 
     public int jumps = 4;
     public float jumpRange = 60f;

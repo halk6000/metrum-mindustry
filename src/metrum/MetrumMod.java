@@ -31,6 +31,7 @@ public class MetrumMod extends Mod {
         MetrumPower.load();
         MetrumUnits.load();
         metrum.modular.MetrumModular.load();
+        metrum.entities.AboveShip.load();
         MetrumUnitBlocks.load();
         MetrumPhysics.load();
         MetrumPower.loadReactors();
