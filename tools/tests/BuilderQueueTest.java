@@ -60,6 +60,7 @@ public class BuilderQueueTest {
         checkCargoDelivery(drill, iron);
         checkTwoBuilders(drill, duct, iron);
         checkDeliveryTarget(iron);
+        checkMiningStall();
         check(BasePlanner.restoreBuildQueue(unit,backup));
         check(unit.plans.size==2 && unit.buildPlan().block==drill);
         check(!BasePlanner.restoreBuildQueue(unit,backup));
@@ -75,6 +76,26 @@ public class BuilderQueueTest {
         try { new AbandonedBuilds().read(new DataInputStream(new ByteArrayInputStream(broken))); throw new AssertionError(); }
         catch(EOFException expected) { check(AbandonedBuilds.pending.isEmpty()); }
         System.out.println("OK: saved plan order, rotations, demolition, controller restoration, queue continuation, reserved materials, released materials, invalid batch cancellation, constructor replacement queue, saved abandoned queue, truncated save");
+    }
+
+    static void checkMiningStall() {
+        float limit = 1200f;
+        float elapsed = BasePlanner.advanceMiningStall(0f, true, false, 480f, limit);
+        check(elapsed == 480f);
+        // A minute spent on prerequisites must neither consume nor replenish the budget.
+        elapsed = BasePlanner.advanceMiningStall(elapsed, false, false, 3600f, limit);
+        check(elapsed == 480f);
+        elapsed = BasePlanner.advanceMiningStall(elapsed, true, false, 719f, limit);
+        check(elapsed == 1199f && elapsed < limit);
+        elapsed = BasePlanner.advanceMiningStall(elapsed, true, false, 1f, limit);
+        check(elapsed == limit);
+        elapsed = BasePlanner.advanceMiningStall(elapsed, false, false, 3600f, limit);
+        check(elapsed == limit);
+        check(BasePlanner.advanceMiningStall(elapsed, true, false, 60f, limit) == limit);
+        elapsed = BasePlanner.advanceMiningStall(elapsed, true, true, 1f, limit);
+        check(elapsed == 0f);
+        check(BasePlanner.advanceMiningStall(elapsed, true, false, 60f, limit) == 60f);
+        System.out.println("OK: tungsten timeout pauses, resumes, expires and resets on progress");
     }
 
     static void checkDeliveryTarget(mindustry.type.Item cargo) {

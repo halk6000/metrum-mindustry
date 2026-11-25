@@ -435,6 +435,11 @@ public class BasePlanner {
             && target.acceptStack(drone.stack.item, drone.stack.amount, drone) > 0 ? target : null;
     }
 
+    static float advanceMiningStall(float elapsed, boolean active, boolean progressed, float delta, float limit) {
+        if (progressed) return 0f;
+        return active ? Math.min(limit, elapsed + delta) : elapsed;
+    }
+
     private static class ResourceDroneAI extends metrum.ai.SmartMining.SmartMinerAI {
         private static final float tungstenWait = 20f * 60f;
         final CoreBuild home;
@@ -473,8 +478,8 @@ public class BasePlanner {
             ItemStack goal = demand != null && demand.item == mindustry.content.Items.tungsten ? demand : null;
             int tungstenCargo = unit.stack.item == mindustry.content.Items.tungsten ? unit.stack.amount : 0;
             // Other resource priorities pause the timeout without granting a fresh budget.
-            if (tungstenCargo > lastTungstenCargo) tungstenStalledTime = 0f;
-            else if (goal != null) tungstenStalledTime = Math.min(tungstenWait, tungstenStalledTime + Time.delta);
+            tungstenStalledTime = advanceMiningStall(tungstenStalledTime, goal != null,
+                tungstenCargo > lastTungstenCargo, Time.delta, tungstenWait);
             tungstenGoal = goal;
             lastTungstenCargo = tungstenCargo;
             if (unit.stack.amount > 0) {
