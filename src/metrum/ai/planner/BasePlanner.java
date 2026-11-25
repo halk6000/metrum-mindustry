@@ -223,7 +223,11 @@ public class BasePlanner {
         abandonedPlans.keySet().removeIf(core -> !core.isValid() || core.team != team);
         for (CoreBuild core : team.cores()) {
             if (hasBuilder(core)) {
-                restoreAbandonedPlans(core, assignedBuilder(core));
+                mindustry.gen.Unit available = mindustry.gen.Groups.unit.find(u -> u.team == core.team
+                    && !u.dead() && !u.isPlayer() && u.type == metrum.content.MetrumUnits.monoMetT1
+                    && u.flag == builderHomeFlag(core) && u.controller() instanceof MetrumBuilderAI
+                    && u.plans.isEmpty());
+                restoreAbandonedPlans(core, available);
                 builderTimers.put(core, 0f);
                 continue;
             }
