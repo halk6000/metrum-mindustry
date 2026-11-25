@@ -317,9 +317,13 @@ public class BuilderQueueTest {
             receiver.tile = Vars.world.tile(5, 6);
             receiver.tile.build = receiver;
             arc.struct.Seq<mindustry.world.Tile> aroundDock = BasePlanner.sandRoute(Vars.world.tile(5, 4),
-                receiver, site -> BasePlanner.sandSiteClear(core.team, duct, site));
+                receiver, site -> BasePlanner.ductSiteClear(core.team, duct, site));
             check(aroundDock != null && aroundDock.size > 2 && aroundDock.peek() == receiver.tile);
             check(!aroundDock.contains(Vars.world.tile(5, 5)) && !aroundDock.contains(Vars.world.tile(4, 5)));
+            arc.struct.Seq<mindustry.world.Tile> oreRoute = BasePlanner.extractorRoute(
+                Vars.world.tile(5, 4), drill, receiver, core.team, duct, tile -> true);
+            check(oreRoute != null && oreRoute.size > 2 && oreRoute.peek() == receiver.tile);
+            check(!oreRoute.contains(Vars.world.tile(5, 5)) && !oreRoute.contains(Vars.world.tile(4, 5)));
             receiver.tile.build = null;
             check(!BasePlanner.blocksMiningDockExit(core.team, duct, 4, 6));
             check(!BasePlanner.blocksMiningDockExit(mindustry.game.Team.sharded, duct, 5, 5));

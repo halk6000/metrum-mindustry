@@ -670,7 +670,7 @@ public class BasePlanner {
             if (duct.next != core && (duct.next == null || !isLinkedStorage(core, duct.next))) continue;
             if (!isDedicatedSandLine(duct)) continue;
             arc.func.Boolf<Tile> available = site -> Build.validPlace(duct.block, core.team, site.x, site.y, 0, false)
-                && sandSiteClear(core.team, duct.block, site);
+                && ductSiteClear(core.team, duct.block, site);
             for (int direction = 0; direction < 4; direction++) {
                 Seq<BuildPlan> repair = sandGapPlan(duct.tile.nearby(direction), furnace, duct, available);
                 if (repair != null && queueConstructionBatch(core, repair)) return true;
@@ -688,7 +688,7 @@ public class BasePlanner {
         return false;
     }
 
-    static boolean sandSiteClear(Team team, Block duct, Tile site) {
+    static boolean ductSiteClear(Team team, Block duct, Tile site) {
         return !overlapsQueuedBuild(team, duct, site.x, site.y)
             && !blocksMiningDockExit(team, duct, site.x, site.y);
     }
@@ -1909,10 +1909,8 @@ public class BasePlanner {
 
     private static Seq<BuildPlan> extractorPlansTo(CoreBuild core, Block drill, Tile site, int rotation, Building destination) {
         Block duct = Blocks.duct;
-        // Plan against a virtual footprint: no temporary or permanent block is spawned here.
-        Seq<Tile> path = Astar.pathfind(site, destination.tile, tile -> 1f,
-            t -> t.build == destination || insideFootprint(t, site, drill)
-                || (t.block() == Blocks.air && Build.validPlace(duct, core.team, t.x, t.y, 0, false)));
+        Seq<Tile> path = extractorRoute(site, drill, destination, core.team, duct,
+            tile -> Build.validPlace(duct, core.team, tile.x, tile.y, 0, false));
         if (path == null || path.isEmpty()) return null;
         Seq<BuildPlan> plans = Seq.with(new BuildPlan(site.x, site.y, rotation, drill));
         for (int i = 0; i < path.size - 1; i++) {
@@ -1921,6 +1919,13 @@ public class BasePlanner {
             plans.add(new BuildPlan(t.x, t.y, t.relativeTo(next), duct));
         }
         return plans;
+    }
+
+    static Seq<Tile> extractorRoute(Tile site, Block drill, Building destination, Team team, Block duct,
+                                    arc.func.Boolf<Tile> canPlace) {
+        return Astar.pathfind(site, destination.tile, tile -> 1f,
+            tile -> tile.build == destination || insideFootprint(tile, site, drill)
+                || (tile.block() == Blocks.air && canPlace.get(tile) && ductSiteClear(team, duct, tile)));
     }
 
     static boolean insideFootprint(Tile tile, Tile anchor, Block block) {
