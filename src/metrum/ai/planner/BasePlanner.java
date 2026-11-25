@@ -1016,7 +1016,11 @@ public class BasePlanner {
     static boolean buildDemandProducer(CoreBuild core, Item item) {
         Block ready = findProducer(core, item);
         final Block producer = ready != null ? ready : findProducer(core, item, true);
-        if (producer == null || count(core, b -> b.block == producer) > 0) return false;
+        if (producer == null) {
+            if (item == mindustry.content.Items.tungsten) prioritizeSalvagerSteel(core);
+            return false;
+        }
+        if (count(core, b -> b.block == producer) > 0) return false;
         java.util.Map<Item, Integer> inputs = new java.util.HashMap<>();
         for (mindustry.world.consumers.Consume consume : producer.nonOptionalConsumers) {
             if (consume instanceof mindustry.world.consumers.ConsumeItems) {
@@ -1038,12 +1042,7 @@ public class BasePlanner {
                 needed += Math.round(cost.amount * Vars.state.rules.buildCostMultiplier);
             }
             if (core.items.get(input.item) >= needed) continue;
-            ItemStack parent = miningDemand.get(core);
-            java.util.Deque<ItemStack> pending = deferredDemand.computeIfAbsent(core, ignored -> new java.util.ArrayDeque<>());
-            if (parent != null && parent.item != input.item && pending.stream().noneMatch(goal -> goal.item == input.item)) {
-                pending.push(parent);
-                miningDemand.put(core, new ItemStack(input.item, needed));
-            }
+            prioritizeProducerDependency(core, input.item, needed);
             return false;
         }
         for (int dir = 0; dir < 4; dir++) {
@@ -1058,6 +1057,29 @@ public class BasePlanner {
         }
         return false;
     }
+
+    static void prioritizeSalvagerSteel(CoreBuild core) {
+        Block salvager = metrum.content.MetrumProduction.salvagerAdvanced;
+        if (salvager == null || !salvager.environmentBuildable() || count(core, b -> b.block == salvager) > 0) return;
+        Item steel = metrum.content.MetrumItems.steel;
+        for (ItemStack cost : salvager.requirements) {
+            if (cost.item != steel) continue;
+            int needed = Math.round(cost.amount * Vars.state.rules.buildCostMultiplier)
+                + economicReserve(core).getOrDefault(steel, 0);
+            if (core.items.get(steel) < needed) prioritizeProducerDependency(core, steel, needed);
+            return;
+        }
+    }
+
+    static void prioritizeProducerDependency(CoreBuild core, Item item, int needed) {
+        ItemStack parent = miningDemand.get(core);
+        if (parent == null || parent.item == item) return;
+        java.util.Deque<ItemStack> pending = deferredDemand.computeIfAbsent(core, ignored -> new java.util.ArrayDeque<>());
+        if (pending.stream().anyMatch(goal -> goal.item == item)) return;
+        pending.push(parent);
+        miningDemand.put(core, new ItemStack(item, needed));
+    }
+
     static Block findProducer(CoreBuild core, Item item) {
         return findProducer(core, item, false);
     }
