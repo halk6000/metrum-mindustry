@@ -1558,6 +1558,7 @@ public class BasePlanner {
         if (demand.item == mindustry.content.Items.silicon || demand.item == mindustry.content.Items.tungsten
             || demand.item == metrum.content.MetrumItems.steel) {
             deliverBufferedOutput(core, demand);
+            if (demand.item == mindustry.content.Items.tungsten) drainSalvagerByproducts(core);
             if (core.items.get(demand.item) >= demand.amount) return;
         }
         boolean recoveryNeedsSteam = demand.item == metrum.content.MetrumItems.steel
@@ -1615,6 +1616,32 @@ public class BasePlanner {
             core.handleStack(item, transferred, factory);
             room -= transferred;
             if (room <= 0) return;
+        }
+    }
+
+    private static void drainSalvagerByproducts(CoreBuild core) {
+        Item sand = mindustry.content.Items.sand;
+        Item tungsten = mindustry.content.Items.tungsten;
+        for (Building factory : core.proximity) {
+            if (factory.block != metrum.content.MetrumProduction.salvagerAdvanced || factory.team != core.team
+                || factory.items == null || factory.closestCore() != core) continue;
+            mindustry.world.blocks.production.Separator salvager = (mindustry.world.blocks.production.Separator) factory.block;
+            for (ItemStack output : salvager.results) {
+                Item item = output.item;
+                int buffered = factory.items.get(item);
+                if (item == tungsten || buffered <= 0) continue;
+                if (item == sand && coreBurnsSand(core)) {
+                    Building furnace = findSandArcFurnace(core);
+                    if (furnace == null) continue;
+                    int missing = requiredPerBatch(furnace, sand) - furnace.items.get(sand);
+                    if (missing > 0) furnace.items.add(sand, factory.removeStack(sand, Math.min(missing, buffered)));
+                } else {
+                    int room = core.storageCapacity - core.items.get(item);
+                    if (room <= 0) continue;
+                    int transferred = factory.removeStack(item, Math.min(room, buffered));
+                    if (transferred > 0) core.handleStack(item, transferred, factory);
+                }
+            }
         }
     }
 
