@@ -277,8 +277,9 @@ public class BasePlanner {
         if (!powerGridDone(core) && extendPowerGrid(core)) return true;
         if (hasWaterDeficit(core) && !hasIdleGenerator(core) && buildPower(core)) return true;
         if (pipeWater(core)) return true;
-        if (drills < 2) return false; // do not spend the bootstrap budget on factories or defences
         ItemStack demand = miningDemand.get(core);
+        if (demand != null && buildSteamForRecovery(core, demand.item)) return true;
+        if (drills < 2) return false; // do not spend the bootstrap budget on other factories or defences
         if (demand != null && !minedResources(core).contains(demand.item)
             && buildDrillLine(core, level, true)) return true;
         if (demand != null && buildDemandProducer(core, demand.item)) return true;
@@ -1045,6 +1046,20 @@ public class BasePlanner {
             prioritizeProducerDependency(core, input.item, needed);
             return false;
         }
+        return queueCoreWorkshop(core, producer);
+    }
+
+    static boolean buildSteamForRecovery(CoreBuild core, Item item) {
+        if (item != metrum.content.MetrumItems.steel && item != mindustry.content.Items.tungsten) return false;
+        Block boiler = metrum.content.MetrumProduction.steamFurnace;
+        if (boiler == null || !boiler.environmentBuildable()) return false;
+        mindustry.type.Liquid steam = metrum.content.MetrumLiquids.steam;
+        if (count(core, b -> b.block == boiler || (b.enabled && b.block.outputsLiquid
+            && b.liquids != null && b.liquids.get(steam) > 1f)) > 0) return false;
+        return queueCoreWorkshop(core, boiler);
+    }
+
+    static boolean queueCoreWorkshop(CoreBuild core, Block producer) {
         for (int dir = 0; dir < 4; dir++) {
             int coreMin = -(core.block.size - 1) / 2, coreMax = core.block.size / 2;
             int factoryMin = -(producer.size - 1) / 2, factoryMax = producer.size / 2;
