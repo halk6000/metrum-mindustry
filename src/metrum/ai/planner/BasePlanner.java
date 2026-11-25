@@ -249,7 +249,8 @@ public class BasePlanner {
             && u.controller() instanceof ResourceDroneAI && ((ResourceDroneAI) u.controller()).home == core)) return;
         mindustry.gen.Unit drone = mindustry.gen.Groups.unit.find(u -> u.team == core.team && !u.dead() && !u.isPlayer()
             && u.flag == 0d && u.plans.isEmpty() && u.closestCore() == core
-            && (u.type == metrum.content.MetrumUnits.monoMetT1 || u.type == metrum.content.MetrumUnits.monoMetT1b)
+            && metrum.ai.SmartMining.command != null && u.type.commands.contains(metrum.ai.SmartMining.command)
+            && u.type.mineItems.contains(demand.item)
             && u.controller() instanceof mindustry.entities.units.AIController
             && !(u.controller() instanceof ResourceDroneAI) && u.canMine(demand.item)
             && metrum.ai.SmartMining.findMineableOre(u, demand.item) != null);
