@@ -1448,10 +1448,12 @@ public class BasePlanner {
     static boolean queueCoreWorkshop(CoreBuild core, Block producer) {
         mindustry.type.Liquid steam = metrum.content.MetrumLiquids.steam;
         boolean needsSteam = steam != null && producer.consumesLiquid(steam);
+        boolean scanCoreEdge = needsSteam || producer == Blocks.siliconArcFurnace
+            || producer == metrum.content.MetrumProduction.arcFurnaceOverclocked;
         int coreMin = -(core.block.size - 1) / 2, coreMax = core.block.size / 2;
         int factoryMin = -(producer.size - 1) / 2, factoryMax = producer.size / 2;
-        int offsetMin = needsSteam ? coreMin - factoryMax : 0;
-        int offsetMax = needsSteam ? coreMax - factoryMin : 0;
+        int offsetMin = scanCoreEdge ? coreMin - factoryMax : 0;
+        int offsetMax = scanCoreEdge ? coreMax - factoryMin : 0;
         Tile fallback = null;
         for (int dir = 0; dir < 4; dir++) {
             int distance = (dir == 0 || dir == 1) ? coreMax - factoryMin + 1 : factoryMax - coreMin + 1;
@@ -1461,7 +1463,10 @@ public class BasePlanner {
                     core.tileY() + dy * distance + dx * offset);
                 if (site == null || !Build.validPlace(producer, core.team, site.x, site.y, 0, false)) continue;
                 if (fallback == null) fallback = site;
-                if (!needsSteam) break;
+                if (!needsSteam) {
+                    if (offset == 0) return queueConstructionBatch(core, Seq.with(new BuildPlan(site.x, site.y, 0, producer)), true);
+                    continue;
+                }
                 for (arc.math.geom.Point2 edge : mindustry.world.Edges.getEdges(producer.size)) {
                     Tile adjacent = Vars.world.tile(site.x + edge.x, site.y + edge.y);
                     if (adjacent != null && adjacent.build != null && adjacent.build.team == core.team
@@ -1470,7 +1475,6 @@ public class BasePlanner {
                     }
                 }
             }
-            if (!needsSteam && fallback != null) break;
         }
         return fallback != null && queueConstructionBatch(core, Seq.with(new BuildPlan(fallback.x, fallback.y, 0, producer)), true);
     }
