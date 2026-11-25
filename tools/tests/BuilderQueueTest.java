@@ -47,6 +47,11 @@ public class BuilderQueueTest {
             installed.rotation = segment.rotation;
         }
         check(BasePlanner.sandOutletReady(route.first(), furnace, sandInput));
+        mindustry.gen.Building lastDuct = route.get(1).build;
+        route.get(1).build = null;
+        BuildPlan repair = BasePlanner.sandGapPlan(route.first(), furnace, sandInput);
+        check(repair != null && repair.block == duct && repair.x == 3 && repair.y == 2 && repair.rotation == 1);
+        route.get(1).build = lastDuct;
         route.get(1).build.rotation = 2;
         check(!BasePlanner.sandOutletReady(route.first(), furnace, sandInput));
         route.get(0).build = route.get(1).build = null;

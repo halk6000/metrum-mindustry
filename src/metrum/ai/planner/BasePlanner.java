@@ -669,6 +669,10 @@ public class BasePlanner {
             mindustry.world.blocks.distribution.Duct.DuctBuild duct = (mindustry.world.blocks.distribution.Duct.DuctBuild) input;
             if (duct.next != core && (duct.next == null || !isLinkedStorage(core, duct.next))) continue;
             if (!isDedicatedSandLine(duct)) continue;
+            for (int direction = 0; direction < 4; direction++) {
+                BuildPlan repair = sandGapPlan(duct.tile.nearby(direction), furnace, duct);
+                if (repair != null && queueConstructionBatch(core, Seq.with(repair))) return true;
+            }
             Seq<Tile> route = Astar.pathfind(duct.tile, furnace.tile, tile -> 1f,
                 tile -> tile.build == furnace || (tile.block() == Blocks.air
                     && duct.within(tile, 6f * Vars.tilesize)
@@ -686,7 +690,27 @@ public class BasePlanner {
     }
 
     static boolean sandOutletReady(Tile output, Building furnace, Building input) {
-        for (int steps = 0; output != null && steps < 7; steps++) {
+        return sandOutletReady(output, furnace, input, 7);
+    }
+
+    static BuildPlan sandGapPlan(Tile tile, Building furnace, Building input) {
+        for (int remaining = 6; tile != null && remaining > 0; remaining--) {
+            if (tile.build == null && tile.block() == Blocks.air) {
+                for (int dir = 0; dir < 4; dir++) {
+                    if (sandOutletReady(tile.nearby(dir), furnace, input, remaining))
+                        return new BuildPlan(tile.x, tile.y, dir, input.block);
+                }
+                return null;
+            }
+            Building duct = tile.build;
+            if (duct == null || duct == input || duct.team != input.team || duct.block != input.block) return null;
+            tile = tile.nearby(duct.rotation);
+        }
+        return null;
+    }
+
+    private static boolean sandOutletReady(Tile output, Building furnace, Building input, int limit) {
+        for (int steps = 0; output != null && steps < limit; steps++) {
             Building next = output.build;
             if (next == furnace) return true;
             if (next == null || next == input || next.team != input.team || next.block != input.block) return false;
