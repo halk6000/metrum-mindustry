@@ -69,3 +69,5 @@ Mindustry 160.8, sektor Ferrox 12, kopia zapisu w osobnym katalogu gry, tylko Me
 Powtórka z odczytem rdzenia co tick potwierdziła dwie dostawy berylu. Przy 8. ticku ładunek spadł z 66 do 0, a zapas rdzenia wzrósł z 1676 do 1742. Przy 747. ticku ładunek spadł z 60 do 0, a zapas wzrósł z 1734 do 1794.
 
 Przy ręcznie ustawionym planie routera kanałowego i zerowym zapasie berylu dron zaczął wydobycie ze ściany przy 4. ticku, dostarczył 11 sztuk do rdzenia przy 142. ticku i ukończył router przy 173. ticku. Przed poprawką wyszukiwania złóż plan kanału z pustym rdzeniem tkwił w kolejce przez 1200 ticków.
+
+W próbie z poprawką `918cc4f` ustawiono kocioł i piec stali obok siebie przy rdzeniu oraz uzupełniono wodę w kotle. Planer pobrał z rdzenia węgiel dla obu warsztatów, w tym jedną sztukę dla kotła. Po 4 tickach piec stali miał 1,2 jednostki pary. Próba obejmowała bezpośredni przepływ między budynkami.
