@@ -1246,11 +1246,7 @@ public class BasePlanner {
                 int missing = Math.max(0, input.getValue() - factory.items.get(item));
                 if (input.getValue() > factory.getMaximumAccepted(item)) continue workshops;
                 if (core.items.get(item) - reserve.getOrDefault(item, 0) < missing) {
-                    java.util.Deque<ItemStack> pending = deferredDemand.computeIfAbsent(core, ignored -> new java.util.ArrayDeque<>());
-                    // Keep the parent objective and avoid circular ingredient dependencies.
-                    if (item != demand.item && pending.stream().noneMatch(parent -> parent.item == item)) {
-                        pending.push(demand);
-                        miningDemand.put(core, new ItemStack(item, missing + reserve.getOrDefault(item, 0)));
+                    if (prioritizeProducerDependency(core, item, missing + reserve.getOrDefault(item, 0))) {
                         // Other workshops still hold the old demand snapshot; resume them next supply tick.
                         return;
                     }
@@ -1367,6 +1363,9 @@ public class BasePlanner {
     static boolean prioritizeProducerDependency(CoreBuild core, Item item, int needed) {
         ItemStack parent = miningDemand.get(core);
         if (parent == null || parent.item == item) return false;
+        // Don't start graphite decompression without a way to get its graphite first.
+        if (parent.item == mindustry.content.Items.coal && item == mindustry.content.Items.graphite
+            && !Vars.indexer.hasOre(item) && !Vars.indexer.hasWallOre(item) && findProducer(core, item) == null) return false;
         java.util.Deque<ItemStack> pending = deferredDemand.computeIfAbsent(core, ignored -> new java.util.ArrayDeque<>());
         if (pending.stream().anyMatch(goal -> goal.item == item)) return false;
         pending.push(parent);
