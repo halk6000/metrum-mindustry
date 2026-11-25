@@ -115,7 +115,7 @@ public class MetrumBuilderAI extends mindustry.ai.types.BuilderAI {
                 return;
             }
         }
-        if (plan.breaking && tile != null && tile.block() == mindustry.content.Blocks.tungstenWall) {
+        if (plan.breaking && tile != null && BasePlanner.isRingWall(tile.block())) {
             mindustry.world.blocks.storage.CoreBlock.CoreBuild home = unit.team.cores().find(
                 core -> BasePlanner.builderHomeFlag(core) == unit.flag);
             if (home == null || !BasePlanner.wallNeedsOpening(home, tile)) {
