@@ -402,6 +402,7 @@ public class BasePlanner {
             && hasWaterDeficit(core) && buildPower(core, true)) return true;
         if (pipeSteam(core)) return true;
         demand = miningDemand.get(core);
+        if (demand != null && buildMiningDock(core, demand.item)) return true;
         boolean waitingForTungsten = demand != null && demand.item == mindustry.content.Items.tungsten
             && hasLocalTungstenDrone(core, demand.item);
         if (demand != null && !waitingForTungsten) {
@@ -430,6 +431,17 @@ public class BasePlanner {
         if (turrets < 2 + level.ordinal() * 2 && buildTurret(core, level)) return true;
         if (buildWalls(core, level)) return true;
         return false; // no construction progress; step() may reclaim unused pipe space
+    }
+
+    private static boolean buildMiningDock(CoreBuild core, Item ore) {
+        Block dock = metrum.content.MetrumUnitBlocks.airMinerDock;
+        mindustry.type.UnitType drone = metrum.content.MetrumUnits.monoMetT1;
+        if (dock == null || !dock.environmentBuildable() || !drone.mineItems.contains(ore)
+            || ore.hardness > drone.mineTier || assignedMiningDrone(core) != null
+            || count(core, b -> b.block == dock) > 0) return false;
+        boolean depositAvailable = (drone.mineFloor && Vars.indexer.findClosestOre(core.x, core.y, ore) != null)
+            || (drone.mineWalls && Vars.indexer.findClosestWallOre(core.x, core.y, ore) != null);
+        return depositAvailable && queueCoreWorkshop(core, dock);
     }
 
     private static boolean hasLocalTungstenDrone(CoreBuild core, Item ore) {
