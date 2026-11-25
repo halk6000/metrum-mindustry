@@ -571,7 +571,13 @@ public class BasePlanner {
         Building furnace = findSandArcFurnace(core);
         mindustry.gen.Unit builder = assignedBuilder(core);
         if (furnace == null || builder == null || !builder.plans.isEmpty()) return false;
-        for (Building input : furnace.proximity) {
+        Seq<Building> inputs = new Seq<>();
+        inputs.addAll(core.proximity);
+        for (Building storage : core.proximity) {
+            if (!isLinkedStorage(core, storage)) continue;
+            for (Building input : storage.proximity) if (!inputs.contains(input)) inputs.add(input);
+        }
+        for (Building input : inputs) {
             if (input.team != core.team || !input.block.quickRotate
                 || !(input instanceof mindustry.world.blocks.distribution.Duct.DuctBuild)) continue;
             mindustry.world.blocks.distribution.Duct.DuctBuild duct = (mindustry.world.blocks.distribution.Duct.DuctBuild) input;
@@ -583,6 +589,29 @@ public class BasePlanner {
                 builder.addBuild(new BuildPlan(duct.tileX(), duct.tileY(), direction, duct.block));
                 return true;
             }
+        }
+        for (Building input : inputs) {
+            if (input.team != core.team || !input.block.quickRotate
+                || !(input instanceof mindustry.world.blocks.distribution.Duct.DuctBuild)) continue;
+            mindustry.world.blocks.distribution.Duct.DuctBuild duct = (mindustry.world.blocks.distribution.Duct.DuctBuild) input;
+            if (duct.next != core && (duct.next == null || !isLinkedStorage(core, duct.next))) continue;
+            if (!isDedicatedSandLine(duct)) continue;
+            Seq<Tile> route = Astar.pathfind(duct.tile, furnace.tile, tile -> 1f,
+                tile -> tile.build == furnace || (tile.block() == Blocks.air
+                    && duct.within(tile, 6f * Vars.tilesize)
+                    && Build.validPlace(duct.block, core.team, tile.x, tile.y, 0, false)));
+            if (route == null || route.size < 2 || route.size > 7) continue;
+            int direction = duct.tile.relativeTo(route.first());
+            if (!Build.validPlace(duct.block, core.team, duct.tileX(), duct.tileY(), direction, false)) continue;
+            Seq<BuildPlan> connector = new Seq<>();
+            for (int i = 0; i < route.size - 1; i++) {
+                Tile tile = route.get(i);
+                if (tile.build == furnace) break;
+                connector.add(new BuildPlan(tile.x, tile.y, tile.relativeTo(route.get(i + 1)), duct.block));
+            }
+            if (connector.isEmpty() || !queueConstructionBatch(core, connector)) continue;
+            builder.addBuild(new BuildPlan(duct.tileX(), duct.tileY(), direction, duct.block));
+            return true;
         }
         return false;
     }
