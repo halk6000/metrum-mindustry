@@ -18,7 +18,7 @@ import static mindustry.type.ItemStack.with;
 /** Crafting blocks ported from the original Metrum JSON mod. */
 public class MetrumProduction {
     public static Block graphiteDecompressor, graphiteDecompressorOverclocked,
-        ammoFactory, steamFurnace, largeSteamFurnace, salvagerOverclocked, salvagerAdvanced, arcFurnaceOverclocked, heatInverter, magmaForge, plasmaIonizer, stoneCrusher, infusionSmelter, salvager;
+        ammoFactory, steamFurnace, largeSteamFurnace, salvagerOverclocked, salvagerAdvanced, arcFurnaceOverclocked, heatInverter, magmaForge, plasmaIonizer, stoneCrusher, infusionSmelter, salvager, rockMelter;
     public static metrum.world.OpenPitMine openPitMine;
 
     private static final Color flame = Color.valueOf("fdb380");
@@ -124,6 +124,20 @@ public class MetrumProduction {
             consumeItem(MetrumItems.pieceRock);
             consumeLiquid(Liquids.water, 0.33f);
             outputItem = new ItemStack(Items.sand, 5);
+        }};
+
+        // primitive slag source: 1 rock + 1 coal -> 12 slag per cycle
+        rockMelter = new GenericCrafter("rock-melter") {{
+            requirements(Category.crafting, with(MetrumItems.pieceRock, 60, MetrumItems.iron, 40, Items.silicon, 30));
+            size = 2;
+            craftTime = metrum.Balance.f("melter.cycleSeconds", 1f) * 60f;
+            itemCapacity = 20;
+            liquidCapacity = 120f;
+            updateEffect = Fx.smeltsmoke;
+            consumePower(metrum.Balance.f("melter.powerPerSecond", 300f) / 60f);
+            consumeItems(with(MetrumItems.pieceRock, 1, Items.coal, 1));
+            outputLiquid = new LiquidStack(Liquids.slag, metrum.Balance.f("melter.slagPerCycle", 12f) / craftTime);
+            drawer = new DrawMulti(new DrawDefault(), new DrawGlowRegion() {{ color = Color.valueOf("ff9a3c"); }});
         }};
 
         // digs 1% per step; every step may reveal underground resources (discovery amounts are weights)

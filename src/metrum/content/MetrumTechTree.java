@@ -50,6 +50,7 @@ public class MetrumTechTree {
         node(graphiteDecompressor, graphiteDecompressorOverclocked);
         node(rockScraper, steamFurnace);
         node(rockScraper, stoneCrusher);
+        node(stoneCrusher, rockMelter);
         TechNode pit = node(stoneCrusher, openPitMine);
         if (pit != null) pit.objectives.add(new mindustry.game.Objectives.Research(steel));
         node(steamFurnace, largeSteamFurnace);
