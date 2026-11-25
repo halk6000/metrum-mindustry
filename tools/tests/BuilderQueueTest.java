@@ -251,6 +251,33 @@ public class BuilderQueueTest {
         float total = source.liquids.get(water) + receiver.liquids.get(water);
         for (mindustry.gen.Building segment : pipes) total += segment.liquids.get(water);
         check(Math.abs(total - 8f) < 0.001f);
+
+        source.liquids.clear();
+        receiver.liquids.clear();
+        for (mindustry.gen.Building segment : pipes) segment.liquids.clear();
+        mindustry.world.blocks.power.ThermalGenerator generator =
+            (mindustry.world.blocks.power.ThermalGenerator) condenser;
+        mindustry.world.blocks.power.ThermalGenerator.ThermalGeneratorBuild geothermal =
+            (mindustry.world.blocks.power.ThermalGenerator.ThermalGeneratorBuild) source;
+        geothermal.sum = condenser.size * condenser.size
+            * mindustry.content.Blocks.rhyoliteVent.attributes.get(generator.attribute);
+        arc.util.Time.delta = 1f;
+        float demand = BasePlanner.requiredWaterRate(receiver);
+        check(demand > 0f);
+        float consumed = 0f;
+        int ticks = 600;
+        for (int tick = 0; tick < ticks; tick++) {
+            geothermal.updateTile();
+            for (mindustry.gen.Building segment : pipes) segment.moveLiquidForward(false, water);
+            float used = Math.min(demand, receiver.liquids.get(water));
+            receiver.liquids.remove(water, used);
+            consumed += used;
+        }
+        float supply = BasePlanner.thermalWaterRate(source);
+        System.out.println("Water per second: produced " + supply * 60f + ", required " + demand * 60f
+            + ", delivered " + consumed * 60f / ticks);
+        check(supply > 0f && consumed >= ticks * Math.min(supply, demand) * 0.95f);
+
     }
 
     static mindustry.gen.Building placeLiquidBlock(Block block, int x, int y, int rotation) {
