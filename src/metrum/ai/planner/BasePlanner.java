@@ -277,6 +277,7 @@ public class BasePlanner {
         if (!powerGridDone(core) && extendPowerGrid(core)) return true;
         if (hasWaterDeficit(core) && !hasIdleGenerator(core) && buildPower(core)) return true;
         if (pipeWater(core)) return true;
+        if (pipeSteam(core)) return true;
         ItemStack demand = miningDemand.get(core);
         if (demand != null && buildSteamForRecovery(core, demand.item)) return true;
         if (drills < 2) return false; // do not spend the bootstrap budget on other factories or defences
@@ -565,21 +566,33 @@ public class BasePlanner {
         return new Seq<>();
     }
     static boolean waterSiteSafe(Tile site, Team team) {
+        return liquidSiteSafe(site, team, mindustry.content.Liquids.water);
+    }
+    static boolean liquidSiteSafe(Tile site, Team team, mindustry.type.Liquid liquid) {
+        return liquidSiteSafe(site, team, liquid, null, null);
+    }
+    static boolean liquidSiteSafe(Tile site, Team team, mindustry.type.Liquid liquid, Building source, Building destination) {
         for (int direction = 0; direction < 4; direction++) {
             Tile neighbour = site.nearby(direction);
             Building building = neighbour == null ? null : neighbour.build;
-            if (building != null && building.team == team && building.block.hasLiquids
-                && !waterCompatible(building)) return false;
+            if (building != null && building != source && building != destination && building.team == team && building.block.hasLiquids
+                && !liquidCompatible(building, liquid)) return false;
         }
         return true;
     }
     static boolean waterCompatible(Building pipe) {
+        return liquidCompatible(pipe, mindustry.content.Liquids.water);
+    }
+    static boolean liquidCompatible(Building pipe, mindustry.type.Liquid carried) {
         return pipe.liquids == null || pipe.liquids.sum((liquid, amount) ->
-            liquid == mindustry.content.Liquids.water ? 0f : amount) <= 0.001f;
+            liquid == carried ? 0f : amount) <= 0.001f;
     }
     static boolean waterLineConnected(Building from, Building to) {
+        return liquidLineConnected(from, to, mindustry.content.Liquids.water);
+    }
+    static boolean liquidLineConnected(Building from, Building to, mindustry.type.Liquid liquid) {
         if (from.team != to.team) return false;
-        if (from.block == Blocks.reinforcedConduit && !waterCompatible(from)) return false;
+        if (from.block == Blocks.reinforcedConduit && !liquidCompatible(from, liquid)) return false;
         Block conduit = Blocks.reinforcedConduit;
         java.util.Set<Building> visited = new java.util.HashSet<>();
         java.util.ArrayDeque<Building> queue = new java.util.ArrayDeque<>();
@@ -587,7 +600,7 @@ public class BasePlanner {
         else {
             if (from.proximity.contains(to)) return true;
             for (Building adjacent : from.proximity) {
-                if (adjacent.team == from.team && adjacent.block == conduit && waterCompatible(adjacent)) {
+                if (adjacent.team == from.team && adjacent.block == conduit && liquidCompatible(adjacent, liquid)) {
                     Tile output = adjacent.tile.nearby(adjacent.rotation);
                     if (output != null && output.build != from) queue.add(adjacent);
                 }
@@ -599,7 +612,7 @@ public class BasePlanner {
             Tile output = pipe.tile.nearby(pipe.rotation);
             Building next = output == null ? null : output.build;
             if (next == to) return true;
-            if (next == null || next.team != from.team || next.block != conduit || !waterCompatible(next)) continue;
+            if (next == null || next.team != from.team || next.block != conduit || !liquidCompatible(next, liquid)) continue;
             Tile nextOutput = next.tile.nearby(next.rotation);
             if (nextOutput != null && nextOutput.build != pipe) queue.add(next);
         }
@@ -731,6 +744,27 @@ public class BasePlanner {
         if (repairWaterGap(core, sources, destinations, connections)) return true;
         if (repairStraightWaterGap(core, sources, destinations, connections)) return true;
         if (repairBentWaterGap(core, sources, destinations, connections)) return true;
+        return queueLiquidLine(core, sources, destinations, water);
+    }
+
+    static boolean pipeSteam(CoreBuild core) {
+        mindustry.type.Liquid steam = metrum.content.MetrumLiquids.steam;
+        if (steam == null) return false;
+        Seq<Building> sources = new Seq<>(), destinations = new Seq<>();
+        Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
+            b -> b.enabled && b.block instanceof mindustry.world.blocks.production.GenericCrafter
+                && ((mindustry.world.blocks.production.GenericCrafter) b.block).outputLiquid != null
+                && ((mindustry.world.blocks.production.GenericCrafter) b.block).outputLiquid.liquid == steam,
+            sources::add);
+        if (sources.isEmpty()) return false;
+        Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
+            b -> (b.block == metrum.content.MetrumProduction.infusionSmelter
+                || b.block == metrum.content.MetrumProduction.salvagerAdvanced) && b.enabled
+                && !sources.contains(from -> liquidLineConnected(from, b, steam)), destinations::add);
+        return queueLiquidLine(core, sources, destinations, steam);
+    }
+
+    static boolean queueLiquidLine(CoreBuild core, Seq<Building> sources, Seq<Building> destinations, mindustry.type.Liquid liquid) {
         Seq<Building[]> pairs = new Seq<>();
         for (Building from : sources) for (Building to : destinations) {
             if (from != to) pairs.add(new Building[]{from, to});
@@ -742,7 +776,9 @@ public class BasePlanner {
             Building from = pair[0], to = pair[1];
             Seq<Tile> candidate = Astar.pathfind(from.tile, to.tile, tile -> 1f,
                 t -> t.build == from || t.build == to ||
-                    (t.block() == Blocks.air && (waterSiteSafe(t, core.team) && Build.validPlace(conduit, core.team, t.x, t.y, 0, false))));
+                    (t.block() == Blocks.air && Build.validPlace(conduit, core.team, t.x, t.y, 0, false)
+                        && (liquid == mindustry.content.Liquids.water ? waterSiteSafe(t, core.team)
+                            : liquidSiteSafe(t, core.team, liquid, from, to))));
             if (candidate != null && candidate.size >= 3) {
                 path = candidate;
                 break;
