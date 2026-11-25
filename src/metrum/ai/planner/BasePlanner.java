@@ -440,9 +440,8 @@ public class BasePlanner {
         final CoreBuild home;
         final mindustry.entities.units.UnitController previousController;
         private ItemStack tungstenGoal;
-        private boolean tungstenTrackingStarted;
         private int lastTungstenCargo;
-        private float lastTungstenProgress;
+        private float tungstenStalledTime;
         private CoreBuild deliveryTarget;
 
         ResourceDroneAI(CoreBuild home, mindustry.entities.units.UnitController previousController) {
@@ -473,11 +472,9 @@ public class BasePlanner {
             }
             ItemStack goal = demand != null && demand.item == mindustry.content.Items.tungsten ? demand : null;
             int tungstenCargo = unit.stack.item == mindustry.content.Items.tungsten ? unit.stack.amount : 0;
-            // A temporary prerequisite demand must not grant another full tungsten timeout.
-            if ((goal != null && !tungstenTrackingStarted) || tungstenCargo > lastTungstenCargo) {
-                lastTungstenProgress = Time.time;
-            }
-            if (goal != null) tungstenTrackingStarted = true;
+            // Other resource priorities pause the timeout without granting a fresh budget.
+            if (tungstenCargo > lastTungstenCargo) tungstenStalledTime = 0f;
+            else if (goal != null) tungstenStalledTime = Math.min(tungstenWait, tungstenStalledTime + Time.delta);
             tungstenGoal = goal;
             lastTungstenCargo = tungstenCargo;
             if (unit.stack.amount > 0) {
@@ -529,13 +526,13 @@ public class BasePlanner {
             if (accepted > 0 && unit.within(core, unit.type.range)) {
                 mindustry.gen.Call.transferItemTo(unit, cargo, accepted, unit.x, unit.y, core);
                 // An overflow delivery elsewhere does not advance this home's recovery goal.
-                if (core == home && cargo == mindustry.content.Items.tungsten) lastTungstenProgress = Time.time;
+                if (core == home && cargo == mindustry.content.Items.tungsten) tungstenStalledTime = 0f;
             }
             moveTo(core, unit.type.range * 0.8f);
         }
 
         private boolean isMakingTungstenProgress() {
-            return tungstenGoal == null || Time.time - lastTungstenProgress < tungstenWait;
+            return tungstenGoal == null || tungstenStalledTime < tungstenWait;
         }
 
         @Override
