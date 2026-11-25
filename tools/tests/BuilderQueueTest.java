@@ -126,13 +126,17 @@ public class BuilderQueueTest {
         mindustry.world.Tile alternateTile = new mindustry.world.Tile(2, 1, oreTile.floor(), alternateDeposit, mindustry.content.Blocks.air);
         Vars.world.tiles.set(2, 1, alternateTile);
         class TestIndexer extends mindustry.ai.BlockIndexer {
-            mindustry.world.Tile available = oreTile;
-            @Override public boolean hasOre(mindustry.type.Item item) { return available.drop() == item; }
+            boolean originalAvailable = true;
+            boolean alternateAvailable;
+            @Override public boolean hasOre(mindustry.type.Item item) {
+                return (item == ore && originalAvailable) || (item == alternateOre && alternateAvailable);
+            }
             @Override public mindustry.world.Tile findClosestOre(Unit unit, mindustry.type.Item item) {
                 return findClosestOre(unit.x, unit.y, item);
             }
             @Override public mindustry.world.Tile findClosestOre(float x, float y, mindustry.type.Item item) {
-                return hasOre(item) ? available : null;
+                if (!hasOre(item)) return null;
+                return item == ore ? oreTile : alternateTile;
             }
         }
         TestIndexer indexer = new TestIndexer();
@@ -148,7 +152,8 @@ public class BuilderQueueTest {
         check(!builder.updateBuilding && builder.plans.size == 1 && builder.buildPlan() == plan);
         System.out.println("OK: empty builder starts mining the missing ore and retains its plan");
 
-        indexer.available = alternateTile;
+        indexer.originalAvailable = false;
+        indexer.alternateAvailable = true;
         builder.type.mineItems.add(alternateOre);
         builder.mineTile = null;
         metrum.ai.SmartMining.SmartMinerAI miner = new metrum.ai.SmartMining.SmartMinerAI();
@@ -161,5 +166,14 @@ public class BuilderQueueTest {
         miner.updateMovement();
         check(miner.targetItem == alternateOre && builder.mineTile == alternateTile);
         System.out.println("OK: miner switches to available ore after its previous deposit disappears");
+
+        indexer.originalAvailable = true;
+        core.items.add(alternateOre, core.getMaximumAccepted(alternateOre));
+        miner.updateMovement();
+        check(miner.targetItem == ore && builder.mineTile == null);
+        arc.util.Time.time += 60f;
+        miner.updateMovement();
+        check(builder.mineTile == oreTile && builder.stack.amount == 0);
+        System.out.println("OK: empty miner switches ore when the core cannot store its current target");
     }
 }
