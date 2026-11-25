@@ -456,6 +456,13 @@ public class BasePlanner {
                 return;
             }
             ItemStack demand = miningDemand.get(home);
+            if (demand == null) {
+                unit.mineTile = null;
+                // Finish the delivery before returning the drone to its previous duties.
+                if (unit.stack.amount > 0) deliverCargo(home);
+                else unit.controller(previousController);
+                return;
+            }
             ItemStack goal = demand != null && demand.item == mindustry.content.Items.tungsten ? demand : null;
             int tungstenCargo = unit.stack.item == mindustry.content.Items.tungsten ? unit.stack.amount : 0;
             if (goal != tungstenGoal || tungstenCargo > lastTungstenCargo) lastTungstenProgress = Time.time;
