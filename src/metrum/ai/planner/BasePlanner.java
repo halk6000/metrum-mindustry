@@ -669,16 +669,13 @@ public class BasePlanner {
             mindustry.world.blocks.distribution.Duct.DuctBuild duct = (mindustry.world.blocks.distribution.Duct.DuctBuild) input;
             if (duct.next != core && (duct.next == null || !isLinkedStorage(core, duct.next))) continue;
             if (!isDedicatedSandLine(duct)) continue;
+            arc.func.Boolf<Tile> available = site -> Build.validPlace(duct.block, core.team, site.x, site.y, 0, false)
+                && !overlapsQueuedBuild(core.team, duct.block, site.x, site.y);
             for (int direction = 0; direction < 4; direction++) {
-                Seq<BuildPlan> repair = sandGapPlan(duct.tile.nearby(direction), furnace, duct,
-                    site -> Build.validPlace(duct.block, core.team, site.x, site.y, 0, false)
-                        && !overlapsQueuedBuild(core.team, duct.block, site.x, site.y));
+                Seq<BuildPlan> repair = sandGapPlan(duct.tile.nearby(direction), furnace, duct, available);
                 if (repair != null && queueConstructionBatch(core, repair)) return true;
             }
-            Seq<Tile> route = Astar.pathfind(duct.tile, furnace.tile, tile -> 1f,
-                tile -> tile.build == furnace || (tile.block() == Blocks.air
-                    && duct.within(tile, 6f * Vars.tilesize)
-                    && Build.validPlace(duct.block, core.team, tile.x, tile.y, 0, false)));
+            Seq<Tile> route = sandRoute(duct.tile, furnace, available);
             if (route == null) continue;
             int deliverySteps = stepsToEntrance(route, furnace);
             if (deliverySteps < 2 || deliverySteps > 7) continue;
@@ -689,6 +686,12 @@ public class BasePlanner {
             return true;
         }
         return false;
+    }
+
+    static Seq<Tile> sandRoute(Tile start, Building furnace, arc.func.Boolf<Tile> available) {
+        return Astar.pathfind(start, furnace.tile, tile -> 1f,
+            tile -> tile.build == furnace || (tile.block() == Blocks.air && tile.build == null
+                && start.within(tile, 6f * Vars.tilesize) && available.get(tile)));
     }
 
     static boolean sandOutletReady(Tile output, Building furnace, Building input) {

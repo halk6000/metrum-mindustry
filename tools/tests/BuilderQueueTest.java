@@ -112,6 +112,11 @@ public class BuilderQueueTest {
             BuildPlan expected = detour.get(i), actual = unreserved.get(i);
             check(actual.x == expected.x && actual.y == expected.y && actual.rotation == expected.rotation);
         }
+        furnace.tile = route.get(2);
+        arc.struct.Seq<mindustry.world.Tile> freshRoute = BasePlanner.sandRoute(Vars.world.tile(3, 1), furnace,
+            site -> !BasePlanner.overlapsQueuedBuild(sandInput.team, duct, site.x, site.y));
+        check(freshRoute != null && freshRoute.size > 2 && freshRoute.peek() == furnace.tile);
+        check(!freshRoute.contains(routeCorner));
         mindustry.gen.Groups.unit.remove(otherBuilder);
         verifyRepairSequence(detour, upstream, furnace, sandInput);
         Vars.world.tile(2, 3).build = route.first().build = null;
