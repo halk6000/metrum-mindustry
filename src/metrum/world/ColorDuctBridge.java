@@ -10,7 +10,6 @@ import arc.util.io.Writes;
 import mindustry.gen.Tex;
 import mindustry.gen.Building;
 import mindustry.type.Item;
-import mindustry.world.blocks.distribution.DirectionalUnloader.DirectionalUnloaderBuild;
 import mindustry.graphics.Layer;
 import mindustry.world.Tile;
 import mindustry.world.blocks.distribution.DuctBridge;
@@ -44,41 +43,15 @@ public class ColorDuctBridge extends DuctBridge {
         dirRegion = Core.atlas.find("duct-bridge-dir");
     }
 
-    public class ColorBridgeBuild extends DuctBridgeBuild {
+    public class ColorBridgeBuild extends FilteredDuctBridgeBuild {
         public int circuit;
 
-        @Override
-        public void updateTile() {
-            if (!items.any()) {
-                super.updateTile();
-                return;
-            }
-            // Leave one matching item available for each working side unloader's next cycle.
-            Item left = reserveForUnloader((rotation + 1) % 4);
-            Item right = reserveForUnloader((rotation + 3) % 4);
-            try {
-                super.updateTile();
-            } finally {
-                if (left != null) items.add(left, 1);
-                if (right != null) items.add(right, 1);
-            }
-        }
-
-        private Item reserveForUnloader(int side) {
-            Building neighbor = nearby(side);
-            if (!(neighbor instanceof DirectionalUnloaderBuild)) return null;
-            DirectionalUnloaderBuild unloader = (DirectionalUnloaderBuild) neighbor;
-            Item filter = unloader.unloadItem;
-            if (unloader.rotation != side || unloader.team != team || !unloader.enabled
-                || unloader.edelta() <= 0f || filter == null || !items.has(filter)) return null;
-            Building output = unloader.front();
-            if (output == null || output.team != team || !output.acceptItem(unloader, filter)) return null;
-            items.remove(filter, 1);
-            return filter;
+        public ColorBridgeBuild() {
+            super(ColorDuctBridge.this);
         }
 
         @Override
-        public boolean acceptItem(mindustry.gen.Building source, mindustry.type.Item item) {
+        public boolean acceptItem(Building source, Item item) {
             int side = relativeToEdge(source.tile);
             return side >= 0 && side != (rotation + 2) % 4 && findLink() != null
                 && items.total() < itemCapacity && occupied[(side + 2) % 4] == null;

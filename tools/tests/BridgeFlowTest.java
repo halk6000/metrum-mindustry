@@ -57,6 +57,7 @@ public class BridgeFlowTest {
             }
         }
         checkFlow(bridge);
+        metrum.world.FilteredDuctBridgeBuild.installOnDuctBridge();
         Blocks.ductBridge.init();
         checkFlow(Blocks.ductBridge);
     }
@@ -95,8 +96,8 @@ public class BridgeFlowTest {
             System.out.println(bridge.name + " phase " + phase + ": side graphite "
                 + diverted
                 + ", forward graphite " + forward.items.get(Items.graphite));
-            if (bridge instanceof ColorDuctBridge && diverted != (phase == 0 ? 5 : 15)) {
-                throw new AssertionError("Circuit bridge lost side priority");
+            if (diverted != (phase == 0 ? 5 : 15)) {
+                throw new AssertionError(bridge.name + " lost side priority");
             }
             if (sent != 20 || diverted <= 0 || side.items.total() != diverted + storedBallast
                 || diverted + forward.items.get(Items.graphite) != 10 * batches

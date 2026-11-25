@@ -26,6 +26,7 @@ public class MetrumMod extends Mod {
         metrum.world.Deposits.load();
         MetrumItems.load();
         MetrumLiquids.load();
+        metrum.world.FilteredDuctBridgeBuild.installOnDuctBridge();
         MetrumBlocks.load();
         MetrumProduction.load();
         MetrumPower.load();
