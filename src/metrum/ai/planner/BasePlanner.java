@@ -504,7 +504,9 @@ public class BasePlanner {
         int wantDrills = 2 + level.ordinal();
         // Try mining first, but let its power/water prerequisites resolve a failed attempt.
         if (drills < 2 && buildDrillLine(core, level)) return true;
-        if ((!hasGenerator(core) || (hasPowerDeficit(core) && !hasIdleGenerator(core))) && buildPower(core)) return true;
+        boolean hasPowerSource = hasGenerator(core);
+        if (hasPowerSource && prioritizeArcFurnacePower(core)) return true;
+        if ((!hasPowerSource || (hasPowerDeficit(core) && !hasIdleGenerator(core))) && buildPower(core)) return true;
         if (!powerGridDone(core) && extendPowerGrid(core)) return true;
         if (hasWaterDeficit(core) && !hasIdleGenerator(core) && buildPower(core)) return true;
         if (pipeWater(core)) return true;
@@ -811,7 +813,7 @@ public class BasePlanner {
         return unpowered[0] == 0;
     }
 
-    static boolean extendPowerGrid(CoreBuild core) {
+    private static boolean prioritizeArcFurnacePower(CoreBuild core) {
         ItemStack demand = miningDemand.get(core);
         if (demand != null && needsArcFurnaceSand(core, demand)) {
             Building furnace = findSandArcFurnace(core);
@@ -820,6 +822,10 @@ public class BasePlanner {
                 && furnace.items.get(mindustry.content.Items.graphite) >= requiredPerBatch(furnace, mindustry.content.Items.graphite)
                 && extendPowerGrid(core, furnace)) return true;
         }
+        return false;
+    }
+
+    static boolean extendPowerGrid(CoreBuild core) {
         return extendPowerGrid(core, null);
     }
 
@@ -849,9 +855,13 @@ public class BasePlanner {
             b -> b.block == node && b.power != null, nodes::add);
         Seq<Building[]> pairs = new Seq<>();
         for (Building a : nodes) for (Building b : nodes) {
-            if (a.power.graph.getLastPowerProduced() <= 0f || b.power.graph.getLastPowerProduced() > 0f
-                || a.power.graph == b.power.graph) continue;
-            if (priority != null && b.power.graph != priority.power.graph) continue;
+            if (a.power.graph == b.power.graph || a.power.graph.getLastPowerProduced() <= 0f) continue;
+            if (priority == null) {
+                if (b.power.graph.getLastPowerProduced() > 0f) continue;
+            } else {
+                if (b.power.graph != priority.power.graph
+                    || a.power.graph.getLastPowerProduced() <= a.power.graph.getLastPowerNeeded() + 0.001f) continue;
+            }
             pairs.add(new Building[]{a, b});
         }
         pairs.sort((a, b) -> Float.compare(a[0].dst2(a[1]), b[0].dst2(b[1])));
