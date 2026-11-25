@@ -878,11 +878,27 @@ public class BasePlanner {
         }) > 0;
     }
 
+    static boolean overlapsQueuedBuild(Team team, Block block, int x, int y) {
+        int minX = x - (block.size - 1) / 2, minY = y - (block.size - 1) / 2;
+        return mindustry.gen.Groups.unit.contains(unit -> {
+            if (unit.team != team || unit.dead()) return false;
+            for (BuildPlan plan : unit.plans) {
+                if (plan.breaking || plan.block == null) continue;
+                int otherX = plan.x - (plan.block.size - 1) / 2;
+                int otherY = plan.y - (plan.block.size - 1) / 2;
+                if (minX < otherX + plan.block.size && otherX < minX + block.size
+                    && minY < otherY + plan.block.size && otherY < minY + block.size) return true;
+            }
+            return false;
+        });
+    }
+
     /** Queue real construction; the engine consumes resources as the drone builds, not here. */
     static boolean queueConstruction(CoreBuild core, Block block, Tile site, int rotation) {
         mindustry.gen.Unit builder = assignedBuilder(core);
         if (builder == null || !builder.plans.isEmpty()) return stalled("konstruktor zajęty lub niedostępny");
         if (site == null || !Build.validPlace(block, core.team, site.x, site.y, rotation, false)) return false;
+        if (overlapsQueuedBuild(core.team, block, site.x, site.y)) return false;
         for (ItemStack cost : block.requirements) {
             int needed = Math.round(cost.amount * Vars.state.rules.buildCostMultiplier);
             if (core.items.get(cost.item) < needed) {
@@ -903,6 +919,7 @@ public class BasePlanner {
         java.util.Map<Item, Long> total = new java.util.HashMap<>();
         for (BuildPlan plan : plans) {
             if (!Build.validPlace(plan.block, core.team, plan.x, plan.y, plan.rotation, false)) return false;
+            if (overlapsQueuedBuild(core.team, plan.block, plan.x, plan.y)) return false;
             for (ItemStack cost : plan.block.requirements) {
                 long amount = Math.round(cost.amount * Vars.state.rules.buildCostMultiplier);
                 total.put(cost.item, total.getOrDefault(cost.item, 0L) + amount);
