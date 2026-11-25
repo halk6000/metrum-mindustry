@@ -529,7 +529,7 @@ public class BasePlanner {
         if (hasWaterDeficit(core) && !hasIdleGenerator(core) && buildPower(core)) return true;
         if (pipeWater(core)) return true;
         ItemStack demand = miningDemand.get(core);
-        if (demand != null && hasRecoveryGoal(core, demand.item) && needsBoilerWater(core)
+        if (demand != null && hasRecoveryGoal(core, demand.item) && needsRecoveryWater(core)
             && hasWaterDeficit(core) && buildPower(core, true)) return true;
         if (pipeSteam(core)) return true;
         demand = miningDemand.get(core);
@@ -2123,8 +2123,10 @@ public class BasePlanner {
         return pump.amount * block.pumpAmount * pump.efficiency * pump.timeScale();
     }
 
-    private static boolean needsBoilerWater(CoreBuild core) {
-        return count(core, b -> b.enabled && b.block == metrum.content.MetrumProduction.steamFurnace
+    private static boolean needsRecoveryWater(CoreBuild core) {
+        return count(core, b -> b.enabled && b.closestCore() == core
+            && (b.block == metrum.content.MetrumProduction.steamFurnace
+                || b.block == metrum.content.MetrumProduction.stoneCrusher)
             && b.liquids != null && b.liquids.get(mindustry.content.Liquids.water) < 1f) > 0;
     }
     static boolean canSupplyWater(Building source) {
