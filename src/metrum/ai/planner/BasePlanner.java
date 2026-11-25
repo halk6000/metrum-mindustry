@@ -38,6 +38,7 @@ public class BasePlanner {
     static String failureReason;
     static final java.util.Map<CoreBuild, ItemStack> miningDemand = new java.util.HashMap<>();
     private static final java.util.Set<CoreBuild> blockedSiliconSites = new java.util.HashSet<>();
+    private static final java.util.Map<CoreBuild, Float> lastSandOnInput = new java.util.HashMap<>();
     static final java.util.Map<CoreBuild, java.util.Deque<ItemStack>> deferredDemand = new java.util.HashMap<>();
     static String plannerAction = "oczekiwanie na pierwszą próbę";
 
@@ -72,6 +73,7 @@ public class BasePlanner {
             bentRepairCursor.clear();
             miningDemand.clear();
             blockedSiliconSites.clear();
+            lastSandOnInput.clear();
             deferredDemand.clear();
 
             // the enemy fields Metrum drones: swap the wave units for MonoMets of a similar strength
@@ -112,6 +114,12 @@ public class BasePlanner {
         String status = arc.Core.bundle.format("metrum.ai.resource-status", demand.item.localizedName,
             core.items.get(demand.item), demand.amount);
         if (original != null) status += "\n" + arc.Core.bundle.format("metrum.ai.deferred-status", original.item.localizedName);
+        if (demand.item == mindustry.content.Items.sand
+            && Time.time - lastSandOnInput.getOrDefault(core, Float.NEGATIVE_INFINITY) < 120f) {
+            boolean burnsSand = ((mindustry.world.blocks.storage.CoreBlock) core.block).incinerateNonBuildable
+                && !demand.item.buildable;
+            status += "\n" + arc.Core.bundle.get(burnsSand ? "metrum.ai.sand-core-incinerates" : "metrum.ai.sand-in-transit");
+        }
         if (demand.item == mindustry.content.Items.silicon && blockedSiliconSites.contains(core)) {
             status += "\n" + arc.Core.bundle.get("metrum.ai.silicon-site-blocked");
         }
@@ -216,6 +224,7 @@ public class BasePlanner {
                 if (core.items.get(previous.item) < previous.amount) miningDemand.put(core, previous);
             }
         }
+        observeSandInputs();
         // Economy compensation is earned by working miners, never by multiplying stored items.
         Vars.state.rules.teams.get(Vars.state.rules.waveTeam).unitMineSpeedMultiplier = 1.5f;
         miningBonusTimer += Time.delta;
@@ -265,6 +274,31 @@ public class BasePlanner {
             }
         }
         plannerAction = completedSteps > before ? "ostatnia próba: wykonano pracę" : (failureReason == null ? "ostatnia próba: bez postępu" : failureReason);
+    }
+
+    private static void observeSandInputs() {
+        lastSandOnInput.keySet().removeIf(core -> !core.isValid() || core.team != Vars.state.rules.waveTeam);
+        for (CoreBuild core : Vars.state.rules.waveTeam.cores()) {
+            ItemStack demand = miningDemand.get(core);
+            if (demand == null || demand.item != mindustry.content.Items.sand) continue;
+            if (hasSandOnInput(core)) {
+                lastSandOnInput.put(core, Time.time);
+                continue;
+            }
+            for (Building storage : core.proximity) {
+                if (isLinkedStorage(core, storage) && hasSandOnInput(storage)) {
+                    lastSandOnInput.put(core, Time.time);
+                    break;
+                }
+            }
+        }
+    }
+
+    private static boolean hasSandOnInput(Building destination) {
+        return destination.proximity.contains(b -> b.team == destination.team
+            && b instanceof mindustry.world.blocks.distribution.Duct.DuctBuild
+            && ((mindustry.world.blocks.distribution.Duct.DuctBuild) b).next == destination
+            && ((mindustry.world.blocks.distribution.Duct.DuctBuild) b).current == mindustry.content.Items.sand);
     }
 
     static void assignMiningDrone(CoreBuild core) {
