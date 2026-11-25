@@ -367,10 +367,11 @@ public class BasePlanner {
         ItemStack demand = miningDemand.get(core);
         if (demand != null && buildSteamForRecovery(core, demand.item)) return true;
         if (demand != null && demand.item == metrum.content.MetrumItems.pieceRock && buildRockScraper(core)) return true;
-        if (drills < 2) return false; // do not spend the bootstrap budget on other factories or defences
-        if (demand != null && !minedResources(core).contains(demand.item)
-            && buildDrillLine(core, level, true)) return true;
-        if (demand != null && buildDemandProducer(core, demand.item)) return true;
+        if (demand != null && (drills >= 2 || hasRecoveryGoal(core, demand.item))) {
+            if (!minedResources(core).contains(demand.item) && buildDrillLine(core, level, true)) return true;
+            if (buildDemandProducer(core, demand.item)) return true;
+        }
+        if (drills < 2) return false; // Keep routine expansion behind mining and recovery prerequisites.
         int factories = count(core, b -> b.block == metrum.content.MetrumPhysics.atomizer);
         if (factories < 1 + level.ordinal() / 2 && buildFactory(core)) return true;
         if (drills < wantDrills) return buildDrillLine(core, level);
@@ -378,6 +379,13 @@ public class BasePlanner {
         if (turrets < 2 + level.ordinal() * 2 && buildTurret(core, level)) return true;
         if (buildWalls(core, level)) return true;
         return false; // no construction progress; step() may reclaim unused pipe space
+    }
+
+    private static boolean hasRecoveryGoal(CoreBuild core, Item item) {
+        if (item == metrum.content.MetrumItems.steel || item == mindustry.content.Items.tungsten) return true;
+        java.util.Deque<ItemStack> pending = deferredDemand.get(core);
+        return pending != null && pending.stream().anyMatch(goal ->
+            goal.item == metrum.content.MetrumItems.steel || goal.item == mindustry.content.Items.tungsten);
     }
 
     static java.util.Map<Item, Integer> queuedBuildReserve(mindustry.gen.Unit builder) {
