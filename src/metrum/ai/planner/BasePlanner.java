@@ -671,7 +671,8 @@ public class BasePlanner {
             if (!isDedicatedSandLine(duct)) continue;
             for (int direction = 0; direction < 4; direction++) {
                 Seq<BuildPlan> repair = sandGapPlan(duct.tile.nearby(direction), furnace, duct,
-                    site -> Build.validPlace(duct.block, core.team, site.x, site.y, 0, false));
+                    site -> Build.validPlace(duct.block, core.team, site.x, site.y, 0, false)
+                        && !overlapsQueuedBuild(core.team, duct.block, site.x, site.y));
                 if (repair != null && queueConstructionBatch(core, repair)) return true;
             }
             Seq<Tile> route = Astar.pathfind(duct.tile, furnace.tile, tile -> 1f,

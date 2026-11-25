@@ -100,6 +100,19 @@ public class BuilderQueueTest {
         check(detour != null && detour.size == 2);
         check(detour.first().x == 2 && detour.first().y == 3 && detour.first().rotation == 0);
         check(detour.peek().x == 2 && detour.peek().y == 2 && detour.peek().rotation == 1);
+        mindustry.gen.Groups.init();
+        Unit otherBuilder = UnitEntity.create();
+        otherBuilder.team = sandInput.team;
+        otherBuilder.plans.addLast(new BuildPlan(routeCorner.x, routeCorner.y, 0, drill));
+        mindustry.gen.Groups.unit.add(otherBuilder);
+        arc.struct.Seq<BuildPlan> unreserved = BasePlanner.sandGapPlan(upstream, furnace, sandInput,
+            site -> !BasePlanner.overlapsQueuedBuild(sandInput.team, duct, site.x, site.y));
+        check(unreserved != null && unreserved.size == detour.size);
+        for (int i = 0; i < detour.size; i++) {
+            BuildPlan expected = detour.get(i), actual = unreserved.get(i);
+            check(actual.x == expected.x && actual.y == expected.y && actual.rotation == expected.rotation);
+        }
+        mindustry.gen.Groups.unit.remove(otherBuilder);
         verifyRepairSequence(detour, upstream, furnace, sandInput);
         Vars.world.tile(2, 3).build = route.first().build = null;
         verifyRepairSequence(corner, upstream, furnace, sandInput);
