@@ -41,9 +41,12 @@ public class AboveShip {
     static void lift(BulletType type) {
         if (type == null || type instanceof BombBulletType || !done.add(type)) return;
         type.layer = Math.max(type.layer, layer);
-        type.shootEffect = lift(type.shootEffect);
-        type.smokeEffect = lift(type.smokeEffect);
-        type.chargeEffect = lift(type.chargeEffect);
+        // the bright muzzle bursts of the blue and green mini lasers stay below the hull
+        if (!(type instanceof mindustry.entities.bullet.ShrapnelBulletType)) {
+            type.shootEffect = lift(type.shootEffect);
+            type.smokeEffect = lift(type.smokeEffect);
+            type.chargeEffect = lift(type.chargeEffect);
+        }
         if (type instanceof LightningBulletType) arcColors.add(((LightningBulletType) type).lightningColor.cpy());
         lift(type.fragBullet);
         lift(type.intervalBullet);
