@@ -1097,10 +1097,13 @@ public class BasePlanner {
     }
 
     private static boolean buildDrillLine(CoreBuild core, AiLevel level, boolean demandOnly, int searchRadius) {
-        return buildDrillLine(core, demandOnly, searchRadius, new arc.struct.IntSet());
+        Seq<BuildPlan> fallback = new Seq<>();
+        if (buildDrillLine(core, demandOnly, searchRadius, new arc.struct.IntSet(), fallback)) return true;
+        return !fallback.isEmpty() && queueConstructionBatch(core, fallback);
     }
 
-    private static boolean buildDrillLine(CoreBuild core, boolean demandOnly, int searchRadius, arc.struct.IntSet rejected) {
+    private static boolean buildDrillLine(CoreBuild core, boolean demandOnly, int searchRadius,
+                                          arc.struct.IntSet rejected, Seq<BuildPlan> fallback) {
         Block chosen = Blocks.plasmaBore;
         Tile ore = findOreSpot(core, chosen, searchRadius, rejected);
         ItemStack demand = miningDemand.get(core);
@@ -1151,10 +1154,25 @@ public class BasePlanner {
             return false;
         }
         Seq<BuildPlan> plans = extractorPlans(core, drill, ore, rotation);
-        if (plans != null) return queueConstructionBatch(core, plans);
+        if (plans != null) {
+            long missing = missingPlanMaterials(core, plans);
+            if (missing == 0) return queueConstructionBatch(core, plans);
+            if (fallback.isEmpty() || missing < missingPlanMaterials(core, fallback)) {
+                fallback.clear();
+                fallback.addAll(plans);
+            }
+        }
         rejected.add(ore.pos());
-        return rejected.size < 4 ? buildDrillLine(core, demandOnly, searchRadius, rejected)
-            : stalled("brak trasy z wiertni do rdzenia");
+        if (rejected.size < 4) return buildDrillLine(core, demandOnly, searchRadius, rejected, fallback);
+        return fallback.isEmpty() && stalled("brak trasy z wiertni do rdzenia");
+    }
+
+    private static long missingPlanMaterials(CoreBuild core, Seq<BuildPlan> plans) {
+        long missing = 0;
+        for (java.util.Map.Entry<Item, Integer> cost : planMaterials(plans).entrySet()) {
+            missing += Math.max(0, cost.getValue() - core.items.get(cost.getKey()));
+        }
+        return missing;
     }
 
     static boolean buildWallExtractor(CoreBuild core, Block scraper) {
