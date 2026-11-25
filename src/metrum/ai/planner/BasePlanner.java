@@ -397,8 +397,11 @@ public class BasePlanner {
         if (!powerGridDone(core) && extendPowerGrid(core)) return true;
         if (hasWaterDeficit(core) && !hasIdleGenerator(core) && buildPower(core)) return true;
         if (pipeWater(core)) return true;
-        if (pipeSteam(core)) return true;
         ItemStack demand = miningDemand.get(core);
+        if (demand != null && hasRecoveryGoal(core, demand.item) && needsBoilerWater(core)
+            && hasWaterDeficit(core) && buildPower(core)) return true;
+        if (pipeSteam(core)) return true;
+        demand = miningDemand.get(core);
         boolean waitingForTungsten = demand != null && demand.item == mindustry.content.Items.tungsten
             && hasLocalTungstenDrone(core, demand.item);
         if (demand != null && !waitingForTungsten) {
@@ -1518,6 +1521,11 @@ public class BasePlanner {
         Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
             b -> b.liquids != null, b -> { rates[0] += thermalWaterRate(b); rates[1] += requiredWaterRate(b); });
         return rates[1] > rates[0] + 0.001f;
+    }
+
+    private static boolean needsBoilerWater(CoreBuild core) {
+        return count(core, b -> b.enabled && b.block == metrum.content.MetrumProduction.steamFurnace
+            && b.liquids != null && b.liquids.get(mindustry.content.Liquids.water) < 1f) > 0;
     }
     static boolean canSupplyWater(Building source) {
         if (!source.block.outputsLiquid || source.liquids == null) return false;
