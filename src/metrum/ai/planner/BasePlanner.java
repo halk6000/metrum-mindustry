@@ -1078,37 +1078,43 @@ public class BasePlanner {
         Block scraper = metrum.content.MetrumBlocks.rockScraper;
         if (scraper == null || !scraper.environmentBuildable() || count(core, b -> b.block == scraper) > 0) return false;
         if (prioritizeWorkshopMaterials(core, scraper)) return false;
-        Tile best = null;
-        int rotation = 0;
-        float distance = Float.MAX_VALUE;
+        Seq<BuildPlan> sites = new Seq<>();
         for (int dx = -30; dx <= 30; dx++) for (int dy = -30; dy <= 30; dy++) {
             Tile tile = Vars.world.tile(core.tileX() + dx, core.tileY() + dy);
-            if (tile == null || tile.block() != Blocks.air || core.dst2(tile) >= distance) continue;
+            if (tile == null || tile.block() != Blocks.air) continue;
             for (int direction = 0; direction < 4; direction++) {
                 if (!Build.validPlace(scraper, core.team, tile.x, tile.y, direction, false)) continue;
-                best = tile;
-                rotation = direction;
-                distance = core.dst2(tile);
+                sites.add(new BuildPlan(tile.x, tile.y, direction, scraper));
                 break;
             }
         }
-        return best != null && queueExtractor(core, scraper, best, rotation);
+        sites.sort((a, b) -> Float.compare(core.dst2(a), core.dst2(b)));
+        for (BuildPlan site : sites) {
+            Seq<BuildPlan> plans = extractorPlans(core, scraper, Vars.world.tile(site.x, site.y), site.rotation);
+            if (plans != null) return queueConstructionBatch(core, plans);
+        }
+        return !sites.isEmpty() && stalled("brak trasy ze skrobaka do rdzenia");
     }
 
     private static boolean queueExtractor(CoreBuild core, Block drill, Tile site, int rotation) {
+        Seq<BuildPlan> plans = extractorPlans(core, drill, site, rotation);
+        return plans == null ? stalled("brak trasy do rdzenia") : queueConstructionBatch(core, plans);
+    }
+
+    private static Seq<BuildPlan> extractorPlans(CoreBuild core, Block drill, Tile site, int rotation) {
         Block duct = Blocks.duct;
         // Plan against a virtual footprint: no temporary or permanent block is spawned here.
         Seq<Tile> path = Astar.pathfind(site, core.tile, tile -> 1f,
             t -> t.build == core || insideFootprint(t, site, drill)
                 || (t.block() == Blocks.air && Build.validPlace(duct, core.team, t.x, t.y, 0, false)));
-        if (path == null || path.isEmpty()) return stalled("brak trasy do rdzenia");
+        if (path == null || path.isEmpty()) return null;
         Seq<BuildPlan> plans = Seq.with(new BuildPlan(site.x, site.y, rotation, drill));
         for (int i = 0; i < path.size - 1; i++) {
             Tile t = path.get(i), next = path.get(i + 1);
             if (insideFootprint(t, site, drill) || t.build != null) continue;
             plans.add(new BuildPlan(t.x, t.y, t.relativeTo(next), duct));
         }
-        return queueConstructionBatch(core, plans);
+        return plans;
     }
 
     static boolean insideFootprint(Tile tile, Tile anchor, Block block) {
