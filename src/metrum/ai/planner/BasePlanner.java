@@ -1549,8 +1549,16 @@ public class BasePlanner {
     static boolean hasWaterDeficit(CoreBuild core) {
         float[] rates = {0f, 0f};
         Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
-            b -> b.liquids != null, b -> { rates[0] += thermalWaterRate(b); rates[1] += requiredWaterRate(b); });
+            b -> b.liquids != null, b -> { rates[0] += waterProductionRate(b); rates[1] += requiredWaterRate(b); });
         return rates[1] > rates[0] + 0.001f;
+    }
+
+    private static float waterProductionRate(Building source) {
+        if (!(source instanceof mindustry.world.blocks.production.Pump.PumpBuild)) return thermalWaterRate(source);
+        mindustry.world.blocks.production.Pump.PumpBuild pump = (mindustry.world.blocks.production.Pump.PumpBuild) source;
+        if (!pump.enabled || pump.liquidDrop != mindustry.content.Liquids.water) return 0f;
+        mindustry.world.blocks.production.Pump block = (mindustry.world.blocks.production.Pump) pump.block;
+        return pump.amount * block.pumpAmount * pump.efficiency * pump.timeScale();
     }
 
     private static boolean needsBoilerWater(CoreBuild core) {
