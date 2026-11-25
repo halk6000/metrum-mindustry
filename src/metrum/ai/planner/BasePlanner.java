@@ -893,6 +893,17 @@ public class BasePlanner {
         }) > 0;
     }
 
+    static boolean hasQueuedBlock(CoreBuild core, Block block) {
+        return mindustry.gen.Groups.unit.contains(unit -> {
+            if (unit.team != core.team || unit.dead() || unit.flag != builderHomeFlag(core)
+                || !(unit.controller() instanceof MetrumBuilderAI)) return false;
+            for (BuildPlan plan : unit.plans) {
+                if (!plan.breaking && plan.block == block) return true;
+            }
+            return false;
+        });
+    }
+
     static boolean overlapsQueuedBuild(Team team, Block block, int x, int y) {
         int minX = x - (block.size - 1) / 2, minY = y - (block.size - 1) / 2;
         return mindustry.gen.Groups.unit.contains(unit -> {
@@ -1909,6 +1920,7 @@ public class BasePlanner {
             }
             return false;
         }
+        if (hasQueuedBlock(core, selected)) return false;
         if (selected == metrum.content.MetrumProduction.stoneCrusher && hasRecoveryGoal(core, item)) {
             Block scraper = metrum.content.MetrumBlocks.rockScraper;
             if (count(core, b -> b.block == scraper && b.enabled && b.closestCore() == core) == 0) {
@@ -1934,7 +1946,7 @@ public class BasePlanner {
             site = findCoreWorkshopSite(core, selected);
         }
         final Block producer = selected;
-        if (count(core, b -> b.block == producer) > 0) return false;
+        if (hasQueuedBlock(core, producer) || count(core, b -> b.block == producer) > 0) return false;
         java.util.Map<Item, Integer> inputs = new java.util.HashMap<>();
         for (mindustry.world.consumers.Consume consume : producer.nonOptionalConsumers) {
             if (consume instanceof mindustry.world.consumers.ConsumeItems) {
