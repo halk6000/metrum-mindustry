@@ -290,14 +290,24 @@ public class BasePlanner {
             }
             if (input != null) lastSandOnInput.put(core, Time.time);
 
-            if (!((mindustry.world.blocks.storage.CoreBlock) core.block).incinerateNonBuildable || sand.buildable) continue;
-            java.util.Deque<ItemStack> pending = deferredDemand.get(core);
-            ItemStack parent = pending == null ? null : pending.peekFirst();
-            boolean sandForSilicon = demand.item == sand && parent != null && parent.item == silicon;
+            if (!coreBurnsSand(core)) continue;
+            boolean sandForSilicon = isSandForSilicon(core, demand);
             if (demand.item == silicon || sandForSilicon) {
                 if (feedArcFurnaceSand(core, input) && sandForSilicon) miningDemand.remove(core);
             }
         }
+    }
+
+    private static boolean coreBurnsSand(CoreBuild core) {
+        return ((mindustry.world.blocks.storage.CoreBlock) core.block).incinerateNonBuildable
+            && !mindustry.content.Items.sand.buildable;
+    }
+
+    private static boolean isSandForSilicon(CoreBuild core, ItemStack demand) {
+        if (demand.item != mindustry.content.Items.sand) return false;
+        java.util.Deque<ItemStack> pending = deferredDemand.get(core);
+        ItemStack parent = pending == null ? null : pending.peekFirst();
+        return parent != null && parent.item == mindustry.content.Items.silicon;
     }
 
     private static mindustry.world.blocks.distribution.Duct.DuctBuild sandInput(Building destination) {
@@ -473,6 +483,8 @@ public class BasePlanner {
             && hasWaterDeficit(core) && buildPower(core, true)) return true;
         if (pipeSteam(core)) return true;
         demand = miningDemand.get(core);
+        if (demand != null && coreBurnsSand(core) && isSandForSilicon(core, demand)
+            && buildDemandProducer(core, mindustry.content.Items.silicon)) return true;
         if (demand != null && buildMiningDock(core, demand.item)) return true;
         boolean waitingForTungsten = demand != null && demand.item == mindustry.content.Items.tungsten
             && hasLocalTungstenDrone(core, demand.item);
@@ -1560,6 +1572,7 @@ public class BasePlanner {
         }
         java.util.Map<Item, Integer> reserve = economicReserve(core);
         for (ItemStack input : batch) {
+            if (input.item == mindustry.content.Items.sand && isSiliconArcFurnace(producer) && coreBurnsSand(core)) continue;
             int needed = input.amount + reserve.getOrDefault(input.item, 0);
             for (ItemStack cost : producer.requirements) if (cost.item == input.item) {
                 needed += Math.round(cost.amount * Vars.state.rules.buildCostMultiplier);
