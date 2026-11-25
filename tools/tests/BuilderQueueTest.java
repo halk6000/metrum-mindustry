@@ -49,7 +49,7 @@ public class BuilderQueueTest {
         check(BasePlanner.sandOutletReady(route.first(), furnace, sandInput));
         mindustry.gen.Building lastDuct = route.get(1).build;
         route.get(1).build = null;
-        BuildPlan repair = BasePlanner.sandGapPlan(route.first(), furnace, sandInput);
+        BuildPlan repair = BasePlanner.sandGapPlan(route.first(), furnace, sandInput).first();
         check(repair != null && repair.block == duct && repair.x == 3 && repair.y == 2 && repair.rotation == 1);
         route.get(1).build = lastDuct;
         // A surviving upstream duct points at a gap before the two installed outlet ducts.
@@ -59,7 +59,7 @@ public class BuilderQueueTest {
         upstream.build.block = duct;
         upstream.build.rotation = 0;
         check(!BasePlanner.sandOutletReady(upstream, furnace, sandInput));
-        BuildPlan middleRepair = BasePlanner.sandGapPlan(upstream, furnace, sandInput);
+        BuildPlan middleRepair = BasePlanner.sandGapPlan(upstream, furnace, sandInput).first();
         check(middleRepair != null && middleRepair.x == 1 && middleRepair.y == 2
             && middleRepair.rotation == 0 && middleRepair.block == duct);
         mindustry.world.Tile gap = Vars.world.tile(middleRepair.x, middleRepair.y);
@@ -69,6 +69,20 @@ public class BuilderQueueTest {
         gap.build.rotation = middleRepair.rotation;
         check(BasePlanner.sandOutletReady(upstream, furnace, sandInput));
         check(BasePlanner.sandGapPlan(upstream, furnace, sandInput) == null);
+        gap.build = route.first().build = null;
+        arc.struct.Seq<BuildPlan> pair = BasePlanner.sandGapPlan(upstream, furnace, sandInput);
+        check(pair != null && pair.size == 2);
+        check(pair.first().x == 2 && pair.first().y == 2 && pair.first().rotation == 0);
+        check(pair.peek().x == 1 && pair.peek().y == 2 && pair.peek().rotation == 0);
+        for (BuildPlan plan : pair) {
+            check(!BasePlanner.sandOutletReady(upstream, furnace, sandInput));
+            mindustry.world.Tile site = Vars.world.tile(plan.x, plan.y);
+            site.build = mindustry.gen.Building.create();
+            site.build.tile = site;
+            site.build.block = plan.block;
+            site.build.rotation = plan.rotation;
+        }
+        check(BasePlanner.sandOutletReady(upstream, furnace, sandInput));
         upstream.build = gap.build = null;
         route.get(1).build.rotation = 2;
         check(!BasePlanner.sandOutletReady(route.first(), furnace, sandInput));
