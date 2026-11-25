@@ -35,13 +35,14 @@ public class MetrumBuilderAI extends mindustry.ai.types.BuilderAI {
         }
     };
     public MetrumBuilderAI() { super(true, 600f); }
-    private void mineWhileIdle() {
+    private void mineWhileIdle(boolean deliverCargo) {
         unit.updateBuilding = false;
         idleMiner.unit(unit);
         if (enteringIdle) {
             idleMiner.mining = unit.stack.amount == 0;
             enteringIdle = false;
         }
+        if (deliverCargo) idleMiner.mining = false;
         idleMiner.updateMovement();
     }
 
@@ -49,7 +50,7 @@ public class MetrumBuilderAI extends mindustry.ai.types.BuilderAI {
     public void updateMovement() {
         constructionOre = null;
         if (unit.plans.isEmpty()) {
-            mineWhileIdle();
+            mineWhileIdle(false);
             return;
         }
         mindustry.entities.units.BuildPlan plan = unit.buildPlan();
@@ -74,12 +75,13 @@ public class MetrumBuilderAI extends mindustry.ai.types.BuilderAI {
             if (!inProgress && core != null && !mindustry.Vars.state.rules.isInfiniteResources(unit.team)) {
                 float multiplier = mindustry.Vars.state.rules.buildCostMultiplier;
                 for (mindustry.type.ItemStack cost : plan.block.requirements) {
-                    int needed = Math.round(cost.amount * multiplier);
-                    if (core.items.get(cost.item) >= needed || !unit.canMine(cost.item)
-                        || !metrum.ai.SmartMining.canStoreMined(core, cost.item)
-                        || mindustry.Vars.indexer.findClosestOre(unit, cost.item) == null) continue;
+                    int missing = Math.round(cost.amount * multiplier) - core.items.get(cost.item);
+                    if (missing <= 0 || !metrum.ai.SmartMining.canStoreMined(core, cost.item)) continue;
+                    boolean deliverCargo = unit.stack.item == cost.item && unit.stack.amount >= missing;
+                    if (!deliverCargo && (!unit.canMine(cost.item)
+                        || mindustry.Vars.indexer.findClosestOre(unit, cost.item) == null)) continue;
                     constructionOre = cost.item;
-                    mineWhileIdle();
+                    mineWhileIdle(deliverCargo);
                     return;
                 }
             }
