@@ -110,7 +110,10 @@ public class BasePlanner {
         String status = arc.Core.bundle.format("metrum.ai.resource-status", demand.item.localizedName,
             core.items.get(demand.item), demand.amount);
         if (original != null) status += "\n" + arc.Core.bundle.format("metrum.ai.deferred-status", original.item.localizedName);
-        return "\n" + status;
+        mindustry.gen.Unit drone = assignedMiningDrone(core);
+        String droneStatus = drone == null ? arc.Core.bundle.get("metrum.ai.mining-drone-unassigned")
+            : arc.Core.bundle.format("metrum.ai.mining-drone-assigned", drone.type.localizedName);
+        return "\n" + status + "\n" + droneStatus;
     }
 
     /** setting: run the Metrum AI in custom games / editor playtests too (not only the Ferrox campaign) */
@@ -258,8 +261,7 @@ public class BasePlanner {
     static void assignMiningDrone(CoreBuild core) {
         ItemStack demand = miningDemand.get(core);
         if (demand == null || !metrum.ai.SmartMining.canStoreMined(core, demand.item)) return;
-        mindustry.gen.Unit current = mindustry.gen.Groups.unit.find(u -> !u.dead() && u.team == core.team
-            && u.controller() instanceof ResourceDroneAI && ((ResourceDroneAI) u.controller()).home == core);
+        mindustry.gen.Unit current = assignedMiningDrone(core);
         if (current != null && (current.stack.amount > 0 || canGather(current, demand.item))) return;
         mindustry.gen.Unit drone = mindustry.gen.Groups.unit.find(u -> u.team == core.team && !u.dead() && !u.isPlayer()
             && u.flag == 0d && u.plans.isEmpty() && u.closestCore() == core
@@ -272,6 +274,11 @@ public class BasePlanner {
             current.controller(((ResourceDroneAI) current.controller()).previousController);
         }
         drone.controller(new ResourceDroneAI(core, drone.controller()));
+    }
+
+    private static mindustry.gen.Unit assignedMiningDrone(CoreBuild core) {
+        return mindustry.gen.Groups.unit.find(u -> !u.dead() && u.team == core.team
+            && u.controller() instanceof ResourceDroneAI && ((ResourceDroneAI) u.controller()).home == core);
     }
 
     private static boolean canGather(mindustry.gen.Unit drone, Item item) {
