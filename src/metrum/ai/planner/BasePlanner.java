@@ -1090,17 +1090,28 @@ public class BasePlanner {
         }
         sites.sort((a, b) -> Float.compare(core.dst2(a), core.dst2(b)));
         java.util.Map<Item, Integer> reserve = economicReserve(core);
+        java.util.Map<Item, Integer> cheapestShortages = null;
+        int cheapestPlanSize = Integer.MAX_VALUE;
         for (BuildPlan site : sites) {
             Seq<BuildPlan> plans = extractorPlans(core, scraper, Vars.world.tile(site.x, site.y), site.rotation);
-            if (plans == null) continue;
+            if (plans == null || plans.size >= cheapestPlanSize) continue;
+            java.util.Map<Item, Integer> shortages = new java.util.HashMap<>();
             for (java.util.Map.Entry<Item, Integer> cost : planMaterials(plans).entrySet()) {
                 Item material = cost.getKey();
                 int needed = cost.getValue() + reserve.getOrDefault(material, 0);
-                if (core.items.get(material) < needed && prioritizeProducerDependency(core, material, needed)) {
-                    return stalled("brak materiału na skrobak i transport: " + material.localizedName);
+                if (core.items.get(material) < needed) shortages.put(material, needed);
+            }
+            if (shortages.isEmpty()) return queueConstructionBatch(core, plans, true);
+            cheapestPlanSize = plans.size; // Every option uses the same scraper and duct type.
+            cheapestShortages = shortages;
+        }
+        if (cheapestShortages != null) {
+            for (java.util.Map.Entry<Item, Integer> shortage : cheapestShortages.entrySet()) {
+                if (prioritizeProducerDependency(core, shortage.getKey(), shortage.getValue())) {
+                    return stalled("brak materiału na skrobak i transport: " + shortage.getKey().localizedName);
                 }
             }
-            return queueConstructionBatch(core, plans, true);
+            return stalled("brak materiałów na skrobak i transport");
         }
         return !sites.isEmpty() && stalled("brak trasy ze skrobaka do rdzenia");
     }
