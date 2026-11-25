@@ -40,6 +40,7 @@ public class BasePlanner {
     private static final java.util.Set<CoreBuild> blockedSiliconSites = new java.util.HashSet<>();
     private static final java.util.Map<CoreBuild, Float> lastSandOnInput = new java.util.HashMap<>();
     private static final java.util.Map<CoreBuild, Float> lastSandForFurnace = new java.util.HashMap<>();
+    private static final java.util.Map<Building, Integer> observedFurnaceSand = new java.util.HashMap<>();
     static final java.util.Map<CoreBuild, java.util.Deque<ItemStack>> deferredDemand = new java.util.HashMap<>();
     static String plannerAction = "oczekiwanie na pierwszą próbę";
 
@@ -76,6 +77,7 @@ public class BasePlanner {
             blockedSiliconSites.clear();
             lastSandOnInput.clear();
             lastSandForFurnace.clear();
+            observedFurnaceSand.clear();
             deferredDemand.clear();
 
             // the enemy fields Metrum drones: swap the wave units for MonoMets of a similar strength
@@ -297,6 +299,7 @@ public class BasePlanner {
     private static void observeSandInputs() {
         lastSandOnInput.keySet().removeIf(core -> !core.isValid() || core.team != Vars.state.rules.waveTeam);
         lastSandForFurnace.keySet().removeIf(core -> !core.isValid() || core.team != Vars.state.rules.waveTeam);
+        observedFurnaceSand.keySet().removeIf(furnace -> !furnace.isValid() || furnace.team != Vars.state.rules.waveTeam);
         Item sand = mindustry.content.Items.sand;
         for (CoreBuild core : Vars.state.rules.waveTeam.cores()) {
             ItemStack demand = miningDemand.get(core);
@@ -344,12 +347,14 @@ public class BasePlanner {
         if (furnace == null) return false;
         Item sand = mindustry.content.Items.sand;
         int batch = requiredPerBatch(furnace, sand);
-        mindustry.world.blocks.distribution.Duct.DuctBuild direct = sandInput(furnace);
-        if (direct != null && furnace.acceptItem(direct, sand)) lastSandForFurnace.put(core, Time.time);
-        if (furnace.items.get(sand) < batch && input != null) {
+        int stocked = furnace.items.get(sand);
+        Integer previous = observedFurnaceSand.put(furnace, stocked);
+        if (previous != null && stocked > previous) lastSandForFurnace.put(core, Time.time);
+        if (stocked < batch && input != null) {
             int transferred = input.removeStack(sand, 1);
             if (transferred > 0) {
                 furnace.items.add(sand, transferred);
+                observedFurnaceSand.put(furnace, stocked + transferred);
                 lastSandForFurnace.put(core, Time.time);
             }
         }
