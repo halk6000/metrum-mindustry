@@ -13,6 +13,19 @@ import mindustry.type.UnitType;
 import mindustry.world.Block;
 public class BuilderQueueTest {
     static void check(boolean ok) { if(!ok) throw new AssertionError(); }
+    static void verifyRepairSequence(arc.struct.Seq<BuildPlan> plans, mindustry.world.Tile start,
+                                     mindustry.gen.Building furnace, mindustry.gen.Building input) {
+        for (BuildPlan plan : plans) {
+            check(!BasePlanner.sandOutletReady(start, furnace, input));
+            mindustry.world.Tile site = Vars.world.tile(plan.x, plan.y);
+            check(site.build == null);
+            site.build = mindustry.gen.Building.create();
+            site.build.tile = site;
+            site.build.block = plan.block;
+            site.build.rotation = plan.rotation;
+        }
+        check(BasePlanner.sandOutletReady(start, furnace, input));
+    }
     public static void main(String[] args) throws Exception {
         Vars.content=new ContentLoader(); Vars.state=new mindustry.core.GameState();
         mindustry.content.Blocks.air=new mindustry.world.blocks.environment.Floor("air");
@@ -74,15 +87,14 @@ public class BuilderQueueTest {
         check(pair != null && pair.size == 2);
         check(pair.first().x == 2 && pair.first().y == 2 && pair.first().rotation == 0);
         check(pair.peek().x == 1 && pair.peek().y == 2 && pair.peek().rotation == 0);
-        for (BuildPlan plan : pair) {
-            check(!BasePlanner.sandOutletReady(upstream, furnace, sandInput));
-            mindustry.world.Tile site = Vars.world.tile(plan.x, plan.y);
-            site.build = mindustry.gen.Building.create();
-            site.build.tile = site;
-            site.build.block = plan.block;
-            site.build.rotation = plan.rotation;
-        }
-        check(BasePlanner.sandOutletReady(upstream, furnace, sandInput));
+        verifyRepairSequence(pair, upstream, furnace, sandInput);
+        // Remove the corner and its approach, keeping the upstream ducts in service.
+        route.first().build = route.get(1).build = null;
+        arc.struct.Seq<BuildPlan> corner = BasePlanner.sandGapPlan(upstream, furnace, sandInput);
+        check(corner != null && corner.size == 2);
+        check(corner.first().x == 3 && corner.first().y == 2 && corner.first().rotation == 1);
+        check(corner.peek().x == 2 && corner.peek().y == 2 && corner.peek().rotation == 0);
+        verifyRepairSequence(corner, upstream, furnace, sandInput);
         upstream.build = gap.build = null;
         route.get(1).build.rotation = 2;
         check(!BasePlanner.sandOutletReady(route.first(), furnace, sandInput));
