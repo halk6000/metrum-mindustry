@@ -1271,6 +1271,8 @@ public class BasePlanner {
                 prioritizeMissingWorkshop(core, metrum.content.MetrumProduction.salvagerAdvanced);
             } else if (item == metrum.content.MetrumItems.steel) {
                 prioritizeMissingWorkshop(core, metrum.content.MetrumProduction.infusionSmelter);
+            } else if (item == mindustry.content.Items.coal && hasRecoveryGoal(core, item)) {
+                prioritizeMissingWorkshop(core, metrum.content.MetrumProduction.graphiteDecompressor);
             }
             return false;
         }
