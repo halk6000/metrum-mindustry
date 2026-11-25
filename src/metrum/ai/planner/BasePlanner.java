@@ -673,7 +673,8 @@ public class BasePlanner {
 
     private static boolean buildMiningDock(CoreBuild core, Item ore) {
         Block dock = metrum.content.MetrumUnitBlocks.airMinerDock;
-        if (dock == null || !dock.environmentBuildable() || !canTrainMiningDrone(core, ore)) return false;
+        if (dock == null || !dock.environmentBuildable() || hasQueuedBlock(core, dock)
+            || !canTrainMiningDrone(core, ore)) return false;
         Building existing = core.proximity.find(b -> b.block == dock && b.team == core.team
             && b.enabled && b.closestCore() == core);
         if (existing != null) return redirectMiningDock(core, existing);
