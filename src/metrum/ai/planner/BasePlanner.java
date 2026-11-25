@@ -127,9 +127,16 @@ public class BasePlanner {
             Building furnace = findSandArcFurnace(core);
             if (furnace != null) {
                 Item sand = mindustry.content.Items.sand, graphite = mindustry.content.Items.graphite;
+                int sandStock = furnace.items.get(sand), graphiteStock = furnace.items.get(graphite);
+                int sandNeeded = requiredPerBatch(furnace, sand), graphiteNeeded = requiredPerBatch(furnace, graphite);
                 status += "\n" + arc.Core.bundle.format("metrum.ai.arc-furnace-inputs",
-                    furnace.items.get(sand), requiredPerBatch(furnace, sand),
-                    furnace.items.get(graphite), requiredPerBatch(furnace, graphite));
+                    sandStock, sandNeeded, graphiteStock, graphiteNeeded);
+                if (sandStock >= sandNeeded && graphiteStock >= graphiteNeeded
+                    && furnace.block.consPower != null && furnace.power != null
+                    && furnace.shouldConsume() && furnace.power.status < 0.999f) {
+                    status += "\n" + arc.Core.bundle.format("metrum.ai.arc-furnace-low-power",
+                        (int) (furnace.power.status * 100f));
+                }
             }
         }
         mindustry.gen.Unit drone = assignedMiningDrone(core);
