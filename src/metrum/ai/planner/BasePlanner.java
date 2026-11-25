@@ -1015,10 +1015,15 @@ public class BasePlanner {
     static void supplyCoreProducers(CoreBuild core) {
         ItemStack demand = miningDemand.get(core);
         if (demand == null || core.items.get(demand.item) >= demand.amount) return;
+        boolean recoveryNeedsSteam = demand.item == metrum.content.MetrumItems.steel
+            || demand.item == mindustry.content.Items.tungsten;
         java.util.Map<Item, Integer> reserve = economicReserve(core);
         workshops: for (Building factory : core.proximity) {
             if (factory.team != core.team || !factory.enabled || factory.items == null
-                || factory.closestCore() != core || !producesItem(factory.block, demand.item)) continue;
+                || factory.closestCore() != core) continue;
+            boolean recoveryBoiler = recoveryNeedsSteam
+                && factory.block == metrum.content.MetrumProduction.steamFurnace;
+            if (!recoveryBoiler && !producesItem(factory.block, demand.item)) continue;
             java.util.Map<Item, Integer> required = new java.util.HashMap<>();
             for (mindustry.world.consumers.Consume consume : factory.block.nonOptionalConsumers) {
                 if (!(consume instanceof mindustry.world.consumers.ConsumeItems)) continue;
