@@ -1419,7 +1419,17 @@ public class BasePlanner {
             site = findCoreWorkshopSite(core, selected);
             if (site != null && prioritizeWorkshopMaterials(core, selected)) return false;
         }
-        if (site == null && isSiliconArcFurnace(selected)) blockedSiliconSites.add(core);
+        if (site == null && isSiliconArcFurnace(selected)) {
+            arc.func.Boolf<Block> fits = block -> !isSiliconArcFurnace(block) && findCoreWorkshopSite(core, block) != null;
+            Block alternative = findProducer(core, item, false, fits);
+            if (alternative == null) alternative = findProducer(core, item, true, fits);
+            if (alternative == null) {
+                blockedSiliconSites.add(core);
+                return false;
+            }
+            selected = alternative;
+            site = findCoreWorkshopSite(core, selected);
+        }
         final Block producer = selected;
         if (count(core, b -> b.block == producer) > 0) return false;
         java.util.Map<Item, Integer> inputs = new java.util.HashMap<>();
@@ -1586,6 +1596,10 @@ public class BasePlanner {
     }
 
     static Block findProducer(CoreBuild core, Item item, boolean allowMissingInputs) {
+        return findProducer(core, item, allowMissingInputs, block -> true);
+    }
+
+    private static Block findProducer(CoreBuild core, Item item, boolean allowMissingInputs, arc.func.Boolf<Block> usable) {
         Block best = null;
         int bestPriority = -1;
         long bestCost = Long.MAX_VALUE;
@@ -1616,6 +1630,7 @@ public class BasePlanner {
             for (java.util.Map.Entry<Item, Integer> need : required.entrySet()) {
                 if (core.items.get(need.getKey()) - reserve.getOrDefault(need.getKey(), 0) < need.getValue()) continue candidates;
             }
+            if (!usable.get(block)) continue;
             int priority = 0;
             if (item == mindustry.content.Items.silicon) {
                 if (block == metrum.content.MetrumProduction.arcFurnaceOverclocked) priority = 2;
