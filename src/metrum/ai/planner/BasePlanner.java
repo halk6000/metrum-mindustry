@@ -1145,7 +1145,11 @@ public class BasePlanner {
         Block ready = findProducer(core, item);
         final Block producer = ready != null ? ready : findProducer(core, item, true);
         if (producer == null) {
-            if (item == mindustry.content.Items.tungsten) prioritizeSalvagerMaterials(core);
+            if (item == mindustry.content.Items.tungsten) {
+                prioritizeMissingWorkshop(core, metrum.content.MetrumProduction.salvagerAdvanced);
+            } else if (item == metrum.content.MetrumItems.steel) {
+                prioritizeMissingWorkshop(core, metrum.content.MetrumProduction.infusionSmelter);
+            }
             return false;
         }
         if (count(core, b -> b.block == producer) > 0) return false;
@@ -1201,10 +1205,9 @@ public class BasePlanner {
         return false;
     }
 
-    static void prioritizeSalvagerMaterials(CoreBuild core) {
-        Block salvager = metrum.content.MetrumProduction.salvagerAdvanced;
-        if (salvager == null || !salvager.environmentBuildable() || count(core, b -> b.block == salvager) > 0) return;
-        prioritizeWorkshopMaterials(core, salvager);
+    private static void prioritizeMissingWorkshop(CoreBuild core, Block workshop) {
+        if (workshop == null || !workshop.environmentBuildable() || count(core, b -> b.block == workshop) > 0) return;
+        prioritizeWorkshopMaterials(core, workshop);
     }
 
     private static boolean prioritizeWorkshopMaterials(CoreBuild core, Block workshop) {
