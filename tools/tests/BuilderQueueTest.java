@@ -57,6 +57,7 @@ public class BuilderQueueTest {
         unit.plans.clear();
         check(backup.size==2);
         check(BasePlanner.planMaterials(backup).get(iron)==9);
+        checkCargoDelivery(drill, iron);
         check(BasePlanner.restoreBuildQueue(unit,backup));
         check(unit.plans.size==2 && unit.buildPlan().block==drill);
         check(!BasePlanner.restoreBuildQueue(unit,backup));
@@ -72,5 +73,48 @@ public class BuilderQueueTest {
         try { new AbandonedBuilds().read(new DataInputStream(new ByteArrayInputStream(broken))); throw new AssertionError(); }
         catch(EOFException expected) { check(AbandonedBuilds.pending.isEmpty()); }
         System.out.println("OK: saved plan order, rotations, demolition, controller restoration, queue continuation, reserved materials, released materials, invalid batch cancellation, constructor replacement queue, saved abandoned queue, truncated save");
+    }
+
+    static void checkCargoDelivery(Block block, mindustry.type.Item ore) {
+        Vars.headless = true;
+        mindustry.content.Blocks.air = new mindustry.world.blocks.environment.AirBlock("test-air");
+        Vars.world.tiles.set(4, 5, new mindustry.world.Tile(4, 5, new mindustry.world.blocks.environment.Floor("test-floor"), mindustry.content.Blocks.air, mindustry.content.Blocks.air));
+        block.buildVisibility = mindustry.world.meta.BuildVisibility.shown;
+        Vars.net = new mindustry.net.Net(null);
+        arc.util.Time.delta = 1f;
+        mindustry.world.blocks.storage.CoreBlock coreBlock = new mindustry.world.blocks.storage.CoreBlock("test-core");
+        mindustry.world.blocks.storage.CoreBlock.CoreBuild core = coreBlock.new CoreBuild() {
+            @Override public int getMaximumAccepted(mindustry.type.Item item) { return 100; }
+            @Override public void handleStack(mindustry.type.Item item, int amount, mindustry.gen.Teamc source) {
+                items.add(item, amount);
+            }
+        };
+        core.block = coreBlock;
+        core.team = mindustry.game.Team.crux;
+        core.items = new mindustry.world.modules.ItemModule();
+        core.items.add(ore, 2);
+
+        Unit builder = new UnitEntity() {
+            @Override public mindustry.world.blocks.storage.CoreBlock.CoreBuild closestCore() { return core; }
+        };
+        builder.team = core.team;
+        builder.type = new UnitType("test-delivery-builder");
+        builder.type.buildSpeed = 1f;
+        builder.type.mineTier = 1;
+        builder.type.mineSpeed = 1f;
+        builder.type.range = 20f;
+        builder.type.itemCapacity = 15;
+        builder.stack = new mindustry.type.ItemStack(ore, 5);
+        MetrumBuilderAI controller = new MetrumBuilderAI();
+        builder.controller(controller);
+        BuildPlan plan = new BuildPlan(4, 5, 1, block);
+        builder.plans.addLast(plan);
+
+        controller.updateMovement();
+        check(core.items.get(ore) == 7 && builder.stack.amount == 0);
+        check(!builder.updateBuilding && builder.plans.size == 1 && builder.buildPlan() == plan);
+        controller.updateMovement();
+        check(builder.updateBuilding && builder.buildPlan() == plan);
+        System.out.println("OK: partial cargo delivered and original construction resumed");
     }
 }

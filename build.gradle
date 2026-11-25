@@ -84,8 +84,21 @@ tasks.register('depositsTest', JavaExec) {
     classpath = files(compileDepositsTest.flatMap { it.destinationDirectory }) + sourceSets.main.output + files(gameJar)
     mainClass = 'DepositsTest'
 }
+def compileBuilderQueueTest = tasks.register('compileBuilderQueueTest', JavaCompile) {
+    dependsOn classes
+    source = files('tools/tests/BuilderQueueTest.java')
+    classpath = sourceSets.main.output + files(gameJar)
+    destinationDirectory = layout.buildDirectory.dir('builder-queue-test-classes')
+}
+tasks.register('builderQueueTest', JavaExec) {
+    group = 'verification'
+    description = 'Checks AI build queues, cargo delivery and construction resumption.'
+    dependsOn compileBuilderQueueTest
+    classpath = files(compileBuilderQueueTest.flatMap { it.destinationDirectory }) + sourceSets.main.output + files(gameJar)
+    mainClass = 'metrum.ai.planner.BuilderQueueTest'
+}
 tasks.named('check') {
-    dependsOn 'salvagerTest', 'steamEngineTest', 'openPitTest', 'depositsTest'
+    dependsOn 'salvagerTest', 'steamEngineTest', 'openPitTest', 'depositsTest', 'builderQueueTest'
 }
 
 // gradlew deploy: build and install into the game (same file name the in-game importer uses)
