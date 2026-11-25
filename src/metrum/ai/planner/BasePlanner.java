@@ -765,6 +765,10 @@ public class BasePlanner {
     }
 
     private static boolean buildPower(CoreBuild core, boolean allowWaterPump) {
+        return buildPower(core, allowWaterPump, core);
+    }
+
+    private static boolean buildPower(CoreBuild core, boolean allowWaterPump, Building nearestTo) {
         Block gen = Blocks.turbineCondenser;
         Tile best = null;
         float bestDst = Float.MAX_VALUE;
@@ -773,7 +777,7 @@ public class BasePlanner {
             if (t == null || !(t.floor() instanceof mindustry.world.blocks.environment.SteamVent)) continue;
             if (!((mindustry.world.blocks.environment.SteamVent) t.floor()).isCenterVent(t)) continue;
             if (!Build.validPlace(gen, core.team, t.x, t.y, 0, false)) continue;
-            float d = core.dst(t);
+            float d = nearestTo.dst2(t);
             if (d < bestDst) { bestDst = d; best = t; }
         }
         if (best == null) {
@@ -819,8 +823,13 @@ public class BasePlanner {
             Building furnace = findSandArcFurnace(core);
             if (furnace != null && furnace.power != null && furnace.power.status < 0.999f && furnace.shouldConsume()
                 && furnace.items.get(mindustry.content.Items.sand) >= requiredPerBatch(furnace, mindustry.content.Items.sand)
-                && furnace.items.get(mindustry.content.Items.graphite) >= requiredPerBatch(furnace, mindustry.content.Items.graphite)
-                && extendPowerGrid(core, furnace)) return true;
+                && furnace.items.get(mindustry.content.Items.graphite) >= requiredPerBatch(furnace, mindustry.content.Items.graphite)) {
+                if (extendPowerGrid(core, furnace)) return true;
+                mindustry.world.blocks.power.PowerGraph graph = furnace.power.graph;
+                if (miningDemand.get(core) == demand && graph.getLastPowerProduced() > 0f
+                    && graph.getLastPowerNeeded() > graph.getLastPowerProduced() + 0.001f
+                    && graph.getLastPowerStored() <= 0.001f) return buildPower(core, false, furnace);
+            }
         }
         return false;
     }
