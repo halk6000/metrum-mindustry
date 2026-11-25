@@ -58,6 +58,7 @@ public class BuilderQueueTest {
         check(backup.size==2);
         check(BasePlanner.planMaterials(backup).get(iron)==9);
         checkCargoDelivery(drill, iron);
+        checkTwoBuilders(drill, duct, iron);
         check(BasePlanner.restoreBuildQueue(unit,backup));
         check(unit.plans.size==2 && unit.buildPlan().block==drill);
         check(!BasePlanner.restoreBuildQueue(unit,backup));
@@ -73,6 +74,44 @@ public class BuilderQueueTest {
         try { new AbandonedBuilds().read(new DataInputStream(new ByteArrayInputStream(broken))); throw new AssertionError(); }
         catch(EOFException expected) { check(AbandonedBuilds.pending.isEmpty()); }
         System.out.println("OK: saved plan order, rotations, demolition, controller restoration, queue continuation, reserved materials, released materials, invalid batch cancellation, constructor replacement queue, saved abandoned queue, truncated save");
+    }
+
+    static void checkTwoBuilders(Block drill, Block duct, mindustry.type.Item iron) {
+        mindustry.gen.Groups.init();
+        mindustry.world.blocks.storage.CoreBlock coreBlock = new mindustry.world.blocks.storage.CoreBlock("two-builder-core");
+        mindustry.world.blocks.storage.CoreBlock.CoreBuild core = coreBlock.new CoreBuild();
+        core.tile = Vars.world.tile(1, 1);
+        core.team = mindustry.game.Team.crux;
+        UnitType previous = metrum.content.MetrumUnits.monoMetT1;
+        UnitType type = new UnitType("two-builder-unit");
+        type.buildSpeed = 1f;
+        metrum.content.MetrumUnits.monoMetT1 = type;
+        try {
+            Unit first = UnitEntity.create(), second = UnitEntity.create();
+            for (Unit builder : new Unit[]{first, second}) {
+                builder.type = type;
+                builder.team = core.team;
+                builder.flag = BasePlanner.builderHomeFlag(core);
+                builder.controller(new MetrumBuilderAI());
+                mindustry.gen.Groups.unit.add(builder);
+            }
+            first.addBuild(new BuildPlan(4, 5, 0, drill));
+            check(BasePlanner.assignedBuilder(core) == second);
+            check(BasePlanner.constructionReserve(core).get(iron) == 7);
+            second.addBuild(new BuildPlan(5, 5, 0, duct));
+            check(BasePlanner.assignedBuilder(core) == first);
+            check(BasePlanner.constructionReserve(core).get(iron) == 9);
+            check(BasePlanner.overlapsQueuedBuild(core.team, drill, 4, 5));
+            first.plans.clear();
+            check(BasePlanner.assignedBuilder(core) == first);
+            check(BasePlanner.constructionReserve(core).get(iron) == 2);
+            second.plans.clear();
+            check(BasePlanner.constructionReserve(core).isEmpty());
+            System.out.println("OK: two constructors, idle selection, combined reservations and released budgets");
+        } finally {
+            mindustry.gen.Groups.unit.clear();
+            metrum.content.MetrumUnits.monoMetT1 = previous;
+        }
     }
 
     static void checkCargoDelivery(Block block, mindustry.type.Item ore) {
