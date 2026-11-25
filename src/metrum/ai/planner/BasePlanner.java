@@ -123,11 +123,13 @@ public class BasePlanner {
         if (demand.item == mindustry.content.Items.silicon && blockedSiliconSites.contains(core)) {
             status += "\n" + arc.Core.bundle.get("metrum.ai.silicon-site-blocked");
         }
-        if (coreBurnsSand(core) && needsArcFurnaceSand(core, demand)) {
+        if (needsArcFurnaceSand(core, demand)) {
             Building furnace = findSandArcFurnace(core);
             if (furnace != null) {
-                status += "\n" + arc.Core.bundle.format("metrum.ai.arc-furnace-sand",
-                    furnace.items.get(mindustry.content.Items.sand), sandPerBatch(furnace));
+                Item sand = mindustry.content.Items.sand, graphite = mindustry.content.Items.graphite;
+                status += "\n" + arc.Core.bundle.format("metrum.ai.arc-furnace-inputs",
+                    furnace.items.get(sand), requiredPerBatch(furnace, sand),
+                    furnace.items.get(graphite), requiredPerBatch(furnace, graphite));
             }
         }
         mindustry.gen.Unit drone = assignedMiningDrone(core);
@@ -331,7 +333,7 @@ public class BasePlanner {
         Building furnace = findSandArcFurnace(core);
         if (furnace == null) return false;
         Item sand = mindustry.content.Items.sand;
-        int batch = sandPerBatch(furnace);
+        int batch = requiredPerBatch(furnace, sand);
         if (furnace.items.get(sand) < batch && input != null) {
             int transferred = input.removeStack(sand, 1);
             if (transferred > 0) furnace.items.add(sand, transferred);
@@ -343,18 +345,18 @@ public class BasePlanner {
         for (Building furnace : coreWorkshops(core, mindustry.content.Items.silicon)) {
             if (furnace.team != core.team || !furnace.enabled || furnace.items == null || furnace.closestCore() != core
                 || !isSiliconArcFurnace(furnace.block)) continue;
-            int batch = sandPerBatch(furnace);
+            int batch = requiredPerBatch(furnace, mindustry.content.Items.sand);
             if (batch > 0 && batch <= furnace.getMaximumAccepted(mindustry.content.Items.sand)) return furnace;
         }
         return null;
     }
 
-    private static int sandPerBatch(Building furnace) {
+    private static int requiredPerBatch(Building furnace, Item item) {
         int batch = 0;
         for (mindustry.world.consumers.Consume consumer : furnace.block.nonOptionalConsumers) {
             if (!(consumer instanceof mindustry.world.consumers.ConsumeItems)) continue;
             for (ItemStack ingredient : ((mindustry.world.consumers.ConsumeItems) consumer).items) {
-                if (ingredient.item == mindustry.content.Items.sand) batch += ingredient.amount;
+                if (ingredient.item == item) batch += ingredient.amount;
             }
         }
         return batch;
