@@ -61,6 +61,7 @@ public class BuilderQueueTest {
         checkTwoBuilders(drill, duct, iron);
         checkDeliveryTarget(iron);
         checkMiningStall();
+        checkExpiredDroneWait(iron);
         check(BasePlanner.restoreBuildQueue(unit,backup));
         check(unit.plans.size==2 && unit.buildPlan().block==drill);
         check(!BasePlanner.restoreBuildQueue(unit,backup));
@@ -76,6 +77,37 @@ public class BuilderQueueTest {
         try { new AbandonedBuilds().read(new DataInputStream(new ByteArrayInputStream(broken))); throw new AssertionError(); }
         catch(EOFException expected) { check(AbandonedBuilds.pending.isEmpty()); }
         System.out.println("OK: saved plan order, rotations, demolition, controller restoration, queue continuation, reserved materials, released materials, invalid batch cancellation, constructor replacement queue, saved abandoned queue, truncated save");
+    }
+
+    static void checkExpiredDroneWait(mindustry.type.Item ore) throws Exception {
+        mindustry.gen.Groups.init();
+        mindustry.world.blocks.storage.CoreBlock block = new mindustry.world.blocks.storage.CoreBlock("timeout-core");
+        mindustry.world.blocks.storage.CoreBlock.CoreBuild core = block.new CoreBuild();
+        core.team = mindustry.game.Team.crux;
+        Class<?> aiClass = Class.forName("metrum.ai.planner.BasePlanner$ResourceDroneAI");
+        java.lang.reflect.Constructor<?> constructor = aiClass.getDeclaredConstructors()[0];
+        constructor.setAccessible(true);
+        mindustry.entities.units.UnitController ai = (mindustry.entities.units.UnitController)
+            constructor.newInstance(core, new MetrumBuilderAI());
+        Unit drone = UnitEntity.create();
+        drone.type = new UnitType("timeout-drone");
+        drone.team = core.team;
+        drone.stack = new mindustry.type.ItemStack(ore, 1);
+        drone.controller(ai);
+        java.lang.reflect.Field goal = aiClass.getDeclaredField("tungstenGoal");
+        java.lang.reflect.Field elapsed = aiClass.getDeclaredField("tungstenStalledTime");
+        goal.setAccessible(true); elapsed.setAccessible(true);
+        goal.set(ai, new mindustry.type.ItemStack(ore, 10));
+        mindustry.gen.Groups.unit.add(drone);
+        try {
+            elapsed.setFloat(ai, 1199f);
+            check(BasePlanner.hasLocalTungstenDrone(core, ore));
+            elapsed.setFloat(ai, 1200f);
+            check(!BasePlanner.hasLocalTungstenDrone(core, ore));
+            elapsed.setFloat(ai, 0f);
+            check(BasePlanner.hasLocalTungstenDrone(core, ore));
+        } finally { mindustry.gen.Groups.unit.clear(); }
+        System.out.println("OK: expired tungsten wait stops blocking recovery even with cargo aboard");
     }
 
     static void checkMiningStall() {

@@ -811,7 +811,7 @@ public class BasePlanner {
         }
     }
 
-    private static boolean hasLocalTungstenDrone(CoreBuild core, Item ore) {
+    static boolean hasLocalTungstenDrone(CoreBuild core, Item ore) {
         return mindustry.gen.Groups.unit.contains(drone -> {
             if (drone.dead() || drone.team != core.team || !(drone.controller() instanceof ResourceDroneAI)
                 || ((ResourceDroneAI) drone.controller()).home != core) return false;
