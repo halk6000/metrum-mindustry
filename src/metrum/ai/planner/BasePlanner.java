@@ -1718,7 +1718,10 @@ public class BasePlanner {
                 || factory.closestCore() != core) continue;
             boolean recoveryBoiler = recoveryNeedsSteam
                 && factory.block == metrum.content.MetrumProduction.steamFurnace;
-            if (!recoveryBoiler && !producesItem(factory.block, demand.item)) continue;
+            boolean recoveryCrusher = demand.item == mindustry.content.Items.coal
+                && hasRecoveryGoal(core, demand.item)
+                && factory.block == metrum.content.MetrumProduction.stoneCrusher;
+            if (!recoveryBoiler && !recoveryCrusher && !producesItem(factory.block, demand.item)) continue;
             java.util.Map<Item, Integer> required = new java.util.HashMap<>();
             for (mindustry.world.consumers.Consume consume : factory.block.nonOptionalConsumers) {
                 if (!(consume instanceof mindustry.world.consumers.ConsumeItems)) continue;
@@ -1732,6 +1735,8 @@ public class BasePlanner {
                 if (missing == 0) continue;
                 if (input.getValue() > factory.getMaximumAccepted(item)) continue workshops;
                 if (core.items.get(item) - reserve.getOrDefault(item, 0) < missing) {
+                    // Feed spare rock while waiting for coal without replacing the coal priority.
+                    if (recoveryCrusher) continue workshops;
                     if (prioritizeProducerDependency(core, item, missing + reserve.getOrDefault(item, 0))) {
                         // Other workshops still hold the old demand snapshot; resume them next supply tick.
                         return;
