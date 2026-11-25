@@ -16,6 +16,15 @@ public class OpenPitMineTest {
         OpenPitMine.OpenPitMineBuild b = block.new OpenPitMineBuild();
         b.block = block;
         b.team = mindustry.game.Team.sharded;
+        b.optionalEfficiency = 0f;
+        return b;
+    }
+
+    static mindustry.gen.Building radar(mindustry.world.Block block, mindustry.game.Team team) {
+        mindustry.gen.Building b = mindustry.gen.Building.create();
+        b.block = block;
+        b.team = team;
+        b.efficiency = 0f;
         return b;
     }
 
@@ -58,7 +67,7 @@ public class OpenPitMineTest {
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         b.write(new Writes(new DataOutputStream(bytes)));
         OpenPitMine.OpenPitMineBuild copy = mine(block);
-        copy.read(new Reads(new DataInputStream(new ByteArrayInputStream(bytes.toByteArray()))), (byte) 0);
+        copy.read(new Reads(new DataInputStream(new ByteArrayInputStream(bytes.toByteArray()))), b.version());
         check(copy.step == 100 && total(copy) == done && copy.found.get(junk) == b.found.get(junk));
         block.discoveryChance = 0f;
         OpenPitMine.OpenPitMineBuild unlucky = mine(block);
@@ -81,6 +90,46 @@ public class OpenPitMineTest {
         run(barren, 6100);
         check(barren.found.isEmpty() && barren.step > 5);
         block.byPlanet.clear();
+        // Radar: adjacent, own team, powered; several count once.
+        mindustry.world.Block radar = new mindustry.world.Block("test-radar");
+        block.radar = radar;
+        OpenPitMine.OpenPitMineBuild fast = mine(block);
+        check(fast.currentStepTime() == 600f);
+        mindustry.gen.Building r1 = radar(radar, mindustry.game.Team.sharded), r2 = radar(radar, mindustry.game.Team.sharded);
+        fast.proximity.add(r1);
+        check(fast.currentStepTime() == 600f); // unpowered
+        r1.efficiency = 1f;
+        check(fast.currentStepTime() == 480f);
+        r2.efficiency = 1f;
+        fast.proximity.add(r2);
+        check(fast.currentStepTime() == 480f);
+        run(fast, 490);
+        check(fast.step == 1);
+        fast.proximity.clear();
+        mindustry.gen.Building foe = radar(radar, mindustry.game.Team.crux);
+        foe.efficiency = 1f;
+        fast.proximity.add(foe);
+        check(fast.currentStepTime() == 600f);
+        // Water: only the share of the step dug with water counts.
+        block.discoveryChance = 0f;
+        block.boostedChance = 1f;
+        OpenPitMine.OpenPitMineBuild wet = mine(block);
+        wet.optionalEfficiency = 1f;
+        run(wet, 300);
+        wet.optionalEfficiency = 0f;
+        run(wet, 200);
+        check(Math.abs(wet.chance(wet.boostedProgress) - 0.5f) < 0.01f);
+        wet.optionalEfficiency = 1f;
+        run(wet, 6000);
+        check(total(wet) > 0);
+        // Saves from before the boosters still load.
+        ByteArrayOutputStream legacy = new ByteArrayOutputStream();
+        DataOutputStream old = new DataOutputStream(legacy);
+        old.writeInt(42); old.writeFloat(0.5f); old.writeByte(0);
+        OpenPitMine.OpenPitMineBuild veteran = mine(block);
+        veteran.read(new Reads(new DataInputStream(new ByteArrayInputStream(legacy.toByteArray()))), (byte) 0);
+        check(veteran.step == 42 && veteran.stepProgress == 0.5f && veteran.boostedProgress == 0f);
+        block.boostedChance = 0.2f;
         // Long-run discovery rate stays near the configured 20%.
         block.discoveryChance = 0.2f;
         block.stepTime = 1f;

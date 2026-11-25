@@ -28,6 +28,11 @@ public class OpenPitMine extends Block {
     public int steps = 100;
     public float stepTime = 60f * 10f;
     public float discoveryChance = 0.2f;
+    /** discovery chance while the optional liquid is supplied */
+    public float boostedChance = 0.24f;
+    /** a powered block of this type next to the pit shortens every step; several count once */
+    public Block radar;
+    public float radarTimeSaved = 60f * 2f;
     public int minDiscovery = 50, maxDiscovery = 200;
     /** deposits left by the collapse: stock per tile and search radius in tiles */
     public int depositPerTile = 25, scatterRadius = 8, maxScatterRadius = 24;
@@ -49,6 +54,14 @@ public class OpenPitMine extends Block {
     public void setStats() {
         super.setStats();
         stats.add(Stat.productionTime, steps * stepTime / 60f, StatUnit.seconds);
+        stats.add(Stat.booster, table -> {
+            table.row();
+            if (radar != null) {
+                table.image(radar.uiIcon).size(24f).padRight(4f);
+                table.add(arc.Core.bundle.format("metrum.pit.radar", arc.util.Strings.autoFixed(radarTimeSaved / 60f, 1))).left().row();
+            }
+            table.add(arc.Core.bundle.format("metrum.pit.water", Math.round(discoveryChance * 100f), Math.round(boostedChance * 100f))).left().colspan(2).row();
+        });
         stats.add(Stat.output, table -> {
             table.row();
             for (ObjectMap.Entry<Planet, ItemStack[]> e : byPlanet) {
@@ -69,6 +82,9 @@ public class OpenPitMine extends Block {
         super.setBars();
         addBar("metrum-pit", (OpenPitMineBuild b) -> new mindustry.ui.Bar(
             () -> arc.Core.bundle.format("metrum.pit.progress", b.step * 100 / steps), () -> Pal.ammo, () -> b.fraction()));
+        addBar("metrum-pit-step", (OpenPitMineBuild b) -> new mindustry.ui.Bar(
+            () -> arc.Core.bundle.format("metrum.pit.step", arc.util.Strings.autoFixed(b.currentStepTime() / 60f, 1), Math.round(b.chance(b.optionalEfficiency) * 100f)),
+            () -> Pal.accent, () -> b.stepProgress));
     }
 
     /** discoveries possible on the current planet */
@@ -98,10 +114,34 @@ public class OpenPitMine extends Block {
     public class OpenPitMineBuild extends Building {
         public int step;
         public float stepProgress;
+        /** part of the current step dug with the liquid booster */
+        public float boostedProgress;
         public final ObjectIntMap<Item> found = new ObjectIntMap<>();
 
         public float fraction() {
             return Mathf.clamp((step + stepProgress) / steps);
+        }
+
+        /** power satisfaction of the best adjacent radar, 0 without one */
+        public float radarEfficiency() {
+            float best = 0f;
+            for (Building other : proximity) {
+                if (other.block == radar && other.team == team) best = Math.max(best, other.efficiency);
+            }
+            return Mathf.clamp(best);
+        }
+
+        public float currentStepTime() {
+            return Math.max(1f, stepTime - radarTimeSaved * radarEfficiency());
+        }
+
+        public float chance(float boost) {
+            return Mathf.lerp(discoveryChance, boostedChance, Mathf.clamp(boost));
+        }
+
+        @Override
+        public boolean shouldConsume() {
+            return step < steps;
         }
 
         @Override
@@ -110,7 +150,9 @@ public class OpenPitMine extends Block {
                 if (collapses && !Vars.net.client()) collapse();
                 return;
             }
-            stepProgress += delta() / stepTime;
+            float advance = delta() / currentStepTime();
+            stepProgress += advance;
+            boostedProgress += advance * optionalEfficiency;
             if (stepProgress < 1f) return;
             if (Vars.net.client()) { // wait for the server's result
                 stepProgress = 1f;
@@ -119,7 +161,8 @@ public class OpenPitMine extends Block {
             stepProgress -= 1f;
             step++;
             if (step >= steps) stepProgress = 0f;
-            Item item = Mathf.chance(discoveryChance) ? randomItem(available()) : null;
+            Item item = Mathf.chance(chance(boostedProgress)) ? randomItem(available()) : null;
+            boostedProgress = 0f;
             if (item != null) {
                 found.increment(item, 0, Mathf.random(minDiscovery, maxDiscovery));
             }
@@ -175,10 +218,16 @@ public class OpenPitMine extends Block {
         }
 
         @Override
+        public byte version() {
+            return 1;
+        }
+
+        @Override
         public void write(Writes write) {
             super.write(write);
             write.i(step);
             write.f(stepProgress);
+            write.f(boostedProgress);
             Seq<Item> keys = new Seq<>();
             for (Item item : Vars.content.items()) if (found.get(item) > 0) keys.add(item);
             write.b(keys.size);
@@ -193,6 +242,7 @@ public class OpenPitMine extends Block {
             super.read(read, revision);
             step = read.i();
             stepProgress = read.f();
+            boostedProgress = revision >= 1 ? read.f() : 0f;
             found.clear();
             int count = read.b();
             for (int i = 0; i < count; i++) {

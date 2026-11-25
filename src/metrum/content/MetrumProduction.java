@@ -146,6 +146,11 @@ public class MetrumProduction {
             size = 4;
             stepTime = metrum.Balance.f("pit.stepSeconds", 10f) * 60f;
             discoveryChance = metrum.Balance.f("pit.discoveryChance", 0.2f);
+            boostedChance = metrum.Balance.f("pit.waterChance", 0.24f);
+            radar = mindustry.content.Blocks.radar;
+            radarTimeSaved = metrum.Balance.f("pit.radarSeconds", 2f) * 60f;
+            liquidCapacity = 60f;
+            consumeLiquid(Liquids.water, metrum.Balance.f("pit.waterPerSecond", 12f) / 60f).boost();
             minDiscovery = metrum.Balance.i("pit.minDiscovery", 50);
             maxDiscovery = metrum.Balance.i("pit.maxDiscovery", 200);
             depositPerTile = metrum.Balance.i("pit.depositPerTile", 25);
