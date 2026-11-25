@@ -18,7 +18,15 @@ public class WelcomeDialog {
         String version = mod == null ? "?" : mod.meta.version;
         boolean forced = Vars.dataDirectory.child("metrum-showwelcome").exists(); // testing aid
         if (!forced && version.equals(Core.settings.getString(key, ""))) return;
+        show(version);
+    }
 
+    public static void show() {
+        Mods.LoadedMod mod = Vars.mods.getMod(MetrumMod.class);
+        show(mod == null ? "?" : mod.meta.version);
+    }
+
+    private static void show(String version) {
         BaseDialog d = new BaseDialog(Core.bundle.format("metrum.welcome.title", version));
         float w = Math.min(Core.graphics.getWidth() / arc.scene.ui.layout.Scl.scl(1f) - 80f, 640f);
         d.cont.pane(p -> {
