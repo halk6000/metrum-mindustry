@@ -440,6 +440,7 @@ public class BasePlanner {
         final CoreBuild home;
         final mindustry.entities.units.UnitController previousController;
         private ItemStack tungstenGoal;
+        private boolean tungstenTrackingStarted;
         private int lastTungstenCargo;
         private float lastTungstenProgress;
         private CoreBuild deliveryTarget;
@@ -472,10 +473,11 @@ public class BasePlanner {
             }
             ItemStack goal = demand != null && demand.item == mindustry.content.Items.tungsten ? demand : null;
             int tungstenCargo = unit.stack.item == mindustry.content.Items.tungsten ? unit.stack.amount : 0;
-            // Replacing the demand object or changing its amount is not mining progress.
-            if ((goal != null && tungstenGoal == null) || tungstenCargo > lastTungstenCargo) {
+            // A temporary prerequisite demand must not grant another full tungsten timeout.
+            if ((goal != null && !tungstenTrackingStarted) || tungstenCargo > lastTungstenCargo) {
                 lastTungstenProgress = Time.time;
             }
+            if (goal != null) tungstenTrackingStarted = true;
             tungstenGoal = goal;
             lastTungstenCargo = tungstenCargo;
             if (unit.stack.amount > 0) {
