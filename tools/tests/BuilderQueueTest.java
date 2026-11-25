@@ -76,6 +76,7 @@ public class BuilderQueueTest {
     }
 
     static void checkCargoDelivery(Block block, mindustry.type.Item ore) {
+        mindustry.type.Item alternateOre = new mindustry.type.Item("test-alternate-ore");
         Vars.headless = true;
         mindustry.content.Blocks.air = new mindustry.world.blocks.environment.AirBlock("test-air");
         Vars.world.tiles.set(4, 5, new mindustry.world.Tile(4, 5, new mindustry.world.blocks.environment.Floor("test-floor"), mindustry.content.Blocks.air, mindustry.content.Blocks.air));
@@ -120,15 +121,22 @@ public class BuilderQueueTest {
         mindustry.world.blocks.environment.OreBlock deposit = new mindustry.world.blocks.environment.OreBlock("test-deposit", ore);
         mindustry.world.Tile oreTile = new mindustry.world.Tile(1, 1, Vars.world.tile(4, 5).floor(), deposit, mindustry.content.Blocks.air);
         Vars.world.tiles.set(1, 1, oreTile);
-        Vars.indexer = new mindustry.ai.BlockIndexer() {
-            @Override public boolean hasOre(mindustry.type.Item item) { return item == ore; }
+        mindustry.world.blocks.environment.OreBlock alternateDeposit =
+            new mindustry.world.blocks.environment.OreBlock("test-alternate-deposit", alternateOre);
+        mindustry.world.Tile alternateTile = new mindustry.world.Tile(2, 1, oreTile.floor(), alternateDeposit, mindustry.content.Blocks.air);
+        Vars.world.tiles.set(2, 1, alternateTile);
+        class TestIndexer extends mindustry.ai.BlockIndexer {
+            mindustry.world.Tile available = oreTile;
+            @Override public boolean hasOre(mindustry.type.Item item) { return available.drop() == item; }
             @Override public mindustry.world.Tile findClosestOre(Unit unit, mindustry.type.Item item) {
                 return findClosestOre(unit.x, unit.y, item);
             }
             @Override public mindustry.world.Tile findClosestOre(float x, float y, mindustry.type.Item item) {
-                return item == ore ? oreTile : null;
+                return hasOre(item) ? available : null;
             }
-        };
+        }
+        TestIndexer indexer = new TestIndexer();
+        Vars.indexer = indexer;
         builder.type.mineFloor = true;
         builder.type.mineRange = 30f;
         builder.type.mineItems.add(ore);
@@ -139,5 +147,19 @@ public class BuilderQueueTest {
         check(builder.stack.amount == 0 && builder.mineTile == oreTile);
         check(!builder.updateBuilding && builder.plans.size == 1 && builder.buildPlan() == plan);
         System.out.println("OK: empty builder starts mining the missing ore and retains its plan");
+
+        indexer.available = alternateTile;
+        builder.type.mineItems.add(alternateOre);
+        builder.mineTile = null;
+        metrum.ai.SmartMining.SmartMinerAI miner = new metrum.ai.SmartMining.SmartMinerAI();
+        miner.unit(builder);
+        miner.targetItem = ore;
+        arc.util.Time.time = 0f;
+        miner.updateMovement();
+        check(miner.targetItem == alternateOre);
+        arc.util.Time.time += 60f;
+        miner.updateMovement();
+        check(miner.targetItem == alternateOre && builder.mineTile == alternateTile);
+        System.out.println("OK: miner switches to available ore after its previous deposit disappears");
     }
 }
