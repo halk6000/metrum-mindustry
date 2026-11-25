@@ -800,6 +800,14 @@ public class BasePlanner {
             int amount = quantities[i] * Math.round(cost.amount * Vars.state.rules.buildCostMultiplier);
             reserve.put(cost.item, reserve.getOrDefault(cost.item, 0) + amount);
         }
+        for (java.util.Map.Entry<Item, Integer> cost : constructionReserve(core).entrySet()) {
+            reserve.put(cost.getKey(), reserve.getOrDefault(cost.getKey(), 0) + cost.getValue());
+        }
+        return reserve;
+    }
+
+    static java.util.Map<Item, Integer> constructionReserve(CoreBuild core) {
+        java.util.Map<Item, Integer> reserve = new java.util.HashMap<>();
         // Multiple constructors can share a home after another core is lost.
         mindustry.gen.Groups.unit.each(builder -> {
             if (builder.team != core.team || builder.dead() || builder.isPlayer()
@@ -906,8 +914,12 @@ public class BasePlanner {
         if (builder == null || !builder.plans.isEmpty()) return stalled("konstruktor zajęty lub niedostępny");
         if (site == null || !Build.validPlace(block, core.team, site.x, site.y, rotation, false)) return false;
         if (overlapsQueuedBuild(core.team, block, site.x, site.y)) return false;
+        java.util.Map<Item, Integer> reserve = constructionReserve(core);
         for (ItemStack cost : block.requirements) {
-            int needed = Math.round(cost.amount * Vars.state.rules.buildCostMultiplier);
+            long totalNeeded = (long) Math.round(cost.amount * Vars.state.rules.buildCostMultiplier)
+                + reserve.getOrDefault(cost.item, 0);
+            if (totalNeeded > Integer.MAX_VALUE) return false;
+            int needed = (int) totalNeeded;
             if (core.items.get(cost.item) < needed) {
                 miningDemand.putIfAbsent(core, new ItemStack(cost.item, needed));
                 return stalled("brak: " + cost.item.localizedName + " (" + core.items.get(cost.item) + "/" + needed + ")");
@@ -932,7 +944,7 @@ public class BasePlanner {
                 total.put(cost.item, total.getOrDefault(cost.item, 0L) + amount);
             }
         }
-        java.util.Map<Item, Integer> reserve = protectReserve ? economicReserve(core) : java.util.Collections.emptyMap();
+        java.util.Map<Item, Integer> reserve = protectReserve ? economicReserve(core) : constructionReserve(core);
         for (java.util.Map.Entry<Item, Long> cost : total.entrySet()) {
             if ((long) core.items.get(cost.getKey()) - reserve.getOrDefault(cost.getKey(), 0) < cost.getValue()) {
                 long needed = cost.getValue() + reserve.getOrDefault(cost.getKey(), 0);
