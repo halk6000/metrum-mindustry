@@ -684,11 +684,20 @@ public class BasePlanner {
         for (int direction = 0; direction < 4; direction++) {
             int dx = arc.math.geom.Geometry.d4x(direction), dy = arc.math.geom.Geometry.d4y(direction);
             int distance = direction < 2 ? coreMax - dockMin + 1 : dockMax - coreMin + 1;
-            Tile site = Vars.world.tile(core.tileX() + dx * distance, core.tileY() + dy * distance);
-            if (site == null || !Build.validPlace(dock, core.team, site.x, site.y, direction, false)) continue;
-            Tile exit = miningDockExit(site, dock, direction);
-            if (exit == null || exit.block() != Blocks.air) continue;
-            return queueConstructionBatch(core, Seq.with(new BuildPlan(site.x, site.y, direction, dock)), true);
+            // Every offset keeps at least one tile of shared edge with the core.
+            int minOffset = coreMin - dockMax, maxOffset = coreMax - dockMin;
+            int radius = Math.max(-minOffset, maxOffset);
+            for (int index = 0; index <= radius * 2; index++) {
+                int offset = index == 0 ? 0 : (index % 2 == 1 ? (index + 1) / 2 : -index / 2);
+                if (offset < minOffset || offset > maxOffset) continue;
+                Tile site = Vars.world.tile(core.tileX() + dx * distance + (dx == 0 ? offset : 0),
+                    core.tileY() + dy * distance + (dy == 0 ? offset : 0));
+                if (site == null || !Build.validPlace(dock, core.team, site.x, site.y, direction, false)
+                    || overlapsQueuedBuild(core.team, dock, site.x, site.y)) continue;
+                Tile exit = miningDockExit(site, dock, direction);
+                if (exit == null || exit.block() != Blocks.air) continue;
+                return queueConstructionBatch(core, Seq.with(new BuildPlan(site.x, site.y, direction, dock)), true);
+            }
         }
         return false;
     }
