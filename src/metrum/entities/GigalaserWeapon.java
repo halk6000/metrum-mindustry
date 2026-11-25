@@ -79,7 +79,7 @@ public class GigalaserWeapon extends Weapon {
         float time = ((ChargeMount) mount).chargeTime;
         float f = Mathf.clamp(time / Math.max(1f, shoot.firstShotDelay));
         float z = Draw.z();
-        Draw.z(Layer.effect);
+        Draw.z(Layer.flyingUnit + 1f); // above the ship
         muzzles(unit, (x, y) -> {
             float radius = 0.6f + 2.6f * f + Mathf.absin(Time.time, 2f, 0.5f * f);
             Draw.color(red, 0.35f + 0.25f * f);
@@ -117,6 +117,7 @@ public class GigalaserWeapon extends Weapon {
             float fade = Mathf.clamp(b.time > b.lifetime - fadeTime ? 1f - (b.time - (b.lifetime - fadeTime)) / fadeTime : 1f);
             float real = Damage.findLength(b, length * fade, laserAbsorb, pierceCap);
             Vec2 tip = new Vec2().trns(b.rotation(), real).add(b.x, b.y);
+            Draw.z(Layer.flyingUnit + 1f); // above the ship
             muzzles((Unit) b.owner, (x, y) -> {
                 for (int i = 0; i < colors.length; i++) {
                     float layer = i / (float) Math.max(1, colors.length - 1);
