@@ -3,6 +3,7 @@ package metrum.ai.planner;
 /** Follow explicit planner jobs without vanilla BuilderAI replacing the unit's queue. */
 public class MetrumBuilderAI extends mindustry.ai.types.BuilderAI {
     private boolean enteringIdle = true;
+    private mindustry.type.Item constructionOre;
     private final metrum.ai.SmartMining.SmartMinerAI idleMiner = new metrum.ai.SmartMining.SmartMinerAI() {
         @Override
         public void updateMovement() {
@@ -23,6 +24,7 @@ public class MetrumBuilderAI extends mindustry.ai.types.BuilderAI {
         }
         @Override
         protected mindustry.type.Item desired() {
+            if (constructionOre != null) return constructionOre;
             mindustry.world.blocks.storage.CoreBlock.CoreBuild home = unit.team.cores().find(
                 core -> BasePlanner.builderHomeFlag(core) == unit.flag);
             mindustry.type.ItemStack demand = home == null ? null : BasePlanner.miningDemand.get(home);
@@ -33,22 +35,23 @@ public class MetrumBuilderAI extends mindustry.ai.types.BuilderAI {
         }
     };
     public MetrumBuilderAI() { super(true, 600f); }
+    private void mineWhileIdle() {
+        unit.updateBuilding = false;
+        idleMiner.unit(unit);
+        if (enteringIdle) {
+            idleMiner.mining = unit.stack.amount == 0;
+            enteringIdle = false;
+        }
+        idleMiner.updateMovement();
+    }
+
     @Override
     public void updateMovement() {
+        constructionOre = null;
         if (unit.plans.isEmpty()) {
-            idleMiner.unit(unit);
-            if (enteringIdle) {
-                idleMiner.mining = unit.stack.amount == 0;
-                enteringIdle = false;
-            }
-            idleMiner.updateMovement(); // normal mining, carrying capacity and delivery to the core
+            mineWhileIdle();
             return;
         }
-        enteringIdle = true;
-        unit.mineTile = null; // explicit construction always preempts mining
-        idleMiner.ore = null;
-        idleMiner.targetItem = null;
-        idleMiner.mining = true;
         mindustry.entities.units.BuildPlan plan = unit.buildPlan();
         // A queued cleanup job may become unsafe if the network changes before the drone arrives.
         mindustry.world.Tile tile = mindustry.Vars.world.tile(plan.x, plan.y);
@@ -67,6 +70,19 @@ public class MetrumBuilderAI extends mindustry.ai.types.BuilderAI {
                 BasePlanner.plannerAction = "przeplanowanie: miejsce budowy niedostępne";
                 return;
             }
+            mindustry.world.blocks.storage.CoreBlock.CoreBuild core = unit.closestCore();
+            if (!inProgress && core != null && !mindustry.Vars.state.rules.isInfiniteResources(unit.team)) {
+                float multiplier = mindustry.Vars.state.rules.buildCostMultiplier;
+                for (mindustry.type.ItemStack cost : plan.block.requirements) {
+                    int needed = Math.round(cost.amount * multiplier);
+                    if (core.items.get(cost.item) >= needed || !unit.canMine(cost.item)
+                        || !metrum.ai.SmartMining.canStoreMined(core, cost.item)
+                        || mindustry.Vars.indexer.findClosestOre(unit, cost.item) == null) continue;
+                    constructionOre = cost.item;
+                    mineWhileIdle();
+                    return;
+                }
+            }
         }
         if (plan.breaking && tile != null && tile.block() == mindustry.content.Blocks.reinforcedConduit) {
             if (tile.build == null || !BasePlanner.unusedWaterPipes(arc.struct.Seq.with(tile.build), unit.team).contains(tile.build)) {
@@ -82,6 +98,10 @@ public class MetrumBuilderAI extends mindustry.ai.types.BuilderAI {
                 return;
             }
         }
+        enteringIdle = true;
+        unit.mineTile = null;
+        idleMiner.ore = null;
+        idleMiner.targetItem = null;
         unit.updateBuilding = true;
         moveTo(plan, unit.type.buildRange * 0.8f);
         unit.lookAt(plan);
