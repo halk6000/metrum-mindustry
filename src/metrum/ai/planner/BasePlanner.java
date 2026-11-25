@@ -938,6 +938,18 @@ public class BasePlanner {
         if (block.acceptsPayload) return false;
         Tile anchor = Vars.world.tile(x, y);
         if (anchor == null) return false;
+        if (mindustry.gen.Groups.unit.contains(unit -> {
+            if (unit.team != team || unit.dead()) return false;
+            for (BuildPlan plan : unit.plans) {
+                if (plan.breaking || plan.block == null
+                    || plan.block != metrum.content.MetrumUnitBlocks.airMinerDock) continue;
+                Tile site = Vars.world.tile(plan.x, plan.y);
+                if (site == null) continue;
+                Tile exit = miningDockExit(site, plan.block, plan.rotation);
+                if (exit != null && insideFootprint(exit, anchor, block)) return true;
+            }
+            return false;
+        })) return true;
         return mindustry.gen.Groups.build.contains(building -> {
             if (building.team != team || building.block != metrum.content.MetrumUnitBlocks.airMinerDock) return false;
             Tile exit = miningDockExit(building.tile, building.block, building.rotation);

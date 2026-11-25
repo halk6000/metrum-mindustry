@@ -83,6 +83,7 @@ public class BuilderQueueTest {
         core.tile = Vars.world.tile(1, 1);
         core.team = mindustry.game.Team.crux;
         UnitType previous = metrum.content.MetrumUnits.monoMetT1;
+        Block previousDock = metrum.content.MetrumUnitBlocks.airMinerDock;
         UnitType type = new UnitType("two-builder-unit");
         type.buildSpeed = 1f;
         metrum.content.MetrumUnits.monoMetT1 = type;
@@ -114,10 +115,18 @@ public class BuilderQueueTest {
             check(BasePlanner.constructionReserve(core).get(iron) == 2);
             second.plans.clear();
             check(BasePlanner.constructionReserve(core).isEmpty());
+            metrum.content.MetrumUnitBlocks.airMinerDock = drill;
+            first.addBuild(new BuildPlan(4, 5, 0, drill));
+            check(BasePlanner.blocksMiningDockExit(core.team, duct, 5, 5));
+            check(!BasePlanner.blocksMiningDockExit(core.team, duct, 4, 6));
+            check(!BasePlanner.blocksMiningDockExit(mindustry.game.Team.sharded, duct, 5, 5));
+            first.plans.clear();
+            check(!BasePlanner.blocksMiningDockExit(core.team, duct, 5, 5));
             System.out.println("OK: two constructors, idle selection, combined reservations and released budgets");
         } finally {
             mindustry.gen.Groups.unit.clear();
             metrum.content.MetrumUnits.monoMetT1 = previous;
+            metrum.content.MetrumUnitBlocks.airMinerDock = previousDock;
         }
     }
 
