@@ -379,18 +379,23 @@ public class BasePlanner {
         if (pipeWater(core)) return true;
         if (pipeSteam(core)) return true;
         ItemStack demand = miningDemand.get(core);
-        if (demand != null && demand.item == mindustry.content.Items.tungsten
-            && hasLocalTungstenDrone(core, demand.item)) return false;
-        if (demand != null && buildSteamForRecovery(core, demand.item)) return true;
-        if (demand != null && demand.item == metrum.content.MetrumItems.pieceRock && buildRockScraper(core)) return true;
-        if (demand != null && (drills >= 2 || hasRecoveryGoal(core, demand.item))) {
-            if (!minedResources(core).contains(demand.item) && buildDrillLine(core, level, true)) return true;
-            if (buildDemandProducer(core, demand.item)) return true;
+        boolean waitingForTungsten = demand != null && demand.item == mindustry.content.Items.tungsten
+            && hasLocalTungstenDrone(core, demand.item);
+        if (demand != null && !waitingForTungsten) {
+            if (buildSteamForRecovery(core, demand.item)) return true;
+            if (demand.item == metrum.content.MetrumItems.pieceRock && buildRockScraper(core)) return true;
+            if (drills >= 2 || hasRecoveryGoal(core, demand.item)) {
+                if (!minedResources(core).contains(demand.item) && buildDrillLine(core, level, true)) return true;
+                if (buildDemandProducer(core, demand.item)) return true;
+            }
         }
         if (drills < 2) return false; // Keep routine expansion behind mining and recovery prerequisites.
         int factories = count(core, b -> b.block == metrum.content.MetrumPhysics.atomizer);
         if (factories < 1 + level.ordinal() / 2 && buildFactory(core)) return true;
-        if (drills < wantDrills) return buildDrillLine(core, level);
+        if (drills < wantDrills) {
+            if (buildDrillLine(core, level)) return true;
+            if (!waitingForTungsten) return false;
+        }
         int turrets = count(core, b -> b.block instanceof mindustry.world.blocks.defense.turrets.Turret);
         if (turrets < 2 + level.ordinal() * 2 && buildTurret(core, level)) return true;
         if (buildWalls(core, level)) return true;
