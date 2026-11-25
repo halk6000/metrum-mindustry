@@ -52,6 +52,24 @@ public class BuilderQueueTest {
         BuildPlan repair = BasePlanner.sandGapPlan(route.first(), furnace, sandInput);
         check(repair != null && repair.block == duct && repair.x == 3 && repair.y == 2 && repair.rotation == 1);
         route.get(1).build = lastDuct;
+        // A surviving upstream duct points at a gap before the two installed outlet ducts.
+        mindustry.world.Tile upstream = Vars.world.tile(0, 2);
+        upstream.build = mindustry.gen.Building.create();
+        upstream.build.tile = upstream;
+        upstream.build.block = duct;
+        upstream.build.rotation = 0;
+        check(!BasePlanner.sandOutletReady(upstream, furnace, sandInput));
+        BuildPlan middleRepair = BasePlanner.sandGapPlan(upstream, furnace, sandInput);
+        check(middleRepair != null && middleRepair.x == 1 && middleRepair.y == 2
+            && middleRepair.rotation == 0 && middleRepair.block == duct);
+        mindustry.world.Tile gap = Vars.world.tile(middleRepair.x, middleRepair.y);
+        gap.build = mindustry.gen.Building.create();
+        gap.build.tile = gap;
+        gap.build.block = middleRepair.block;
+        gap.build.rotation = middleRepair.rotation;
+        check(BasePlanner.sandOutletReady(upstream, furnace, sandInput));
+        check(BasePlanner.sandGapPlan(upstream, furnace, sandInput) == null);
+        upstream.build = gap.build = null;
         route.get(1).build.rotation = 2;
         check(!BasePlanner.sandOutletReady(route.first(), furnace, sandInput));
         route.get(0).build = route.get(1).build = null;
