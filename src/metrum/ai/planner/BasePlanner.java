@@ -976,6 +976,8 @@ public class BasePlanner {
 
     private static boolean buildPower(CoreBuild core, boolean allowWaterPump, Building nearestTo) {
         Block gen = Blocks.turbineCondenser;
+        // Reassess the deficit after the pending source is built, before ordering another.
+        if (hasQueuedBlock(core, gen)) return false;
         Tile best = null;
         float bestDst = Float.MAX_VALUE;
         for (int dx = -35; dx <= 35; dx++) for (int dy = -35; dy <= 35; dy++) {
@@ -998,7 +1000,7 @@ public class BasePlanner {
         if (count(core, b -> b.enabled && b instanceof mindustry.world.blocks.production.Pump.PumpBuild
             && ((mindustry.world.blocks.production.Pump.PumpBuild) b).liquidDrop == water) > 0) return false;
         Block pump = Blocks.reinforcedPump;
-        if (!pump.environmentBuildable()) return false;
+        if (!pump.environmentBuildable() || hasQueuedBlock(core, pump)) return false;
         Tile best = null;
         float distance = Float.MAX_VALUE;
         for (int dx = -35; dx <= 35; dx++) for (int dy = -35; dy <= 35; dy++) {
