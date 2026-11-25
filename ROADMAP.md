@@ -130,6 +130,8 @@
 
 - [ ] Rozpoznanie i ekspansja gospodarcza (uwaga użytkownika 24.11): drony szukają brakujących zasobów poza bezpośrednim otoczeniem rdzenia, odkrywają teren i zakładają połączone placówki; używać maszyn Metrum, uwzględnić wolfram i unikać zależności wymagających wolframu do uruchomienia jego pierwszego źródła. Dalsza symulacja przy nieobecności gracza pozostaje osobnym zadaniem.
 
+- [ ] **Regresja rozpoznawania zasobów przez planer AI — węgiel i paliwa rdzenia (25.11)**: objaw analogiczny do wcześniejszego błędu z niewidocznym piaskiem (wspólna przyczyna do potwierdzenia w kodzie). Rdzeń spala węgiel, ale planer nie widzi go w danych dronów. Udostępnić planerowi węgiel oraz wszystkie pozostałe zasoby zużywane jako paliwo przez rdzeń; uwzględniać ich zapotrzebowanie i dostępność w danych dronów. Planer powinien następnie sprawdzać dostawy taśmociągami lub dronami i planować brakujące zaopatrzenie. Test regresji: piasek, węgiel i każde paliwo rdzenia, oba sposoby transportu oraz brak dostaw.
+
 ## Mapa użytkownika — aktualizacja 24.11
 - [x] Zaimportowano Stary Wąwóz zapisany 24.11 o 08:34 z katalogu map Steam do obu nazw mapy w assets/maps; kolejny JAR i wydanie mają zawierać tę wersję.
 - Złoża Starego Wąwozu są rozmieszczone ręcznie: mają być skąpe, lecz wystarczające na pierwsze walki. Nie dosypywać losowych rud ani zwiększać złóż jako obejścia problemów gospodarki AI.
