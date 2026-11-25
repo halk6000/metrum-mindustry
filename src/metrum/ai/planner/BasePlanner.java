@@ -366,6 +366,7 @@ public class BasePlanner {
         if (pipeSteam(core)) return true;
         ItemStack demand = miningDemand.get(core);
         if (demand != null && buildSteamForRecovery(core, demand.item)) return true;
+        if (demand != null && demand.item == metrum.content.MetrumItems.pieceRock && buildRockScraper(core)) return true;
         if (drills < 2) return false; // do not spend the bootstrap budget on other factories or defences
         if (demand != null && !minedResources(core).contains(demand.item)
             && buildDrillLine(core, level, true)) return true;
@@ -1021,7 +1022,7 @@ public class BasePlanner {
     }
 
     static boolean buildDrillLine(CoreBuild core, AiLevel level, boolean demandOnly) {
-        Block chosen = Blocks.plasmaBore, duct = Blocks.duct;
+        Block chosen = Blocks.plasmaBore;
         Tile ore = findOreSpot(core, chosen, 30);
         ItemStack demand = miningDemand.get(core);
         // Consider modded wall drills as well as the vanilla plasma bore.
@@ -1070,7 +1071,32 @@ public class BasePlanner {
             }
             return false;
         }
-        final Tile site = ore;
+        return queueExtractor(core, drill, ore, rotation);
+    }
+
+    static boolean buildRockScraper(CoreBuild core) {
+        Block scraper = metrum.content.MetrumBlocks.rockScraper;
+        if (scraper == null || !scraper.environmentBuildable() || count(core, b -> b.block == scraper) > 0) return false;
+        if (prioritizeWorkshopMaterials(core, scraper)) return false;
+        Tile best = null;
+        int rotation = 0;
+        float distance = Float.MAX_VALUE;
+        for (int dx = -30; dx <= 30; dx++) for (int dy = -30; dy <= 30; dy++) {
+            Tile tile = Vars.world.tile(core.tileX() + dx, core.tileY() + dy);
+            if (tile == null || tile.block() != Blocks.air || core.dst2(tile) >= distance) continue;
+            for (int direction = 0; direction < 4; direction++) {
+                if (!Build.validPlace(scraper, core.team, tile.x, tile.y, direction, false)) continue;
+                best = tile;
+                rotation = direction;
+                distance = core.dst2(tile);
+                break;
+            }
+        }
+        return best != null && queueExtractor(core, scraper, best, rotation);
+    }
+
+    private static boolean queueExtractor(CoreBuild core, Block drill, Tile site, int rotation) {
+        Block duct = Blocks.duct;
         // Plan against a virtual footprint: no temporary or permanent block is spawned here.
         Seq<Tile> path = Astar.pathfind(site, core.tile, tile -> 1f,
             t -> t.build == core || insideFootprint(t, site, drill)
