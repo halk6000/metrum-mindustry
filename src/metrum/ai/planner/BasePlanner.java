@@ -1369,6 +1369,7 @@ public class BasePlanner {
             for (java.util.Map.Entry<Item, Integer> input : required.entrySet()) {
                 Item item = input.getKey();
                 int missing = Math.max(0, input.getValue() - factory.items.get(item));
+                if (missing == 0) continue;
                 if (input.getValue() > factory.getMaximumAccepted(item)) continue workshops;
                 if (core.items.get(item) - reserve.getOrDefault(item, 0) < missing) {
                     if (prioritizeProducerDependency(core, item, missing + reserve.getOrDefault(item, 0))) {
