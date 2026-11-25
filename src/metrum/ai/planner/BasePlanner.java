@@ -1359,7 +1359,7 @@ public class BasePlanner {
             }
             return false;
         }
-        Seq<BuildPlan> plans = extractorPlans(core, drill, ore, rotation);
+        Seq<BuildPlan> plans = extractorPlans(core, drill, ore, rotation, output);
         if (plans != null) {
             long missing = missingPlanMaterials(core, plans);
             if (missing == 0) return queueConstructionBatch(core, plans);
@@ -1399,7 +1399,8 @@ public class BasePlanner {
         java.util.Map<Item, Integer> cheapestShortages = null;
         int cheapestPlanSize = Integer.MAX_VALUE;
         for (BuildPlan site : sites) {
-            Seq<BuildPlan> plans = extractorPlans(core, scraper, Vars.world.tile(site.x, site.y), site.rotation);
+            Item output = ((mindustry.world.blocks.production.WallCrafter) scraper).output;
+            Seq<BuildPlan> plans = extractorPlans(core, scraper, Vars.world.tile(site.x, site.y), site.rotation, output);
             if (plans == null || plans.size >= cheapestPlanSize) continue;
             java.util.Map<Item, Integer> shortages = new java.util.HashMap<>();
             for (java.util.Map.Entry<Item, Integer> cost : planMaterials(plans).entrySet()) {
@@ -1422,11 +1423,24 @@ public class BasePlanner {
         return !sites.isEmpty() && stalled("brak trasy z bloku „" + scraper.localizedName + "” do rdzenia");
     }
 
-    private static Seq<BuildPlan> extractorPlans(CoreBuild core, Block drill, Tile site, int rotation) {
+    private static Seq<BuildPlan> extractorPlans(CoreBuild core, Block drill, Tile site, int rotation, Item output) {
+        if (output == mindustry.content.Items.sand && !output.buildable
+            && ((mindustry.world.blocks.storage.CoreBlock) core.block).incinerateNonBuildable) {
+            for (Building furnace : coreWorkshops(core, mindustry.content.Items.silicon)) {
+                if (furnace.team != core.team || !furnace.enabled || furnace.closestCore() != core
+                    || !isSiliconArcFurnace(furnace.block)) continue;
+                Seq<BuildPlan> direct = extractorPlansTo(core, drill, site, rotation, furnace);
+                if (direct != null) return direct;
+            }
+        }
+        return extractorPlansTo(core, drill, site, rotation, core);
+    }
+
+    private static Seq<BuildPlan> extractorPlansTo(CoreBuild core, Block drill, Tile site, int rotation, Building destination) {
         Block duct = Blocks.duct;
         // Plan against a virtual footprint: no temporary or permanent block is spawned here.
-        Seq<Tile> path = Astar.pathfind(site, core.tile, tile -> 1f,
-            t -> t.build == core || insideFootprint(t, site, drill)
+        Seq<Tile> path = Astar.pathfind(site, destination.tile, tile -> 1f,
+            t -> t.build == destination || insideFootprint(t, site, drill)
                 || (t.block() == Blocks.air && Build.validPlace(duct, core.team, t.x, t.y, 0, false)));
         if (path == null || path.isEmpty()) return null;
         Seq<BuildPlan> plans = Seq.with(new BuildPlan(site.x, site.y, rotation, drill));
