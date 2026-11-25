@@ -280,14 +280,18 @@ public class BasePlanner {
             if (home.isValid() && home.team == unit.team && unit.stack.amount > 0) {
                 Item cargo = unit.stack.item;
                 ItemStack demand = miningDemand.get(home);
+                int accepted = home.acceptStack(cargo, unit.stack.amount, unit);
+                CoreBuild nearest = unit.closestCore();
+                boolean vanillaWouldDiscardCargo = targetItem != null && nearest != null
+                    && nearest.acceptStack(targetItem, 1, unit) == 0;
                 boolean hasRequestedAmount = demand != null && cargo == demand.item
                     && unit.stack.amount >= demand.amount - home.items.get(cargo);
                 if (!mining || hasRequestedAmount || unit.stack.amount >= unit.type.itemCapacity
+                    || accepted < unit.stack.amount || vanillaWouldDiscardCargo
                     || (demand != null && cargo != demand.item)
                     || (!unit.validMine(unit.mineTile) && !canGather(unit, cargo))) {
                     mining = false;
                     unit.mineTile = null;
-                    int accepted = home.acceptStack(cargo, unit.stack.amount, unit);
                     if (accepted > 0 && unit.within(home, unit.type.range)) {
                         mindustry.gen.Call.transferItemTo(unit, cargo, accepted, unit.x, unit.y, home);
                     }
