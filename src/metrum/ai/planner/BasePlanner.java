@@ -245,23 +245,34 @@ public class BasePlanner {
     static void assignMiningDrone(CoreBuild core) {
         ItemStack demand = miningDemand.get(core);
         if (demand == null || !metrum.ai.SmartMining.canStoreMined(core, demand.item)) return;
-        if (mindustry.gen.Groups.unit.contains(u -> !u.dead() && u.team == core.team
-            && u.controller() instanceof ResourceDroneAI && ((ResourceDroneAI) u.controller()).home == core)) return;
+        mindustry.gen.Unit current = mindustry.gen.Groups.unit.find(u -> !u.dead() && u.team == core.team
+            && u.controller() instanceof ResourceDroneAI && ((ResourceDroneAI) u.controller()).home == core);
+        if (current != null && (current.stack.amount > 0 || canGather(current, demand.item))) return;
         mindustry.gen.Unit drone = mindustry.gen.Groups.unit.find(u -> u.team == core.team && !u.dead() && !u.isPlayer()
             && u.flag == 0d && u.plans.isEmpty() && u.closestCore() == core
             && metrum.ai.SmartMining.command != null && u.type.commands.contains(metrum.ai.SmartMining.command)
-            && u.type.mineItems.contains(demand.item)
             && u.controller() instanceof mindustry.entities.units.AIController
-            && !(u.controller() instanceof ResourceDroneAI) && u.canMine(demand.item)
-            && metrum.ai.SmartMining.findMineableOre(u, demand.item) != null);
-        if (drone != null) drone.controller(new ResourceDroneAI(core));
+            && !(u.controller() instanceof ResourceDroneAI) && canGather(u, demand.item));
+        if (drone == null) return;
+        if (current != null) {
+            current.mineTile = null;
+            current.controller(((ResourceDroneAI) current.controller()).previousController);
+        }
+        drone.controller(new ResourceDroneAI(core, drone.controller()));
+    }
+
+    private static boolean canGather(mindustry.gen.Unit drone, Item item) {
+        return drone.type.mineItems.contains(item) && drone.canMine(item)
+            && metrum.ai.SmartMining.findMineableOre(drone, item) != null;
     }
 
     private static class ResourceDroneAI extends metrum.ai.SmartMining.SmartMinerAI {
         final CoreBuild home;
+        final mindustry.entities.units.UnitController previousController;
 
-        ResourceDroneAI(CoreBuild home) {
+        ResourceDroneAI(CoreBuild home, mindustry.entities.units.UnitController previousController) {
             this.home = home;
+            this.previousController = previousController;
         }
 
         @Override
@@ -289,9 +300,8 @@ public class BasePlanner {
         @Override
         protected Item desired() {
             ItemStack demand = miningDemand.get(home);
-            if (demand != null && unit.canMine(demand.item)
-                && metrum.ai.SmartMining.canStoreMined(home, demand.item)
-                && metrum.ai.SmartMining.findMineableOre(unit, demand.item) != null) return demand.item;
+            if (demand != null && metrum.ai.SmartMining.canStoreMined(home, demand.item)
+                && canGather(unit, demand.item)) return demand.item;
             return super.desired();
         }
     }
