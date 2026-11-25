@@ -123,6 +123,13 @@ public class BasePlanner {
         if (demand.item == mindustry.content.Items.silicon && blockedSiliconSites.contains(core)) {
             status += "\n" + arc.Core.bundle.get("metrum.ai.silicon-site-blocked");
         }
+        if (coreBurnsSand(core) && (demand.item == mindustry.content.Items.silicon || isSandForSilicon(core, demand))) {
+            Building furnace = findSandArcFurnace(core);
+            if (furnace != null) {
+                status += "\n" + arc.Core.bundle.format("metrum.ai.arc-furnace-sand",
+                    furnace.items.get(mindustry.content.Items.sand), sandPerBatch(furnace));
+            }
+        }
         mindustry.gen.Unit drone = assignedMiningDrone(core);
         String droneStatus = drone == null ? arc.Core.bundle.get("metrum.ai.mining-drone-unassigned")
             : arc.Core.bundle.format("metrum.ai.mining-drone-assigned", drone.type.localizedName);
@@ -318,25 +325,36 @@ public class BasePlanner {
     }
 
     private static boolean feedArcFurnaceSand(CoreBuild core, mindustry.world.blocks.distribution.Duct.DuctBuild input) {
+        Building furnace = findSandArcFurnace(core);
+        if (furnace == null) return false;
         Item sand = mindustry.content.Items.sand;
+        int batch = sandPerBatch(furnace);
+        if (furnace.items.get(sand) < batch && input != null) {
+            int transferred = input.removeStack(sand, 1);
+            if (transferred > 0) furnace.items.add(sand, transferred);
+        }
+        return furnace.items.get(sand) >= batch;
+    }
+
+    private static Building findSandArcFurnace(CoreBuild core) {
         for (Building furnace : coreWorkshops(core, mindustry.content.Items.silicon)) {
             if (furnace.team != core.team || !furnace.enabled || furnace.items == null || furnace.closestCore() != core
                 || !isSiliconArcFurnace(furnace.block)) continue;
-            int batch = 0;
-            for (mindustry.world.consumers.Consume consumer : furnace.block.nonOptionalConsumers) {
-                if (!(consumer instanceof mindustry.world.consumers.ConsumeItems)) continue;
-                for (ItemStack ingredient : ((mindustry.world.consumers.ConsumeItems) consumer).items) {
-                    if (ingredient.item == sand) batch += ingredient.amount;
-                }
-            }
-            if (batch == 0 || batch > furnace.getMaximumAccepted(sand)) continue;
-            if (furnace.items.get(sand) < batch && input != null) {
-                int transferred = input.removeStack(sand, 1);
-                if (transferred > 0) furnace.items.add(sand, transferred);
-            }
-            return furnace.items.get(sand) >= batch;
+            int batch = sandPerBatch(furnace);
+            if (batch > 0 && batch <= furnace.getMaximumAccepted(mindustry.content.Items.sand)) return furnace;
         }
-        return false;
+        return null;
+    }
+
+    private static int sandPerBatch(Building furnace) {
+        int batch = 0;
+        for (mindustry.world.consumers.Consume consumer : furnace.block.nonOptionalConsumers) {
+            if (!(consumer instanceof mindustry.world.consumers.ConsumeItems)) continue;
+            for (ItemStack ingredient : ((mindustry.world.consumers.ConsumeItems) consumer).items) {
+                if (ingredient.item == mindustry.content.Items.sand) batch += ingredient.amount;
+            }
+        }
+        return batch;
     }
 
     static void assignMiningDrone(CoreBuild core) {
