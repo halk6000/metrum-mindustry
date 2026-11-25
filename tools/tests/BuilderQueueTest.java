@@ -26,6 +26,17 @@ public class BuilderQueueTest {
         check(BasePlanner.stepsToEntrance(route, furnace) == 7);
         route.get(6).build = route.get(7).build = null;
         Block drill=new Block("test-drill"), duct=new Block("test-duct"); drill.rotate=true; duct.rotate=true;
+        // Approach east, turn north into the furnace edge, then reach its anchor to the east.
+        route = arc.struct.Seq.with(Vars.world.tile(2, 2), Vars.world.tile(3, 2),
+            Vars.world.tile(3, 3), Vars.world.tile(4, 3));
+        route.get(2).build = route.get(3).build = furnace;
+        arc.struct.Seq<BuildPlan> connector = BasePlanner.planSandConnector(route,
+            BasePlanner.stepsToEntrance(route, furnace), duct);
+        check(connector.size == 2 && connector.first().rotation == 0);
+        BuildPlan outlet = connector.peek();
+        check(outlet.block == duct && outlet.x == 3 && outlet.y == 2 && outlet.rotation == 1);
+        check(Vars.world.tile(outlet.x, outlet.y).nearby(outlet.rotation).build == furnace);
+        route.get(2).build = route.get(3).build = null;
         Queue<BuildPlan> plans=new Queue<>();
         plans.addLast(new BuildPlan(4,5,1,drill));
         plans.addLast(new BuildPlan(5,5,0,duct));

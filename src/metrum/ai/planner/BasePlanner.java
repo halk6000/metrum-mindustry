@@ -678,12 +678,7 @@ public class BasePlanner {
             if (deliverySteps < 2 || deliverySteps > 7) continue;
             int direction = duct.tile.relativeTo(route.first());
             if (!Build.validPlace(duct.block, core.team, duct.tileX(), duct.tileY(), direction, false)) continue;
-            Seq<BuildPlan> connector = new Seq<>();
-            for (int i = 0; i < deliverySteps - 1; i++) {
-                Tile tile = route.get(i);
-                connector.add(new BuildPlan(tile.x, tile.y, tile.relativeTo(route.get(i + 1)), duct.block));
-            }
-            if (connector.isEmpty() || !queueConstructionBatch(core, connector)) continue;
+            if (!queueConstructionBatch(core, planSandConnector(route, deliverySteps, duct.block))) continue;
             builder.addBuild(new BuildPlan(duct.tileX(), duct.tileY(), direction, duct.block));
             return true;
         }
@@ -695,6 +690,15 @@ public class BasePlanner {
             if (route.get(i).build == destination) return i + 1;
         }
         return 0;
+    }
+
+    static Seq<BuildPlan> planSandConnector(Seq<Tile> route, int deliverySteps, Block duct) {
+        Seq<BuildPlan> plans = new Seq<>();
+        for (int i = 0; i < deliverySteps - 1; i++) {
+            Tile tile = route.get(i);
+            plans.add(new BuildPlan(tile.x, tile.y, tile.relativeTo(route.get(i + 1)), duct));
+        }
+        return plans;
     }
 
     private static boolean isDedicatedSandLine(mindustry.world.blocks.distribution.Duct.DuctBuild duct) {
