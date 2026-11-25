@@ -365,6 +365,8 @@ public class BasePlanner {
         if (pipeWater(core)) return true;
         if (pipeSteam(core)) return true;
         ItemStack demand = miningDemand.get(core);
+        if (demand != null && demand.item == mindustry.content.Items.tungsten
+            && hasLocalTungstenDrone(core, demand.item)) return false;
         if (demand != null && buildSteamForRecovery(core, demand.item)) return true;
         if (demand != null && demand.item == metrum.content.MetrumItems.pieceRock && buildRockScraper(core)) return true;
         if (demand != null && (drills >= 2 || hasRecoveryGoal(core, demand.item))) {
@@ -379,6 +381,17 @@ public class BasePlanner {
         if (turrets < 2 + level.ordinal() * 2 && buildTurret(core, level)) return true;
         if (buildWalls(core, level)) return true;
         return false; // no construction progress; step() may reclaim unused pipe space
+    }
+
+    private static boolean hasLocalTungstenDrone(CoreBuild core, Item ore) {
+        return mindustry.gen.Groups.unit.contains(drone -> {
+            if (drone.dead() || drone.team != core.team || !(drone.controller() instanceof ResourceDroneAI)
+                || ((ResourceDroneAI) drone.controller()).home != core) return false;
+            if (drone.stack.amount > 0 && drone.stack.item == ore) return true;
+            if (drone.stack.amount > 0 || !drone.canMine(ore) || !drone.type.mineItems.contains(ore)) return false;
+            Tile deposit = metrum.ai.SmartMining.findMineableOre(drone, ore);
+            return deposit != null && core.within(deposit, 30f * Vars.tilesize);
+        });
     }
 
     private static boolean hasRecoveryGoal(CoreBuild core, Item item) {
