@@ -43,6 +43,21 @@ public class BridgeFlowTest {
         Blocks.ductUnloader.init();
         Blocks.container.init();
 
+        int[] dx = {1, 0, -1, 0};
+        int[] dy = {0, 1, 0, -1};
+        for (int rotation = 0; rotation < 4; rotation++) {
+            Building intake = place(bridge, 10, 4, rotation);
+            place(bridge, 10 + 3 * dx[rotation], 4 + 3 * dy[rotation], rotation);
+            for (int side = 0; side < 4; side++) {
+                Building source = place(Blocks.duct, 10 + dx[side], 4 + dy[side], (side + 2) % 4);
+                boolean expected = side != (rotation + 2) % 4;
+                if (intake.acceptItem(source, Items.graphite) != expected) {
+                    throw new AssertionError("Incorrect intake for rotation " + rotation + ", side " + side);
+                }
+            }
+        }
+        Vars.world.tiles.fill();
+
         Building feed = place(Blocks.container, 2, 1, 1);
         Building start = place(bridge, 2, 2, 0);
         Building middle = place(bridge, 5, 2, 0);

@@ -80,7 +80,8 @@ public class ColorDuctBridge extends DuctBridge {
         @Override
         public boolean acceptItem(mindustry.gen.Building source, mindustry.type.Item item) {
             int side = relativeToEdge(source.tile);
-            return side >= 0 && (side & 1) != (rotation & 1) && super.acceptItem(source, item);
+            return side >= 0 && side != (rotation + 2) % 4 && findLink() != null
+                && items.total() < itemCapacity && occupied[(side + 2) % 4] == null;
         }
 
         @Override
