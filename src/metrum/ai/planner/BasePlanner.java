@@ -492,6 +492,23 @@ public class BasePlanner {
             unit.mineTile = null;
             Item cargo = unit.stack.item;
             int accepted = core.acceptStack(cargo, unit.stack.amount, unit);
+            if (accepted <= 0) {
+                CoreBuild alternative = null;
+                float nearest = Float.MAX_VALUE;
+                for (CoreBuild candidate : unit.team.cores()) {
+                    if (candidate == core || !candidate.isValid()
+                        || candidate.acceptStack(cargo, unit.stack.amount, unit) <= 0) continue;
+                    float distance = unit.dst2(candidate);
+                    if (distance < nearest) {
+                        nearest = distance;
+                        alternative = candidate;
+                    }
+                }
+                if (alternative != null) {
+                    core = alternative;
+                    accepted = core.acceptStack(cargo, unit.stack.amount, unit);
+                }
+            }
             if (accepted > 0 && unit.within(core, unit.type.range)) {
                 mindustry.gen.Call.transferItemTo(unit, cargo, accepted, unit.x, unit.y, core);
                 if (cargo == mindustry.content.Items.tungsten) lastTungstenProgress = Time.time;
