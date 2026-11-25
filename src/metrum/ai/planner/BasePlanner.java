@@ -399,7 +399,7 @@ public class BasePlanner {
         if (pipeWater(core)) return true;
         ItemStack demand = miningDemand.get(core);
         if (demand != null && hasRecoveryGoal(core, demand.item) && needsBoilerWater(core)
-            && hasWaterDeficit(core) && buildPower(core)) return true;
+            && hasWaterDeficit(core) && buildPower(core, true)) return true;
         if (pipeSteam(core)) return true;
         demand = miningDemand.get(core);
         boolean waitingForTungsten = demand != null && demand.item == mindustry.content.Items.tungsten
@@ -600,6 +600,10 @@ public class BasePlanner {
         return true;
     }
     static boolean buildPower(CoreBuild core) {
+        return buildPower(core, false);
+    }
+
+    private static boolean buildPower(CoreBuild core, boolean allowWaterPump) {
         Block gen = Blocks.turbineCondenser;
         Tile best = null;
         float bestDst = Float.MAX_VALUE;
@@ -611,8 +615,29 @@ public class BasePlanner {
             float d = core.dst(t);
             if (d < bestDst) { bestDst = d; best = t; }
         }
-        if (best == null) return stalled("geoterma: brak wolnego miejsca na wyziewie");
+        if (best == null) {
+            if (allowWaterPump && buildWaterPump(core)) return true;
+            return stalled("geoterma: brak wolnego miejsca na wyziewie");
+        }
         return queueConstruction(core, gen, best, 0);
+    }
+
+    private static boolean buildWaterPump(CoreBuild core) {
+        mindustry.type.Liquid water = mindustry.content.Liquids.water;
+        if (count(core, b -> b.enabled && b instanceof mindustry.world.blocks.production.Pump.PumpBuild
+            && ((mindustry.world.blocks.production.Pump.PumpBuild) b).liquidDrop == water) > 0) return false;
+        Block pump = Blocks.reinforcedPump;
+        if (!pump.environmentBuildable()) return false;
+        Tile best = null;
+        float distance = Float.MAX_VALUE;
+        for (int dx = -35; dx <= 35; dx++) for (int dy = -35; dy <= 35; dy++) {
+            Tile tile = Vars.world.tile(core.tileX() + dx, core.tileY() + dy);
+            if (tile == null || tile.floor().liquidDrop != water || core.dst2(tile) >= distance
+                || !Build.validPlace(pump, core.team, tile.x, tile.y, 0, false)) continue;
+            best = tile;
+            distance = core.dst2(tile);
+        }
+        return best != null && queueConstruction(core, pump, best, 0);
     }
 
     /** beam nodes on a lattice (every 8 tiles) between generators and consumers; nodes auto-link in straight lines */
