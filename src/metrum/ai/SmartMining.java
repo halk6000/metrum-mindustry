@@ -114,8 +114,10 @@ public class SmartMining {
             mindustry.gen.Building core = unit.closestCore();
             Item best = null;
             int bestAmount = Integer.MAX_VALUE;
+            boolean currentOreAvailable = false;
             for (Item it : unit.type.mineItems) {
                 if (!unit.canMine(it) || !canStoreMined(core, it) || Vars.indexer.findClosestOre(unit, it) == null) continue;
+                if (it == targetItem) currentOreAvailable = true;
                 int amount = core == null ? 0 : core.items.get(it);
                 if (best == null || amount < bestAmount
                     || (amount == bestAmount && it.localizedName.compareToIgnoreCase(best.localizedName) < 0)) {
@@ -125,8 +127,7 @@ public class SmartMining {
             }
             // hysteresis: keep the current ore unless another one is clearly scarcer,
             // so drones don't flip-flop every 2 s when stocks are close
-            if (targetItem != null && best != null && targetItem != best && core != null
-                && unit.canMine(targetItem) && canStoreMined(core, targetItem) && core.items.get(targetItem) <= bestAmount + 20) return targetItem;
+            if (currentOreAvailable && core.items.get(targetItem) <= bestAmount + 20) return targetItem;
             return best;
         }
 
