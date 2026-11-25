@@ -1555,8 +1555,8 @@ public class BasePlanner {
     static void supplyCoreProducers(CoreBuild core) {
         ItemStack demand = miningDemand.get(core);
         if (demand == null || core.items.get(demand.item) >= demand.amount) return;
-        if (demand.item == mindustry.content.Items.silicon) {
-            deliverBufferedSilicon(core, demand.amount);
+        if (demand.item == mindustry.content.Items.silicon || demand.item == mindustry.content.Items.tungsten) {
+            deliverBufferedOutput(core, demand);
             if (core.items.get(demand.item) >= demand.amount) return;
         }
         boolean recoveryNeedsSteam = demand.item == metrum.content.MetrumItems.steel
@@ -1598,15 +1598,21 @@ public class BasePlanner {
         }
     }
 
-    private static void deliverBufferedSilicon(CoreBuild core, int target) {
-        Item silicon = mindustry.content.Items.silicon;
-        int stocked = core.items.get(silicon);
-        int room = Math.min(target, core.storageCapacity) - stocked;
+    private static void deliverBufferedOutput(CoreBuild core, ItemStack demand) {
+        Item item = demand.item;
+        int room = Math.min(demand.amount, core.storageCapacity) - core.items.get(item);
         if (room <= 0) return;
-        Building furnace = findSandArcFurnace(core);
-        if (furnace == null || furnace.items.get(silicon) == 0) return;
-        int transferred = furnace.removeStack(silicon, Math.min(room, furnace.items.get(silicon)));
-        if (transferred > 0) core.handleStack(silicon, transferred, furnace);
+        for (Building factory : coreWorkshops(core, item)) {
+            if (factory.team != core.team || !factory.enabled || factory.items == null || factory.closestCore() != core) continue;
+            boolean source = item == mindustry.content.Items.silicon ? isSiliconArcFurnace(factory.block)
+                : factory.block == metrum.content.MetrumProduction.salvagerAdvanced;
+            if (!source || factory.items.get(item) == 0) continue;
+            int transferred = factory.removeStack(item, Math.min(room, factory.items.get(item)));
+            if (transferred <= 0) continue;
+            core.handleStack(item, transferred, factory);
+            room -= transferred;
+            if (room <= 0) return;
+        }
     }
 
     private static void bufferArcFurnaceGraphite(CoreBuild core, java.util.Map<Item, Integer> reserve) {
