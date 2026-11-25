@@ -97,7 +97,20 @@ public class BasePlanner {
         boolean heartbeat = active() && Time.time - lastPlannerTick < 120f;
         String base = heartbeat ? "[green]Metrum[] — " + plannerAction + " (kroki: " + completedSteps + ")"
             : rules.buildAi ? "[orange]Mindustry[]" : "[lightgray]brak aktywnego planera[]";
-        return "AI bazy: " + base + (rules.rtsAi ? "\n[orange]Oddziały: RTS Mindustry[]" : "");
+        return "AI bazy: " + base + (heartbeat ? resourceStatus() : "")
+            + (rules.rtsAi ? "\n[orange]Oddziały: RTS Mindustry[]" : "");
+    }
+
+    private static String resourceStatus() {
+        CoreBuild core = Vars.state.rules.waveTeam.cores().find(c -> miningDemand.containsKey(c));
+        if (core == null) return "";
+        ItemStack demand = miningDemand.get(core);
+        java.util.Deque<ItemStack> pending = deferredDemand.get(core);
+        ItemStack original = pending == null ? null : pending.peekLast();
+        String status = arc.Core.bundle.format("metrum.ai.resource-status", demand.item.localizedName,
+            core.items.get(demand.item), demand.amount);
+        if (original != null) status += "\n" + arc.Core.bundle.format("metrum.ai.deferred-status", original.item.localizedName);
+        return "\n" + status;
     }
 
     /** setting: run the Metrum AI in custom games / editor playtests too (not only the Ferrox campaign) */
