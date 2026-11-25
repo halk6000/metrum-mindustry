@@ -2,7 +2,10 @@ package metrum.ai.planner;
 
 /** Follow explicit planner jobs without vanilla BuilderAI replacing the unit's queue. */
 public class MetrumBuilderAI extends mindustry.ai.types.BuilderAI {
+    private static final float stallDelay = 30f;
     private boolean enteringIdle = true;
+    private mindustry.world.blocks.ConstructBlock.ConstructBuild observedSite;
+    private float observedProgress, stalledTime;
     private mindustry.type.Item constructionOre;
     private final metrum.ai.SmartMining.SmartMinerAI idleMiner = new metrum.ai.SmartMining.SmartMinerAI() {
         @Override
@@ -52,16 +55,30 @@ public class MetrumBuilderAI extends mindustry.ai.types.BuilderAI {
     public void updateMovement() {
         constructionOre = null;
         if (unit.plans.isEmpty()) {
+            observedSite = null;
             mineWhileIdle(false);
             return;
         }
         mindustry.entities.units.BuildPlan plan = unit.buildPlan();
         // A queued cleanup job may become unsafe if the network changes before the drone arrives.
         mindustry.world.Tile tile = mindustry.Vars.world.tile(plan.x, plan.y);
+        mindustry.world.blocks.ConstructBlock.ConstructBuild site = null;
+        if (!plan.breaking && tile != null && tile.build instanceof mindustry.world.blocks.ConstructBlock.ConstructBuild
+            && tile.build.team == unit.team) {
+            mindustry.world.blocks.ConstructBlock.ConstructBuild candidate =
+                (mindustry.world.blocks.ConstructBlock.ConstructBuild) tile.build;
+            if (candidate.current == plan.block && !candidate.activeDeconstruct) site = candidate;
+        }
+        if (site == null || site != observedSite || site.progress != observedProgress) {
+            observedSite = site;
+            observedProgress = site == null ? 0f : site.progress;
+            stalledTime = 0f;
+        } else if (stalledTime < stallDelay) {
+            if (unit.updateBuilding && unit.within(plan, unit.type.buildRange)) stalledTime += arc.util.Time.delta;
+            else stalledTime = 0f;
+        }
         if (!plan.breaking) {
-            boolean inProgress = tile != null && tile.build instanceof mindustry.world.blocks.ConstructBlock.ConstructBuild
-                && tile.build.team == unit.team
-                && ((mindustry.world.blocks.ConstructBlock.ConstructBuild) tile.build).current == plan.block;
+            boolean inProgress = site != null;
             boolean completed = tile != null && tile.build != null && tile.build.team == unit.team
                 && tile.block() == plan.block && tile.build.tileX() == plan.x && tile.build.tileY() == plan.y
                 && (!plan.block.rotate || tile.build.rotation == plan.rotation);
@@ -74,7 +91,8 @@ public class MetrumBuilderAI extends mindustry.ai.types.BuilderAI {
                 return;
             }
             mindustry.world.blocks.storage.CoreBlock.CoreBuild core = unit.closestCore();
-            if (core != null && !mindustry.Vars.state.rules.isInfiniteResources(unit.team)) {
+            if ((!inProgress || stalledTime >= stallDelay) && core != null
+                && !mindustry.Vars.state.rules.isInfiniteResources(unit.team)) {
                 float multiplier = mindustry.Vars.state.rules.buildCostMultiplier;
                 for (mindustry.type.ItemStack cost : plan.block.requirements) {
                     int needed = Math.round(cost.amount * multiplier);
@@ -106,6 +124,7 @@ public class MetrumBuilderAI extends mindustry.ai.types.BuilderAI {
             }
         }
         enteringIdle = true;
+        if (!unit.updateBuilding) stalledTime = 0f;
         unit.mineTile = null;
         idleMiner.ore = null;
         idleMiner.targetItem = null;

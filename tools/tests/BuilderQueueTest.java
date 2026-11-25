@@ -159,12 +159,21 @@ public class BuilderQueueTest {
         site.current = block;
         site.progress = 0.5f;
         siteTile.build = site;
+        builder.type.buildRange = 100f;
         core.items.set(ore, 0);
         controller.updateMovement();
+        for (int tick = 0; tick < 25; tick++) controller.updateMovement();
+        check(builder.updateBuilding && builder.mineTile == null);
+        site.progress = 0.6f;
+        controller.updateMovement();
+        for (int tick = 0; tick < 25; tick++) controller.updateMovement();
+        check(builder.updateBuilding && builder.buildPlan() == plan);
+        arc.util.Time.time += 60f;
+        for (int tick = 0; tick < 5; tick++) controller.updateMovement();
         check(!builder.updateBuilding && builder.mineTile == oreTile && builder.buildPlan() == plan);
         core.items.set(ore, 1);
         controller.updateMovement();
-        check(builder.updateBuilding && site.progress == 0.5f && builder.buildPlan() == plan);
+        check(builder.updateBuilding && site.progress == 0.6f && builder.buildPlan() == plan);
         siteTile.build = null;
         System.out.println("OK: started construction keeps its progress while the builder replenishes an empty stock");
 
