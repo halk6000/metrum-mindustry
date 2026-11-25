@@ -1157,6 +1157,7 @@ public class BasePlanner {
 
     static Block findProducer(CoreBuild core, Item item, boolean allowMissingInputs) {
         Block best = null;
+        int bestPriority = -1;
         long bestCost = Long.MAX_VALUE;
         java.util.Map<Item, Integer> reserve = economicReserve(core);
         candidates: for (Block block : Vars.content.blocks()) {
@@ -1185,7 +1186,16 @@ public class BasePlanner {
             for (java.util.Map.Entry<Item, Integer> need : required.entrySet()) {
                 if (core.items.get(need.getKey()) - reserve.getOrDefault(need.getKey(), 0) < need.getValue()) continue candidates;
             }
-            if (totalCost < bestCost) { best = block; bestCost = totalCost; }
+            int priority = 0;
+            if (item == mindustry.content.Items.silicon) {
+                if (block == metrum.content.MetrumProduction.arcFurnaceOverclocked) priority = 2;
+                else if (block == Blocks.siliconArcFurnace) priority = 1;
+            }
+            if (priority > bestPriority || (priority == bestPriority && totalCost < bestCost)) {
+                best = block;
+                bestPriority = priority;
+                bestCost = totalCost;
+            }
         }
         return best;
     }    static float thermalWaterRate(Building source) {
