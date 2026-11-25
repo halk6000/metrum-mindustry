@@ -472,7 +472,10 @@ public class BasePlanner {
             }
             ItemStack goal = demand != null && demand.item == mindustry.content.Items.tungsten ? demand : null;
             int tungstenCargo = unit.stack.item == mindustry.content.Items.tungsten ? unit.stack.amount : 0;
-            if (goal != tungstenGoal || tungstenCargo > lastTungstenCargo) lastTungstenProgress = Time.time;
+            // Replacing the demand object or changing its amount is not mining progress.
+            if ((goal != null && tungstenGoal == null) || tungstenCargo > lastTungstenCargo) {
+                lastTungstenProgress = Time.time;
+            }
             tungstenGoal = goal;
             lastTungstenCargo = tungstenCargo;
             if (unit.stack.amount > 0) {
