@@ -812,11 +812,23 @@ public class BasePlanner {
     }
 
     static boolean extendPowerGrid(CoreBuild core) {
+        ItemStack demand = miningDemand.get(core);
+        if (demand != null && needsArcFurnaceSand(core, demand)) {
+            Building furnace = findSandArcFurnace(core);
+            if (furnace != null && furnace.power != null && furnace.power.status < 0.999f && furnace.shouldConsume()
+                && furnace.items.get(mindustry.content.Items.sand) >= requiredPerBatch(furnace, mindustry.content.Items.sand)
+                && furnace.items.get(mindustry.content.Items.graphite) >= requiredPerBatch(furnace, mindustry.content.Items.graphite)
+                && extendPowerGrid(core, furnace)) return true;
+        }
+        return extendPowerGrid(core, null);
+    }
+
+    private static boolean extendPowerGrid(CoreBuild core, Building priority) {
         Block node = Blocks.beamNode;
         // Give off-lattice buildings an adjacent connection point before filling the regular grid.
         Seq<Building> endpoints = new Seq<>();
         Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
-            b -> b.power != null && (b.block.consPower != null
+            b -> (priority == null || b == priority) && b.power != null && (b.block.consPower != null
                 || b.block instanceof mindustry.world.blocks.power.PowerGenerator)
                 && !b.proximity.contains(other -> other.team == core.team && other.block == node),
             endpoints::add);
@@ -839,6 +851,7 @@ public class BasePlanner {
         for (Building a : nodes) for (Building b : nodes) {
             if (a.power.graph.getLastPowerProduced() <= 0f || b.power.graph.getLastPowerProduced() > 0f
                 || a.power.graph == b.power.graph) continue;
+            if (priority != null && b.power.graph != priority.power.graph) continue;
             pairs.add(new Building[]{a, b});
         }
         pairs.sort((a, b) -> Float.compare(a[0].dst2(a[1]), b[0].dst2(b[1])));
@@ -853,6 +866,7 @@ public class BasePlanner {
                 return queueConstruction(core, node, t, 0);
             }
         }
+        if (priority != null) return false;
         int step = 8, placed = 0;
         for (int r = step; r <= 32 && placed < 3; r += step) {
             for (int dx = -r; dx <= r && placed < 3; dx += step) for (int dy = -r; dy <= r && placed < 3; dy += step) {
