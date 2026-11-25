@@ -1558,14 +1558,28 @@ public class BasePlanner {
             && b.liquids != null && b.liquids.get(mindustry.content.Liquids.water) < 1f) > 0;
     }
     static boolean canSupplyWater(Building source) {
-        if (!source.block.outputsLiquid || source.liquids == null) return false;
-        if (source.liquids.get(mindustry.content.Liquids.water) > 1f) return true;
+        if (!source.enabled || !source.block.outputsLiquid || source.liquids == null) return false;
+        mindustry.type.Liquid water = mindustry.content.Liquids.water;
+        boolean stocked = source.liquids.get(water) > 1f;
         if (source.block instanceof mindustry.world.blocks.power.ThermalGenerator) {
             mindustry.type.LiquidStack output = ((mindustry.world.blocks.power.ThermalGenerator) source.block).outputLiquid;
-            return source.enabled && source.efficiency > 0f && output != null
-                && output.liquid == mindustry.content.Liquids.water && output.amount > 0f;
+            return output != null && output.liquid == water && output.amount > 0f
+                && (stocked || source.efficiency > 0f);
         }
-        return false;
+        if (source instanceof mindustry.world.blocks.production.Pump.PumpBuild) {
+            return stocked && ((mindustry.world.blocks.production.Pump.PumpBuild) source).liquidDrop == water;
+        }
+        if (source.block instanceof mindustry.world.blocks.production.GenericCrafter) {
+            mindustry.world.blocks.production.GenericCrafter crafter =
+                (mindustry.world.blocks.production.GenericCrafter) source.block;
+            if (!stocked) return false;
+            if (crafter.outputLiquid != null && crafter.outputLiquid.liquid == water) return true;
+            if (crafter.outputLiquids != null) for (mindustry.type.LiquidStack output : crafter.outputLiquids) {
+                if (output.liquid == water) return true;
+            }
+            return false;
+        }
+        return stocked && !source.block.consumesLiquid(water);
     }
     static boolean canSupportDrill(CoreBuild core, Block drill) {
         float multiplier = Vars.state.rules.buildCostMultiplier;
