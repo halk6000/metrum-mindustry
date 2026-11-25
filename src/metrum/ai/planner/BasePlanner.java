@@ -1555,7 +1555,8 @@ public class BasePlanner {
     static void supplyCoreProducers(CoreBuild core) {
         ItemStack demand = miningDemand.get(core);
         if (demand == null || core.items.get(demand.item) >= demand.amount) return;
-        if (demand.item == mindustry.content.Items.silicon || demand.item == mindustry.content.Items.tungsten) {
+        if (demand.item == mindustry.content.Items.silicon || demand.item == mindustry.content.Items.tungsten
+            || demand.item == metrum.content.MetrumItems.steel) {
             deliverBufferedOutput(core, demand);
             if (core.items.get(demand.item) >= demand.amount) return;
         }
@@ -1602,10 +1603,12 @@ public class BasePlanner {
         Item item = demand.item;
         int room = Math.min(demand.amount, core.storageCapacity) - core.items.get(item);
         if (room <= 0) return;
+        Block recoveryWorkshop = item == metrum.content.MetrumItems.steel
+            ? metrum.content.MetrumProduction.infusionSmelter : metrum.content.MetrumProduction.salvagerAdvanced;
         for (Building factory : coreWorkshops(core, item)) {
             if (factory.team != core.team || !factory.enabled || factory.items == null || factory.closestCore() != core) continue;
             boolean source = item == mindustry.content.Items.silicon ? isSiliconArcFurnace(factory.block)
-                : factory.block == metrum.content.MetrumProduction.salvagerAdvanced;
+                : factory.block == recoveryWorkshop;
             if (!source || factory.items.get(item) == 0) continue;
             int transferred = factory.removeStack(item, Math.min(room, factory.items.get(item)));
             if (transferred <= 0) continue;
