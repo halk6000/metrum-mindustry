@@ -982,9 +982,26 @@ public class BasePlanner {
         return queueConstructionBatch(core, plans, false);
     }
 
+    static boolean batchBlocksDockExit(Seq<BuildPlan> plans) {
+        for (BuildPlan dock : plans) {
+            if (dock.breaking || dock.block == null || dock.block != metrum.content.MetrumUnitBlocks.airMinerDock) continue;
+            Tile site = Vars.world.tile(dock.x, dock.y);
+            if (site == null) continue;
+            Tile exit = miningDockExit(site, dock.block, dock.rotation);
+            if (exit == null) continue;
+            for (BuildPlan other : plans) {
+                if (other == dock || other.breaking || other.block == null || other.block.acceptsPayload) continue;
+                Tile anchor = Vars.world.tile(other.x, other.y);
+                if (anchor != null && insideFootprint(exit, anchor, other.block)) return true;
+            }
+        }
+        return false;
+    }
+
     static boolean queueConstructionBatch(CoreBuild core, Seq<BuildPlan> plans, boolean protectReserve) {
         mindustry.gen.Unit builder = assignedBuilder(core);
         if (builder == null || !builder.plans.isEmpty() || plans.isEmpty()) return false;
+        if (batchBlocksDockExit(plans)) return false;
         java.util.Map<Item, Long> total = new java.util.HashMap<>();
         for (BuildPlan plan : plans) {
             if (!Build.validPlace(plan.block, core.team, plan.x, plan.y, plan.rotation, false)) return false;

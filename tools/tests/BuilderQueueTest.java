@@ -116,6 +116,12 @@ public class BuilderQueueTest {
             second.plans.clear();
             check(BasePlanner.constructionReserve(core).isEmpty());
             metrum.content.MetrumUnitBlocks.airMinerDock = drill;
+            BuildPlan dockPlan = new BuildPlan(4, 5, 0, drill);
+            BuildPlan obstruction = new BuildPlan(5, 5, 0, duct);
+            check(BasePlanner.batchBlocksDockExit(arc.struct.Seq.with(dockPlan, obstruction)));
+            check(BasePlanner.batchBlocksDockExit(arc.struct.Seq.with(obstruction, dockPlan)));
+            check(!BasePlanner.batchBlocksDockExit(arc.struct.Seq.with(dockPlan, new BuildPlan(4, 6, 0, duct))));
+            check(!BasePlanner.batchBlocksDockExit(arc.struct.Seq.with(dockPlan, new BuildPlan(5, 5))));
             first.addBuild(new BuildPlan(4, 5, 0, drill));
             check(BasePlanner.blocksMiningDockExit(core.team, duct, 5, 5));
             check(!BasePlanner.blocksMiningDockExit(core.team, duct, 4, 6));
