@@ -637,7 +637,9 @@ public class BasePlanner {
             best = tile;
             distance = core.dst2(tile);
         }
-        return best != null && queueConstruction(core, pump, best, 0);
+        if (best == null) return false;
+        if (prioritizeWorkshopMaterials(core, pump)) return stalled("brak materiałów na pompę wody");
+        return queueConstructionBatch(core, Seq.with(new BuildPlan(best.x, best.y, 0, pump)), true);
     }
 
     /** beam nodes on a lattice (every 8 tiles) between generators and consumers; nodes auto-link in straight lines */
