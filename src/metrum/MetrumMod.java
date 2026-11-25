@@ -103,6 +103,8 @@ public class MetrumMod extends Mod {
         metrum.ai.planner.BasePlanner.init();
         // Settings -> Metrum: enemy AI level (separate AI mode)
         if (!mindustry.Vars.headless) {
+            mindustry.mod.Mods.LoadedMod mod = mindustry.Vars.mods.getMod(MetrumMod.class);
+            if (mod != null) mod.meta.description = arc.Core.bundle.get("metrum.mod.description", mod.meta.description);
             mindustry.Vars.ui.settings.addCategory(arc.Core.bundle.get("metrum.settings"), mindustry.gen.Icon.terrain, t -> {
                 t.sliderPref(metrum.ai.planner.AiLevel.setting, 2, 0, metrum.ai.planner.AiLevel.values().length - 1, 1,
                     i -> metrum.ai.planner.AiLevel.values()[i].localized());
