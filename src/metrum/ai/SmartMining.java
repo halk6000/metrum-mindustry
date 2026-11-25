@@ -103,6 +103,11 @@ public class SmartMining {
             if (want != null && targetItem != want) {
                 targetItem = want;
                 if (ore != null && ore.drop() != want && ore.wallDrop() != want) ore = null;
+                // The active mining tile is separate from the navigation target.
+                // Stop extracting the old resource as soon as the priority changes.
+                if (unit.mineTile != null && unit.mineTile.drop() != want && unit.mineTile.wallDrop() != want) {
+                    unit.mineTile = null;
+                }
             }
         }
 
