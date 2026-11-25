@@ -11,6 +11,7 @@ public class MetrumBuilderAI extends mindustry.ai.types.BuilderAI {
         @Override
         public void updateMovement() {
             mindustry.gen.Building core = unit.closestCore();
+            if (deliverBeforeIncineration(core)) return;
             if (unit.stack.amount > 0 && core != null) {
                 int accepted = core.acceptStack(unit.stack.item, unit.stack.amount, unit);
                 if (mining && targetItem != null && core.acceptStack(targetItem, 1, unit) == 0) mining = false;

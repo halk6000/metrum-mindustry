@@ -185,6 +185,7 @@ public class BuilderQueueTest {
         catch(EOFException expected) { check(AbandonedBuilds.pending.isEmpty()); }
         checkWaterBypassFlow();
         checkCondenserFeedsImpactDrill();
+        checkIncineratedCargo();
         System.out.println("OK: saved plan order, rotations, demolition, controller restoration, queue continuation, reserved materials, released materials, invalid batch cancellation, constructor replacement queue, saved abandoned queue, truncated save");
     }
 
@@ -217,6 +218,41 @@ public class BuilderQueueTest {
         float total = delivered;
         for (mindustry.gen.Building segment : line) total += segment.liquids.get(water);
         check(Math.abs(total - 8f) < 0.001f);
+    }
+
+    static void checkIncineratedCargo() {
+        mindustry.gen.Building core = mindustry.gen.Building.create();
+        core.block = mindustry.content.Blocks.coreBastion;
+        Unit drone = UnitEntity.create();
+        drone.type = new UnitType("test-loaded-miner");
+        drone.type.range = 40f;
+        class Delivery extends metrum.ai.SmartMining.SmartMinerAI {
+            boolean deliver() { return deliverBeforeIncineration(core); }
+        }
+        for (Block consumer : new Block[]{mindustry.content.Blocks.graphitePress, mindustry.content.Blocks.siliconSmelter}) {
+            consumer.init();
+            mindustry.gen.Building factory = consumer.buildType.get();
+            factory.block = consumer;
+            factory.tile = Vars.world.tile(0, 0);
+            factory.tile.build = factory;
+            factory.team = drone.team;
+            factory.items = new mindustry.world.modules.ItemModule();
+            mindustry.type.Item cargo = consumer == mindustry.content.Blocks.graphitePress
+                ? mindustry.content.Items.coal : mindustry.content.Items.sand;
+            Vars.indexer = new mindustry.ai.BlockIndexer() {
+                @Override public mindustry.gen.Building findTile(mindustry.game.Team team, float x, float y,
+                        float range, arc.func.Boolf<mindustry.gen.Building> filter) {
+                    return filter.get(factory) ? factory : null;
+                }
+            };
+            Delivery ai = new Delivery();
+            ai.unit(drone);
+            drone.stack.set(cargo, 3);
+            check(ai.deliver() && factory.items.get(cargo) == 3 && drone.stack.amount == 0);
+            factory.enabled = false;
+            drone.stack.set(cargo, 3);
+            check(ai.deliver() && drone.stack.amount == 3);
+        }
     }
 
     static void checkCondenserFeedsImpactDrill() {

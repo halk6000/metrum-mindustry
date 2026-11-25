@@ -95,9 +95,41 @@ public class SmartMining {
     /** MinerAI whose ore choice follows the selected mode */
     public static class SmartMinerAI extends MinerAI {
         float retarget;
+        private mindustry.gen.Building cargoConsumer;
+        private float consumerRetry;
+
+        protected boolean deliverBeforeIncineration(mindustry.gen.Building core) {
+            Item cargo = unit.stack.item;
+            if (unit.stack.amount <= 0 || cargo == null || cargo.buildable || core == null
+                || !(core.block instanceof mindustry.world.blocks.storage.CoreBlock)
+                || !((mindustry.world.blocks.storage.CoreBlock) core.block).incinerateNonBuildable) return false;
+            unit.mineTile = null;
+            if (cargoConsumer != null && (!cargoConsumer.isValid() || !canReceiveCargo(unit, cargoConsumer))) {
+                cargoConsumer = null;
+                consumerRetry = 0f;
+            }
+            if (cargoConsumer == null && (consumerRetry -= arc.util.Time.delta) <= 0f) {
+                consumerRetry = 30f;
+                cargoConsumer = Vars.indexer.findTile(unit.team, core.x, core.y, 40f * Vars.tilesize,
+                    building -> canReceiveCargo(unit, building));
+            }
+            if (cargoConsumer != null) {
+                if (unit.within(cargoConsumer, unit.type.range)) {
+                    int amount = cargoConsumer.acceptStack(cargo, unit.stack.amount, unit);
+                    mindustry.gen.Call.transferItemTo(unit, cargo, amount, unit.x, unit.y, cargoConsumer);
+                } else moveTo(cargoConsumer, unit.type.range * 0.8f);
+            }
+            return true;
+        }
+
+        private boolean canReceiveCargo(Unit drone, mindustry.gen.Building building) {
+            return building.team == drone.team && building.enabled && building.block.consumesItem(drone.stack.item)
+                && building.acceptStack(drone.stack.item, drone.stack.amount, drone) > 0;
+        }
 
         @Override
         public void updateMovement() {
+            if (deliverBeforeIncineration(unit.closestCore())) return;
             super.updateMovement();
             Item want = desired();
             if (want != null && targetItem != want) {

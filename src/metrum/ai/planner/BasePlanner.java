@@ -456,6 +456,7 @@ public class BasePlanner {
 
         @Override
         public void updateMovement() {
+            if (deliverBeforeIncineration(home.isValid() && home.team == unit.team ? home : unit.closestCore())) return;
             if (unit.stack.amount == 0) deliveryTarget = null;
             if (!home.isValid() || home.team != unit.team) {
                 unit.mineTile = null;
