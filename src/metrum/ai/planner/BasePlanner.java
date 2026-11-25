@@ -1099,7 +1099,23 @@ public class BasePlanner {
     private static boolean buildDrillLine(CoreBuild core, AiLevel level, boolean demandOnly, int searchRadius) {
         Seq<BuildPlan> fallback = new Seq<>();
         if (buildDrillLine(core, demandOnly, searchRadius, new arc.struct.IntSet(), fallback)) return true;
-        return !fallback.isEmpty() && queueConstructionBatch(core, fallback);
+        if (fallback.isEmpty()) return false;
+        ItemStack demand = miningDemand.get(core);
+        if (demandOnly && demand != null) {
+            boolean recoveryAlternative = demand.item == mindustry.content.Items.tungsten
+                || (demand.item == mindustry.content.Items.coal && hasRecoveryGoal(core, demand.item));
+            // Give local production a chance before committing to a more expensive extraction route.
+            if (!recoveryAlternative || searchRadius > 30) {
+                for (java.util.Map.Entry<Item, Integer> cost : planMaterials(fallback).entrySet()) {
+                    Item material = cost.getKey();
+                    if (core.items.get(material) < cost.getValue()
+                        && prioritizeProducerDependency(core, material, cost.getValue())) {
+                        return stalled("brak materiału na wiertnię i transport: " + material.localizedName);
+                    }
+                }
+            }
+        }
+        return queueConstructionBatch(core, fallback);
     }
 
     private static boolean buildDrillLine(CoreBuild core, boolean demandOnly, int searchRadius,
