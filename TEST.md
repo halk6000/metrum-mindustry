@@ -73,3 +73,5 @@ Przy ręcznie ustawionym planie routera kanałowego i zerowym zapasie berylu dro
 W próbie z poprawką `918cc4f` ustawiono kocioł i piec stali obok siebie przy rdzeniu oraz uzupełniono wodę w kotle. Planer pobrał z rdzenia węgiel dla obu warsztatów, w tym jedną sztukę dla kotła. Po 4 tickach piec stali miał 1,2 jednostki pary. Próba obejmowała bezpośredni przepływ między budynkami.
 
 W osobnej próbie ustawiono oba warsztaty z przerwą i ręcznie zaopatrzono kocioł w wodę i węgiel. Planer wytyczył dwie rury, a dron zbudował obie. Przy 25. ticku piec miał 4,26 jednostki pary.
+
+W próbie produkcji stali warsztaty ustawiono obok siebie przy rdzeniu, kotłowi podano wodę, a piecowi zapewniono pełne zasilanie testowe. Planer podawał materiały z rdzenia. Po 161 tickach zapas stali w rdzeniu wzrósł z 0 do 2, a bufor wyjściowy pieca pozostał pusty.
