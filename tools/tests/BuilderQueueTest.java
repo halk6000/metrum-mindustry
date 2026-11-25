@@ -161,9 +161,15 @@ public class BuilderQueueTest {
         siteTile.build = site;
         builder.type.buildRange = 100f;
         core.items.set(ore, 0);
+        builder.set(siteTile.worldx() + 2f * builder.type.buildRange, siteTile.worldy());
         controller.updateMovement();
+        for (int tick = 0; tick < 60; tick++) controller.updateMovement();
+        check(builder.updateBuilding && builder.mineTile == null && builder.buildPlan() == plan);
+
+        builder.set(oreTile.worldx(), oreTile.worldy());
         for (int tick = 0; tick < 25; tick++) controller.updateMovement();
         check(builder.updateBuilding && builder.mineTile == null);
+        System.out.println("OK: travel outside build range does not count as stalled construction");
         site.progress = 0.6f;
         controller.updateMovement();
         for (int tick = 0; tick < 25; tick++) controller.updateMovement();
