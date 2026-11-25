@@ -123,7 +123,7 @@ public class BasePlanner {
         if (demand.item == mindustry.content.Items.silicon && blockedSiliconSites.contains(core)) {
             status += "\n" + arc.Core.bundle.get("metrum.ai.silicon-site-blocked");
         }
-        if (coreBurnsSand(core) && (demand.item == mindustry.content.Items.silicon || isSandForSilicon(core, demand))) {
+        if (coreBurnsSand(core) && needsArcFurnaceSand(core, demand)) {
             Building furnace = findSandArcFurnace(core);
             if (furnace != null) {
                 status += "\n" + arc.Core.bundle.format("metrum.ai.arc-furnace-sand",
@@ -285,10 +285,10 @@ public class BasePlanner {
 
     private static void observeSandInputs() {
         lastSandOnInput.keySet().removeIf(core -> !core.isValid() || core.team != Vars.state.rules.waveTeam);
-        Item sand = mindustry.content.Items.sand, silicon = mindustry.content.Items.silicon;
+        Item sand = mindustry.content.Items.sand;
         for (CoreBuild core : Vars.state.rules.waveTeam.cores()) {
             ItemStack demand = miningDemand.get(core);
-            if (demand == null || (demand.item != sand && demand.item != silicon)) continue;
+            if (demand == null || (demand.item != sand && !needsArcFurnaceSand(core, demand))) continue;
             mindustry.world.blocks.distribution.Duct.DuctBuild input = sandInput(core);
             if (input == null) for (Building storage : core.proximity) {
                 if (!isLinkedStorage(core, storage)) continue;
@@ -297,10 +297,8 @@ public class BasePlanner {
             }
             if (input != null) lastSandOnInput.put(core, Time.time);
 
-            if (!coreBurnsSand(core)) continue;
-            boolean sandForSilicon = isSandForSilicon(core, demand);
-            if (demand.item == silicon || sandForSilicon) {
-                if (feedArcFurnaceSand(core, input) && sandForSilicon) miningDemand.remove(core);
+            if (coreBurnsSand(core) && needsArcFurnaceSand(core, demand)) {
+                if (feedArcFurnaceSand(core, input) && demand.item == sand) miningDemand.remove(core);
             }
         }
     }
@@ -311,7 +309,12 @@ public class BasePlanner {
     }
 
     private static boolean isSandForSilicon(CoreBuild core, ItemStack demand) {
-        if (demand.item != mindustry.content.Items.sand) return false;
+        return demand.item == mindustry.content.Items.sand && needsArcFurnaceSand(core, demand);
+    }
+
+    private static boolean needsArcFurnaceSand(CoreBuild core, ItemStack demand) {
+        if (demand.item == mindustry.content.Items.silicon) return true;
+        if (demand.item != mindustry.content.Items.sand && demand.item != mindustry.content.Items.graphite) return false;
         java.util.Deque<ItemStack> pending = deferredDemand.get(core);
         ItemStack parent = pending == null ? null : pending.peekFirst();
         return parent != null && parent.item == mindustry.content.Items.silicon;
