@@ -880,16 +880,19 @@ public class BasePlanner {
         if (steam == null) return false;
         Seq<Building> sources = new Seq<>(), destinations = new Seq<>();
         Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
-            b -> b.enabled && b.block instanceof mindustry.world.blocks.production.GenericCrafter
-                && ((mindustry.world.blocks.production.GenericCrafter) b.block).outputLiquid != null
-                && ((mindustry.world.blocks.production.GenericCrafter) b.block).outputLiquid.liquid == steam,
-            sources::add);
+            BasePlanner::isSteamSource, sources::add);
         if (sources.isEmpty()) return false;
         Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
             b -> (b.block == metrum.content.MetrumProduction.infusionSmelter
                 || b.block == metrum.content.MetrumProduction.salvagerAdvanced) && b.enabled
                 && !sources.contains(from -> liquidLineConnected(from, b, steam)), destinations::add);
         return queueLiquidLine(core, sources, destinations, steam);
+    }
+
+    private static boolean isSteamSource(Building building) {
+        if (!building.enabled || !(building.block instanceof mindustry.world.blocks.production.GenericCrafter)) return false;
+        mindustry.type.LiquidStack output = ((mindustry.world.blocks.production.GenericCrafter) building.block).outputLiquid;
+        return output != null && output.liquid == metrum.content.MetrumLiquids.steam;
     }
 
     static boolean queueLiquidLine(CoreBuild core, Seq<Building> sources, Seq<Building> destinations, mindustry.type.Liquid liquid) {
@@ -1305,17 +1308,33 @@ public class BasePlanner {
     }
 
     static boolean queueCoreWorkshop(CoreBuild core, Block producer) {
+        mindustry.type.Liquid steam = metrum.content.MetrumLiquids.steam;
+        boolean needsSteam = steam != null && producer.consumesLiquid(steam);
+        int coreMin = -(core.block.size - 1) / 2, coreMax = core.block.size / 2;
+        int factoryMin = -(producer.size - 1) / 2, factoryMax = producer.size / 2;
+        int offsetMin = needsSteam ? coreMin - factoryMax : 0;
+        int offsetMax = needsSteam ? coreMax - factoryMin : 0;
+        Tile fallback = null;
         for (int dir = 0; dir < 4; dir++) {
-            int coreMin = -(core.block.size - 1) / 2, coreMax = core.block.size / 2;
-            int factoryMin = -(producer.size - 1) / 2, factoryMax = producer.size / 2;
             int distance = (dir == 0 || dir == 1) ? coreMax - factoryMin + 1 : factoryMax - coreMin + 1;
-            Tile site = Vars.world.tile(core.tileX() + arc.math.geom.Geometry.d4x(dir) * distance,
-                core.tileY() + arc.math.geom.Geometry.d4y(dir) * distance);
-            if (site == null || !Build.validPlace(producer, core.team, site.x, site.y, 0, false)) continue;
-            // Build materials are consumed by the drone; supplyCoreProducers loads inputs only after completion.
-            return queueConstructionBatch(core, Seq.with(new BuildPlan(site.x, site.y, 0, producer)), true);
+            int dx = arc.math.geom.Geometry.d4x(dir), dy = arc.math.geom.Geometry.d4y(dir);
+            for (int offset = offsetMin; offset <= offsetMax; offset++) {
+                Tile site = Vars.world.tile(core.tileX() + dx * distance - dy * offset,
+                    core.tileY() + dy * distance + dx * offset);
+                if (site == null || !Build.validPlace(producer, core.team, site.x, site.y, 0, false)) continue;
+                if (fallback == null) fallback = site;
+                if (!needsSteam) break;
+                for (arc.math.geom.Point2 edge : mindustry.world.Edges.getEdges(producer.size)) {
+                    Tile adjacent = Vars.world.tile(site.x + edge.x, site.y + edge.y);
+                    if (adjacent != null && adjacent.build != null && adjacent.build.team == core.team
+                        && isSteamSource(adjacent.build)) {
+                        return queueConstructionBatch(core, Seq.with(new BuildPlan(site.x, site.y, 0, producer)), true);
+                    }
+                }
+            }
+            if (!needsSteam && fallback != null) break;
         }
-        return false;
+        return fallback != null && queueConstructionBatch(core, Seq.with(new BuildPlan(fallback.x, fallback.y, 0, producer)), true);
     }
 
     private static void prioritizeMissingWorkshop(CoreBuild core, Block workshop) {
