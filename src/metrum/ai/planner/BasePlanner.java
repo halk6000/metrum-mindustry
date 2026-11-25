@@ -1145,7 +1145,7 @@ public class BasePlanner {
         Block ready = findProducer(core, item);
         final Block producer = ready != null ? ready : findProducer(core, item, true);
         if (producer == null) {
-            if (item == mindustry.content.Items.tungsten) prioritizeSalvagerSteel(core);
+            if (item == mindustry.content.Items.tungsten) prioritizeSalvagerMaterials(core);
             return false;
         }
         if (count(core, b -> b.block == producer) > 0) return false;
@@ -1200,26 +1200,25 @@ public class BasePlanner {
         return false;
     }
 
-    static void prioritizeSalvagerSteel(CoreBuild core) {
+    static void prioritizeSalvagerMaterials(CoreBuild core) {
         Block salvager = metrum.content.MetrumProduction.salvagerAdvanced;
         if (salvager == null || !salvager.environmentBuildable() || count(core, b -> b.block == salvager) > 0) return;
-        Item steel = metrum.content.MetrumItems.steel;
+        java.util.Map<Item, Integer> reserve = economicReserve(core);
         for (ItemStack cost : salvager.requirements) {
-            if (cost.item != steel) continue;
             int needed = Math.round(cost.amount * Vars.state.rules.buildCostMultiplier)
-                + economicReserve(core).getOrDefault(steel, 0);
-            if (core.items.get(steel) < needed) prioritizeProducerDependency(core, steel, needed);
-            return;
+                + reserve.getOrDefault(cost.item, 0);
+            if (core.items.get(cost.item) < needed && prioritizeProducerDependency(core, cost.item, needed)) return;
         }
     }
 
-    static void prioritizeProducerDependency(CoreBuild core, Item item, int needed) {
+    static boolean prioritizeProducerDependency(CoreBuild core, Item item, int needed) {
         ItemStack parent = miningDemand.get(core);
-        if (parent == null || parent.item == item) return;
+        if (parent == null || parent.item == item) return false;
         java.util.Deque<ItemStack> pending = deferredDemand.computeIfAbsent(core, ignored -> new java.util.ArrayDeque<>());
-        if (pending.stream().anyMatch(goal -> goal.item == item)) return;
+        if (pending.stream().anyMatch(goal -> goal.item == item)) return false;
         pending.push(parent);
         miningDemand.put(core, new ItemStack(item, needed));
+        return true;
     }
 
     static Block findProducer(CoreBuild core, Item item) {
