@@ -267,8 +267,12 @@ public class BasePlanner {
     }
 
     private static class ResourceDroneAI extends metrum.ai.SmartMining.SmartMinerAI {
+        private static final float tungstenWait = 20f * 60f;
         final CoreBuild home;
         final mindustry.entities.units.UnitController previousController;
+        private ItemStack tungstenGoal;
+        private int lastTungstenCargo;
+        private float lastTungstenProgress;
 
         ResourceDroneAI(CoreBuild home, mindustry.entities.units.UnitController previousController) {
             this.home = home;
@@ -287,9 +291,14 @@ public class BasePlanner {
                 }
                 return;
             }
+            ItemStack demand = miningDemand.get(home);
+            ItemStack goal = demand != null && demand.item == mindustry.content.Items.tungsten ? demand : null;
+            int tungstenCargo = unit.stack.item == mindustry.content.Items.tungsten ? unit.stack.amount : 0;
+            if (goal != tungstenGoal || tungstenCargo > lastTungstenCargo) lastTungstenProgress = Time.time;
+            tungstenGoal = goal;
+            lastTungstenCargo = tungstenCargo;
             if (unit.stack.amount > 0) {
                 Item cargo = unit.stack.item;
-                ItemStack demand = miningDemand.get(home);
                 int accepted = home.acceptStack(cargo, unit.stack.amount, unit);
                 CoreBuild nearest = unit.closestCore();
                 boolean vanillaWouldDiscardCargo = targetItem != null && nearest != null
@@ -314,8 +323,13 @@ public class BasePlanner {
             int accepted = core.acceptStack(cargo, unit.stack.amount, unit);
             if (accepted > 0 && unit.within(core, unit.type.range)) {
                 mindustry.gen.Call.transferItemTo(unit, cargo, accepted, unit.x, unit.y, core);
+                if (cargo == mindustry.content.Items.tungsten) lastTungstenProgress = Time.time;
             }
             moveTo(core, unit.type.range * 0.8f);
+        }
+
+        private boolean isMakingTungstenProgress() {
+            return tungstenGoal == null || Time.time - lastTungstenProgress < tungstenWait;
         }
 
         @Override
@@ -387,6 +401,7 @@ public class BasePlanner {
         return mindustry.gen.Groups.unit.contains(drone -> {
             if (drone.dead() || drone.team != core.team || !(drone.controller() instanceof ResourceDroneAI)
                 || ((ResourceDroneAI) drone.controller()).home != core) return false;
+            if (!((ResourceDroneAI) drone.controller()).isMakingTungstenProgress()) return false;
             if (drone.stack.amount > 0 && drone.stack.item == ore) return true;
             if (drone.stack.amount > 0 || !drone.canMine(ore) || !drone.type.mineItems.contains(ore)) return false;
             Tile deposit = metrum.ai.SmartMining.findMineableOre(drone, ore);
