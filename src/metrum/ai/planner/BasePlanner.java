@@ -173,9 +173,16 @@ public class BasePlanner {
     }
 
     static mindustry.gen.Unit assignedBuilder(CoreBuild core) {
-        return mindustry.gen.Groups.unit.find(u -> u.team == core.team && !u.dead()
-            && u.type == metrum.content.MetrumUnits.monoMetT1 && u.flag == builderHomeFlag(core)
-            && u.controller() instanceof MetrumBuilderAI);
+        mindustry.gen.Unit busy = null;
+        for (mindustry.gen.Unit unit : mindustry.gen.Groups.unit) {
+            if (unit.team != core.team || unit.dead() || unit.isPlayer()
+                || unit.type != metrum.content.MetrumUnits.monoMetT1 || unit.flag != builderHomeFlag(core)
+                || !(unit.controller() instanceof MetrumBuilderAI)) continue;
+            if (unit.plans.isEmpty()) return unit;
+            if (busy == null) busy = unit;
+        }
+        // Preserve the busy result so the planner still waits when every constructor has work.
+        return busy;
     }
     static boolean hasBuilder(CoreBuild core) {
         return mindustry.gen.Groups.unit.contains(u -> u.team == core.team
