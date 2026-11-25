@@ -152,6 +152,18 @@ public class BuilderQueueTest {
         check(!builder.updateBuilding && builder.plans.size == 1 && builder.buildPlan() == plan);
         System.out.println("OK: empty builder starts mining the missing ore and retains its plan");
 
+        builder.stack.amount = 3;
+        builder.stack.item = ore;
+        builder.plans.clear();
+        core.items.set(ore, core.getMaximumAccepted(ore));
+        controller.updateMovement();
+        check(builder.stack.amount == 3 && builder.mineTile == null);
+        core.items.remove(ore, 3);
+        controller.updateMovement();
+        check(builder.stack.amount == 0 && core.items.get(ore) == core.getMaximumAccepted(ore));
+        core.items.set(ore, 2);
+        System.out.println("OK: builder keeps mined cargo until the core has room again");
+
         indexer.originalAvailable = false;
         indexer.alternateAvailable = true;
         builder.type.mineItems.add(alternateOre);

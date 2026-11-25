@@ -8,10 +8,12 @@ public class MetrumBuilderAI extends mindustry.ai.types.BuilderAI {
         @Override
         public void updateMovement() {
             mindustry.gen.Building core = unit.closestCore();
-            if (!mining && unit.stack.amount > 0 && core != null) {
+            if (unit.stack.amount > 0 && core != null) {
                 int accepted = core.acceptStack(unit.stack.item, unit.stack.amount, unit);
+                if (mining && targetItem != null && core.acceptStack(targetItem, 1, unit) == 0) mining = false;
                 // Handle partial deliveries here because vanilla MinerAI clears the entire stack.
                 if (accepted < unit.stack.amount) {
+                    mining = false;
                     unit.mineTile = null;
                     if (accepted > 0 && unit.within(core, unit.type.range)) {
                         mindustry.gen.Call.transferItemTo(unit, unit.stack.item, accepted, unit.x, unit.y, core);
