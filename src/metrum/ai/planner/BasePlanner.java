@@ -1346,7 +1346,9 @@ public class BasePlanner {
                 plans.add(new BuildPlan(t.x, t.y, t.relativeTo(next), conduit));
             }
             if (plans.size <= pipeBudget) return queueConstructionBatch(core, plans);
-            boolean neededForDemand = water ? recoveryWater && to.block == metrum.content.MetrumProduction.steamFurnace
+            boolean neededForDemand = water ? recoveryWater && to.enabled && to.closestCore() == core
+                && (to.block == metrum.content.MetrumProduction.steamFurnace
+                    || to.block == metrum.content.MetrumProduction.stoneCrusher)
                 : demand != null && producesItem(to.block, demand.item);
             if (neededForDemand) {
                 shortestDemandLine = Math.min(shortestDemandLine, plans.size);
@@ -1357,7 +1359,7 @@ public class BasePlanner {
                 long needed = (long) Math.round(cost.amount * Vars.state.rules.buildCostMultiplier) * shortestDemandLine;
                 if (needed <= Integer.MAX_VALUE && core.items.get(cost.item) < needed
                     && prioritizeProducerDependency(core, cost.item, (int) needed)) {
-                    return stalled((water ? "brak materiału na wodę do kotła: " : "brak materiału na rurociąg parowy: ")
+                    return stalled((water ? "brak materiału na rurociąg wodny: " : "brak materiału na rurociąg parowy: ")
                         + cost.item.localizedName);
                 }
             }
