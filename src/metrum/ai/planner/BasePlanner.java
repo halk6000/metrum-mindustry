@@ -859,12 +859,14 @@ public class BasePlanner {
         pairs.sort((a, b) -> Float.compare(a[0].dst2(a[1]), b[0].dst2(b[1])));
         Block conduit = Blocks.reinforcedConduit;
         boolean water = liquid == mindustry.content.Liquids.water;
+        ItemStack demand = water ? null : miningDemand.get(core);
+        int shortestDemandLine = Integer.MAX_VALUE;
         int pipeBudget = Integer.MAX_VALUE;
         for (ItemStack cost : conduit.requirements) {
             int perPipe = Math.round(cost.amount * Vars.state.rules.buildCostMultiplier);
             if (perPipe > 0) pipeBudget = Math.min(pipeBudget, core.items.get(cost.item) / perPipe);
         }
-        if (pipeBudget == 0) return false;
+        if (pipeBudget == 0 && demand == null) return false;
         for (Building[] pair : pairs) {
             Building from = pair[0], to = pair[1];
             Seq<Tile> path = Astar.pathfind(from.tile, to.tile, tile -> 1f,
@@ -881,6 +883,18 @@ public class BasePlanner {
             }
             if (plans.size <= pipeBudget) return queueConstructionBatch(core, plans);
             if (water) return false;
+            if (demand != null && producesItem(to.block, demand.item)) {
+                shortestDemandLine = Math.min(shortestDemandLine, plans.size);
+            }
+        }
+        if (shortestDemandLine != Integer.MAX_VALUE) {
+            for (ItemStack cost : conduit.requirements) {
+                long needed = (long) Math.round(cost.amount * Vars.state.rules.buildCostMultiplier) * shortestDemandLine;
+                if (needed <= Integer.MAX_VALUE && core.items.get(cost.item) < needed
+                    && prioritizeProducerDependency(core, cost.item, (int) needed)) {
+                    return stalled("brak materiału na rurociąg parowy: " + cost.item.localizedName);
+                }
+            }
         }
         return false;
     }
