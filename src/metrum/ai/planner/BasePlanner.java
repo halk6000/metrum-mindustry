@@ -1353,7 +1353,7 @@ public class BasePlanner {
         boolean recoveryNeedsSteam = demand.item == metrum.content.MetrumItems.steel
             || demand.item == mindustry.content.Items.tungsten;
         java.util.Map<Item, Integer> reserve = economicReserve(core);
-        workshops: for (Building factory : core.proximity) {
+        workshops: for (Building factory : coreWorkshops(core, demand.item)) {
             if (factory.team != core.team || !factory.enabled || factory.items == null
                 || factory.closestCore() != core) continue;
             boolean recoveryBoiler = recoveryNeedsSteam
@@ -1388,7 +1388,7 @@ public class BasePlanner {
         }
     }
     static boolean buildDemandProducer(CoreBuild core, Item item) {
-        if (item == mindustry.content.Items.silicon && core.proximity.contains(factory -> factory.team == core.team
+        if (item == mindustry.content.Items.silicon && coreWorkshops(core, item).contains(factory -> factory.team == core.team
             && factory.enabled && factory.items != null && factory.closestCore() == core
             && (factory.block == Blocks.siliconArcFurnace
                 || factory.block == metrum.content.MetrumProduction.arcFurnaceOverclocked))) return false;
@@ -1434,6 +1434,28 @@ public class BasePlanner {
         return queueCoreWorkshop(core, producer);
     }
 
+    private static Seq<Building> coreWorkshops(CoreBuild core, Item item) {
+        if (item != mindustry.content.Items.silicon) return core.proximity;
+        Seq<Building> workshops = new Seq<>();
+        workshops.addAll(core.proximity);
+        for (Building storage : core.proximity) {
+            if (!isLinkedStorage(core, storage)) continue;
+            for (Building factory : storage.proximity) {
+                if (isSiliconArcFurnace(factory.block) && !workshops.contains(factory)) workshops.add(factory);
+            }
+        }
+        return workshops;
+    }
+
+    private static boolean isLinkedStorage(CoreBuild core, Building building) {
+        return building.team == core.team && building instanceof mindustry.world.blocks.storage.StorageBlock.StorageBuild
+            && ((mindustry.world.blocks.storage.StorageBlock.StorageBuild) building).linkedCore == core;
+    }
+
+    private static boolean isSiliconArcFurnace(Block block) {
+        return block == Blocks.siliconArcFurnace || block == metrum.content.MetrumProduction.arcFurnaceOverclocked;
+    }
+
     static boolean buildSteamForRecovery(CoreBuild core, Item item) {
         if (item != metrum.content.MetrumItems.steel && item != mindustry.content.Items.tungsten) return false;
         Block boiler = metrum.content.MetrumProduction.steamFurnace;
@@ -1448,8 +1470,7 @@ public class BasePlanner {
     static boolean queueCoreWorkshop(CoreBuild core, Block producer) {
         mindustry.type.Liquid steam = metrum.content.MetrumLiquids.steam;
         boolean needsSteam = steam != null && producer.consumesLiquid(steam);
-        boolean scanCoreEdge = needsSteam || producer == Blocks.siliconArcFurnace
-            || producer == metrum.content.MetrumProduction.arcFurnaceOverclocked;
+        boolean scanCoreEdge = needsSteam || isSiliconArcFurnace(producer);
         int coreMin = -(core.block.size - 1) / 2, coreMax = core.block.size / 2;
         int factoryMin = -(producer.size - 1) / 2, factoryMax = producer.size / 2;
         int offsetMin = scanCoreEdge ? coreMin - factoryMax : 0;
@@ -1476,7 +1497,26 @@ public class BasePlanner {
                 }
             }
         }
+        if (fallback == null && isSiliconArcFurnace(producer)) fallback = findLinkedWorkshopSite(core, producer);
         return fallback != null && queueConstructionBatch(core, Seq.with(new BuildPlan(fallback.x, fallback.y, 0, producer)), true);
+    }
+
+    private static Tile findLinkedWorkshopSite(CoreBuild core, Block producer) {
+        int factoryMin = -(producer.size - 1) / 2, factoryMax = producer.size / 2;
+        for (Building storage : core.proximity) {
+            if (!isLinkedStorage(core, storage)) continue;
+            int storageMin = -(storage.block.size - 1) / 2, storageMax = storage.block.size / 2;
+            for (int dir = 0; dir < 4; dir++) {
+                int distance = dir < 2 ? storageMax - factoryMin + 1 : factoryMax - storageMin + 1;
+                int dx = arc.math.geom.Geometry.d4x(dir), dy = arc.math.geom.Geometry.d4y(dir);
+                for (int offset = storageMin - factoryMax; offset <= storageMax - factoryMin; offset++) {
+                    Tile site = Vars.world.tile(storage.tileX() + dx * distance - dy * offset,
+                        storage.tileY() + dy * distance + dx * offset);
+                    if (site != null && Build.validPlace(producer, core.team, site.x, site.y, 0, false)) return site;
+                }
+            }
+        }
+        return null;
     }
 
     private static void prioritizeMissingWorkshop(CoreBuild core, Block workshop) {
