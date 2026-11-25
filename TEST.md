@@ -67,3 +67,5 @@ Problemy: zrzut ekranu + `saves/last_log.txt` po zamknięciu gry.
 Mindustry 160.8, sektor Ferrox 12, kopia zapisu w osobnym katalogu gry, tylko Metrum z poprawką `10054db`. W ciągu 900 ticków dron konstrukcyjny pozostawał przy złożu berylu. Odczyty ładunku wynosiły kolejno 50, 10, 26, 42, 59 i 12 sztuk. Przy 720 tickach miał jeden plan budowy, przy 900 kolejka była pusta.
 
 Powtórka z odczytem rdzenia co tick potwierdziła dwie dostawy berylu. Przy 8. ticku ładunek spadł z 66 do 0, a zapas rdzenia wzrósł z 1676 do 1742. Przy 747. ticku ładunek spadł z 60 do 0, a zapas wzrósł z 1734 do 1794.
+
+Przy ręcznie ustawionym planie routera kanałowego i zerowym zapasie berylu dron zaczął wydobycie ze ściany przy 4. ticku, dostarczył 11 sztuk do rdzenia przy 142. ticku i ukończył router przy 173. ticku. Przed poprawką wyszukiwania złóż plan kanału z pustym rdzeniem tkwił w kolejce przez 1200 ticków.

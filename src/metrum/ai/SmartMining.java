@@ -86,6 +86,12 @@ public class SmartMining {
         return core != null && core.items != null && item != null
             && core.items.get(item) < core.getMaximumAccepted(item);
     }
+
+    public static Tile findMineableOre(Unit unit, Item item) {
+        Tile floorOre = unit.type.mineFloor ? Vars.indexer.findClosestOre(unit, item) : null;
+        if (floorOre != null) return floorOre;
+        return unit.type.mineWalls ? Vars.indexer.findClosestWallOre(unit, item) : null;
+    }
     /** MinerAI whose ore choice follows the selected mode */
     public static class SmartMinerAI extends MinerAI {
         float retarget;
@@ -116,7 +122,7 @@ public class SmartMining {
             int bestAmount = Integer.MAX_VALUE;
             boolean currentOreAvailable = false;
             for (Item it : unit.type.mineItems) {
-                if (!unit.canMine(it) || !canStoreMined(core, it) || Vars.indexer.findClosestOre(unit, it) == null) continue;
+                if (!unit.canMine(it) || !canStoreMined(core, it) || findMineableOre(unit, it) == null) continue;
                 if (it == targetItem) currentOreAvailable = true;
                 int amount = core == null ? 0 : core.items.get(it);
                 if (best == null || amount < bestAmount
@@ -136,7 +142,7 @@ public class SmartMining {
             float bestDst = Float.MAX_VALUE;
             for (Item it : unit.type.mineItems) {
                 if (!unit.canMine(it) || !canStoreMined(unit.closestCore(), it)) continue;
-                Tile t = Vars.indexer.findClosestOre(unit, it);
+                Tile t = findMineableOre(unit, it);
                 if (t != null && unit.dst(t) < bestDst) {
                     bestDst = unit.dst(t);
                     best = it;

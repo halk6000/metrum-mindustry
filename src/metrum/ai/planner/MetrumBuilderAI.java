@@ -35,7 +35,7 @@ public class MetrumBuilderAI extends mindustry.ai.types.BuilderAI {
             mindustry.type.ItemStack demand = home == null ? null : BasePlanner.miningDemand.get(home);
             if (demand != null && unit.canMine(demand.item)
                 && metrum.ai.SmartMining.canStoreMined(unit.closestCore(), demand.item)
-                && mindustry.Vars.indexer.findClosestOre(unit, demand.item) != null) return demand.item;
+                && metrum.ai.SmartMining.findMineableOre(unit, demand.item) != null) return demand.item;
             return super.desired();
         }
     };
@@ -102,7 +102,7 @@ public class MetrumBuilderAI extends mindustry.ai.types.BuilderAI {
                     if (missing <= 0 || !metrum.ai.SmartMining.canStoreMined(core, cost.item)) continue;
                     boolean deliverCargo = unit.stack.item == cost.item && unit.stack.amount >= missing;
                     if (!deliverCargo && (!unit.canMine(cost.item)
-                        || mindustry.Vars.indexer.findClosestOre(unit, cost.item) == null)) continue;
+                        || metrum.ai.SmartMining.findMineableOre(unit, cost.item) == null)) continue;
                     constructionOre = cost.item;
                     mineWhileIdle(deliverCargo);
                     return;
