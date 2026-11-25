@@ -283,7 +283,8 @@ public class BasePlanner {
                 boolean hasRequestedAmount = demand != null && cargo == demand.item
                     && unit.stack.amount >= demand.amount - home.items.get(cargo);
                 if (!mining || hasRequestedAmount || unit.stack.amount >= unit.type.itemCapacity
-                    || (demand != null && cargo != demand.item)) {
+                    || (demand != null && cargo != demand.item)
+                    || (!unit.validMine(unit.mineTile) && !canGather(unit, cargo))) {
                     mining = false;
                     unit.mineTile = null;
                     int accepted = home.acceptStack(cargo, unit.stack.amount, unit);
