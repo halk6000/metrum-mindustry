@@ -840,7 +840,7 @@ public class BasePlanner {
                     || (dy >= min && dy <= max && (dx == min - 1 || dx == max + 1)))) continue;
                 Tile t = Vars.world.tile(endpoint.tileX() + dx, endpoint.tileY() + dy);
                 if (t == null || t.block() != Blocks.air || !Build.validPlace(node, core.team, t.x, t.y, 0, false)) continue;
-                return queueConstruction(core, node, t, 0);
+                return queuePowerNode(core, node, t, priority != null);
             }
         }
         // Grow a continuous connection from a producing graph to an isolated node.
@@ -863,7 +863,7 @@ public class BasePlanner {
             if (route == null || route.isEmpty()) continue;
             for (Tile t : route) {
                 if (t.build != null) continue;
-                return queueConstruction(core, node, t, 0);
+                return queuePowerNode(core, node, t, priority != null);
             }
         }
         if (priority != null) return false;
@@ -877,6 +877,18 @@ public class BasePlanner {
             }
         }
         return placed > 0 || stalled("sieć prądu: brak dostępnego miejsca na dalsze węzły");
+    }
+
+    private static boolean queuePowerNode(CoreBuild core, Block node, Tile site, boolean priority) {
+        if (priority) {
+            for (ItemStack cost : node.requirements) {
+                int needed = Math.round(cost.amount * Vars.state.rules.buildCostMultiplier);
+                if (core.items.get(cost.item) < needed && prioritizeProducerDependency(core, cost.item, needed)) {
+                    return stalled("brak materiału na zasilanie pieca łukowego: " + cost.item.localizedName);
+                }
+            }
+        }
+        return queueConstruction(core, node, site, 0);
     }
 
     // ---------- step 3: water - conduit from a water source (turbine condenser / pump) to a thirsty consumer ----------
