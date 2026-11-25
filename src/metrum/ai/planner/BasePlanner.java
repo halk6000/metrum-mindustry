@@ -1555,6 +1555,10 @@ public class BasePlanner {
     static void supplyCoreProducers(CoreBuild core) {
         ItemStack demand = miningDemand.get(core);
         if (demand == null || core.items.get(demand.item) >= demand.amount) return;
+        if (demand.item == mindustry.content.Items.silicon) {
+            deliverBufferedSilicon(core, demand.amount);
+            if (core.items.get(demand.item) >= demand.amount) return;
+        }
         boolean recoveryNeedsSteam = demand.item == metrum.content.MetrumItems.steel
             || demand.item == mindustry.content.Items.tungsten;
         java.util.Map<Item, Integer> reserve = economicReserve(core);
@@ -1592,6 +1596,17 @@ public class BasePlanner {
                 factory.items.add(input.getKey(), missing);
             }
         }
+    }
+
+    private static void deliverBufferedSilicon(CoreBuild core, int target) {
+        Item silicon = mindustry.content.Items.silicon;
+        int stocked = core.items.get(silicon);
+        int room = Math.min(target, core.storageCapacity) - stocked;
+        if (room <= 0) return;
+        Building furnace = findSandArcFurnace(core);
+        if (furnace == null || furnace.items.get(silicon) == 0) return;
+        int transferred = furnace.removeStack(silicon, Math.min(room, furnace.items.get(silicon)));
+        if (transferred > 0) core.handleStack(silicon, transferred, furnace);
     }
 
     private static void bufferArcFurnaceGraphite(CoreBuild core, java.util.Map<Item, Integer> reserve) {
