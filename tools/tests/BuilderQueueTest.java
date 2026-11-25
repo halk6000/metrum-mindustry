@@ -59,6 +59,7 @@ public class BuilderQueueTest {
         check(BasePlanner.planMaterials(backup).get(iron)==9);
         checkCargoDelivery(drill, iron);
         checkTwoBuilders(drill, duct, iron);
+        checkDeliveryTarget(iron);
         check(BasePlanner.restoreBuildQueue(unit,backup));
         check(unit.plans.size==2 && unit.buildPlan().block==drill);
         check(!BasePlanner.restoreBuildQueue(unit,backup));
@@ -74,6 +75,33 @@ public class BuilderQueueTest {
         try { new AbandonedBuilds().read(new DataInputStream(new ByteArrayInputStream(broken))); throw new AssertionError(); }
         catch(EOFException expected) { check(AbandonedBuilds.pending.isEmpty()); }
         System.out.println("OK: saved plan order, rotations, demolition, controller restoration, queue continuation, reserved materials, released materials, invalid batch cancellation, constructor replacement queue, saved abandoned queue, truncated save");
+    }
+
+    static void checkDeliveryTarget(mindustry.type.Item cargo) {
+        boolean[] valid = {true};
+        int[] room = {10};
+        mindustry.world.blocks.storage.CoreBlock block = new mindustry.world.blocks.storage.CoreBlock("delivery-target-core");
+        mindustry.world.blocks.storage.CoreBlock.CoreBuild target = block.new CoreBuild() {
+            @Override public boolean isValid() { return valid[0]; }
+            @Override public int acceptStack(mindustry.type.Item item, int amount, mindustry.gen.Teamc source) {
+                return Math.min(room[0], amount);
+            }
+        };
+        Unit drone = UnitEntity.create();
+        drone.team = target.team = mindustry.game.Team.crux;
+        drone.stack = new mindustry.type.ItemStack(cargo, 5);
+        check(BasePlanner.retainedDeliveryTarget(drone, target) == target);
+        room[0] = 1;
+        check(BasePlanner.retainedDeliveryTarget(drone, target) == target);
+        room[0] = 0;
+        check(BasePlanner.retainedDeliveryTarget(drone, target) == null);
+        room[0] = 10; valid[0] = false;
+        check(BasePlanner.retainedDeliveryTarget(drone, target) == null);
+        valid[0] = true; target.team = mindustry.game.Team.sharded;
+        check(BasePlanner.retainedDeliveryTarget(drone, target) == null);
+        target.team = drone.team; drone.stack.amount = 0;
+        check(BasePlanner.retainedDeliveryTarget(drone, target) == null);
+        System.out.println("OK: delivery target retained with partial room, released when full, lost, hostile or cargo empty");
     }
 
     static void checkTwoBuilders(Block drill, Block duct, mindustry.type.Item iron) {

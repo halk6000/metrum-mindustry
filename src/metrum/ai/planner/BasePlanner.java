@@ -430,6 +430,11 @@ public class BasePlanner {
             && metrum.ai.SmartMining.findMineableOre(drone, item) != null;
     }
 
+    static CoreBuild retainedDeliveryTarget(mindustry.gen.Unit drone, CoreBuild target) {
+        return drone.stack.amount > 0 && target != null && target.isValid() && target.team == drone.team
+            && target.acceptStack(drone.stack.item, drone.stack.amount, drone) > 0 ? target : null;
+    }
+
     private static class ResourceDroneAI extends metrum.ai.SmartMining.SmartMinerAI {
         private static final float tungstenWait = 20f * 60f;
         final CoreBuild home;
@@ -493,11 +498,9 @@ public class BasePlanner {
             mining = false;
             unit.mineTile = null;
             Item cargo = unit.stack.item;
-            if (deliveryTarget != null && deliveryTarget.isValid() && deliveryTarget.team == unit.team
-                && deliveryTarget.acceptStack(cargo, unit.stack.amount, unit) > 0) {
+            deliveryTarget = retainedDeliveryTarget(unit, deliveryTarget);
+            if (deliveryTarget != null) {
                 core = deliveryTarget;
-            } else {
-                deliveryTarget = null;
             }
             int accepted = core.acceptStack(cargo, unit.stack.amount, unit);
             if (accepted <= 0) {
