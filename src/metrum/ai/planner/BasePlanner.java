@@ -673,13 +673,14 @@ public class BasePlanner {
                 tile -> tile.build == furnace || (tile.block() == Blocks.air
                     && duct.within(tile, 6f * Vars.tilesize)
                     && Build.validPlace(duct.block, core.team, tile.x, tile.y, 0, false)));
-            if (route == null || route.size < 2 || route.size > 7) continue;
+            if (route == null) continue;
+            int deliverySteps = stepsToEntrance(route, furnace);
+            if (deliverySteps < 2 || deliverySteps > 7) continue;
             int direction = duct.tile.relativeTo(route.first());
             if (!Build.validPlace(duct.block, core.team, duct.tileX(), duct.tileY(), direction, false)) continue;
             Seq<BuildPlan> connector = new Seq<>();
-            for (int i = 0; i < route.size - 1; i++) {
+            for (int i = 0; i < deliverySteps - 1; i++) {
                 Tile tile = route.get(i);
-                if (tile.build == furnace) break;
                 connector.add(new BuildPlan(tile.x, tile.y, tile.relativeTo(route.get(i + 1)), duct.block));
             }
             if (connector.isEmpty() || !queueConstructionBatch(core, connector)) continue;
@@ -687,6 +688,13 @@ public class BasePlanner {
             return true;
         }
         return false;
+    }
+
+    static int stepsToEntrance(Seq<Tile> route, Building destination) {
+        for (int i = 0; i < route.size; i++) {
+            if (route.get(i).build == destination) return i + 1;
+        }
+        return 0;
     }
 
     private static boolean isDedicatedSandLine(mindustry.world.blocks.distribution.Duct.DuctBuild duct) {

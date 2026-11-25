@@ -18,6 +18,13 @@ public class BuilderQueueTest {
         mindustry.content.Blocks.air=new mindustry.world.blocks.environment.Floor("air");
         Vars.world=new mindustry.core.World(); Vars.world.tiles=new mindustry.world.Tiles(8,8);
         for(int x=0;x<8;x++) for(int y=0;y<8;y++) Vars.world.tiles.set(x,y,new mindustry.world.Tile(x,y));
+        arc.struct.Seq<mindustry.world.Tile> route = new arc.struct.Seq<>();
+        for (int x = 0; x < 8; x++) route.add(Vars.world.tile(x, 2));
+        mindustry.gen.Building furnace = mindustry.gen.Building.create();
+        check(BasePlanner.stepsToEntrance(route, furnace) == 0);
+        route.get(6).build = route.get(7).build = furnace;
+        check(BasePlanner.stepsToEntrance(route, furnace) == 7);
+        route.get(6).build = route.get(7).build = null;
         Block drill=new Block("test-drill"), duct=new Block("test-duct"); drill.rotate=true; duct.rotate=true;
         Queue<BuildPlan> plans=new Queue<>();
         plans.addLast(new BuildPlan(4,5,1,drill));
