@@ -1398,6 +1398,9 @@ public class BasePlanner {
                 .computeIfAbsent(to, ignored -> waterLineConnected(from, to));
         }
     }
+    static boolean waterRepairSiteClear(Tile site, Team team, Block conduit) {
+        return transportSiteClear(team, conduit, site) && waterSiteSafe(site, team);
+    }
     static boolean repairWaterGap(CoreBuild core, Seq<Building> sources, Seq<Building> destinations, WaterConnections connections) {
         Block conduit = Blocks.reinforcedConduit;
         if (destinations.isEmpty()) return false;
@@ -1405,7 +1408,7 @@ public class BasePlanner {
             if (source.block != conduit || !waterCompatible(source)) continue;
             Tile gap = source.tile.nearby(source.rotation);
             if (gap == null || gap.block() != Blocks.air
-                || !(waterSiteSafe(gap, core.team) && Build.validPlace(conduit, core.team, gap.x, gap.y, 0, false))) continue;
+                || !(waterRepairSiteClear(gap, core.team, conduit) && Build.validPlace(conduit, core.team, gap.x, gap.y, 0, false))) continue;
             for (int direction = 0; direction < 4; direction++) {
                 if (direction == (source.rotation + 2) % 4) continue;
                 Tile beyond = gap.nearby(direction);
@@ -1436,7 +1439,7 @@ public class BasePlanner {
                 if (t == null) break;
                 if (t.build == null) {
                     if (distance > 6 || t.block() != Blocks.air
-                        || !(waterSiteSafe(t, core.team) && Build.validPlace(conduit, core.team, t.x, t.y, source.rotation, false))) break;
+                        || !(waterRepairSiteClear(t, core.team, conduit) && Build.validPlace(conduit, core.team, t.x, t.y, source.rotation, false))) break;
                     gaps.add(t);
                     continue;
                 }
@@ -1466,7 +1469,7 @@ public class BasePlanner {
             if (source.block != conduit || !waterCompatible(source)) continue;
             Tile start = source.tile.nearby(source.rotation);
             if (start == null || start.block() != Blocks.air
-                || !(waterSiteSafe(start, core.team) && Build.validPlace(conduit, core.team, start.x, start.y, 0, false))) continue;
+                || !(waterRepairSiteClear(start, core.team, conduit) && Build.validPlace(conduit, core.team, start.x, start.y, 0, false))) continue;
             java.util.Set<Tile> seen = new java.util.HashSet<>();
             java.util.ArrayDeque<Seq<Tile>> queue = new java.util.ArrayDeque<>();
             queue.add(Seq.with(start)); seen.add(start);
@@ -1492,7 +1495,7 @@ public class BasePlanner {
                         return queueConstructionBatch(core, plans);
                     }
                     if (path.size >= 6 || seen.contains(nextTile) || nextTile.block() != Blocks.air
-                        || !(waterSiteSafe(nextTile, core.team) && Build.validPlace(conduit, core.team, nextTile.x, nextTile.y, 0, false))) continue;
+                        || !(waterRepairSiteClear(nextTile, core.team, conduit) && Build.validPlace(conduit, core.team, nextTile.x, nextTile.y, 0, false))) continue;
                     Seq<Tile> extended = new Seq<>(path); extended.add(nextTile);
                     seen.add(nextTile); queue.addLast(extended);
                 }

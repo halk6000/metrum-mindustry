@@ -333,6 +333,10 @@ public class BuilderQueueTest {
             check(pipes != null && pipes.size > 2 && pipes.peek() == receiver.tile);
             check(!pipes.contains(Vars.world.tile(5, 5)) && !pipes.contains(Vars.world.tile(4, 5)));
             pump.tile.build = null;
+            Block repairPipe = new Block("repair-water-conduit");
+            check(!BasePlanner.waterRepairSiteClear(Vars.world.tile(4, 5), core.team, repairPipe));
+            check(!BasePlanner.waterRepairSiteClear(Vars.world.tile(5, 5), core.team, repairPipe));
+            check(BasePlanner.waterRepairSiteClear(Vars.world.tile(6, 5), core.team, repairPipe));
             receiver.tile.build = null;
             check(!BasePlanner.blocksMiningDockExit(core.team, duct, 4, 6));
             check(!BasePlanner.blocksMiningDockExit(mindustry.game.Team.sharded, duct, 5, 5));
