@@ -390,7 +390,9 @@ public class BasePlanner {
                 if (demand.item == mindustry.content.Items.sand && hasRecoveryGoal(core, demand.item)
                     && buildWallExtractor(core, Blocks.cliffCrusher)) return true;
                 if (buildDemandProducer(core, demand.item)) return true;
-                if (demand.item == mindustry.content.Items.tungsten && miningDemand.get(core) == demand
+                boolean explore = demand.item == mindustry.content.Items.tungsten
+                    || (demand.item == mindustry.content.Items.coal && hasRecoveryGoal(core, demand.item));
+                if (explore && miningDemand.get(core) == demand
                     && !minedResources(core).contains(demand.item) && buildDrillLine(core, level, true, 60)) return true;
             }
         }
