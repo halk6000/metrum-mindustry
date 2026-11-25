@@ -39,6 +39,7 @@ public class BasePlanner {
     static final java.util.Map<CoreBuild, ItemStack> miningDemand = new java.util.HashMap<>();
     private static final java.util.Set<CoreBuild> blockedSiliconSites = new java.util.HashSet<>();
     private static final java.util.Map<CoreBuild, Float> lastSandOnInput = new java.util.HashMap<>();
+    private static final java.util.Map<CoreBuild, Float> lastSandForFurnace = new java.util.HashMap<>();
     static final java.util.Map<CoreBuild, java.util.Deque<ItemStack>> deferredDemand = new java.util.HashMap<>();
     static String plannerAction = "oczekiwanie na pierwszą próbę";
 
@@ -74,6 +75,7 @@ public class BasePlanner {
             miningDemand.clear();
             blockedSiliconSites.clear();
             lastSandOnInput.clear();
+            lastSandForFurnace.clear();
             deferredDemand.clear();
 
             // the enemy fields Metrum drones: swap the wave units for MonoMets of a similar strength
@@ -294,6 +296,7 @@ public class BasePlanner {
 
     private static void observeSandInputs() {
         lastSandOnInput.keySet().removeIf(core -> !core.isValid() || core.team != Vars.state.rules.waveTeam);
+        lastSandForFurnace.keySet().removeIf(core -> !core.isValid() || core.team != Vars.state.rules.waveTeam);
         Item sand = mindustry.content.Items.sand;
         for (CoreBuild core : Vars.state.rules.waveTeam.cores()) {
             ItemStack demand = miningDemand.get(core);
@@ -341,9 +344,14 @@ public class BasePlanner {
         if (furnace == null) return false;
         Item sand = mindustry.content.Items.sand;
         int batch = requiredPerBatch(furnace, sand);
+        mindustry.world.blocks.distribution.Duct.DuctBuild direct = sandInput(furnace);
+        if (direct != null && furnace.acceptItem(direct, sand)) lastSandForFurnace.put(core, Time.time);
         if (furnace.items.get(sand) < batch && input != null) {
             int transferred = input.removeStack(sand, 1);
-            if (transferred > 0) furnace.items.add(sand, transferred);
+            if (transferred > 0) {
+                furnace.items.add(sand, transferred);
+                lastSandForFurnace.put(core, Time.time);
+            }
         }
         return furnace.items.get(sand) >= batch;
     }
@@ -499,11 +507,14 @@ public class BasePlanner {
         return true;
     }
     static boolean buildStep(CoreBuild core, AiLevel level) {
+        ItemStack currentDemand = miningDemand.get(core);
+        boolean waitingForSand = currentDemand != null && isSandForSilicon(core, currentDemand)
+            && Time.time - lastSandForFurnace.getOrDefault(core, Float.NEGATIVE_INFINITY) < 6f * 60f;
         int drills = count(core, b -> b.block instanceof mindustry.world.blocks.production.BeamDrill
             || b.block instanceof mindustry.world.blocks.production.Drill);
         int wantDrills = 2 + level.ordinal();
         // Try mining first, but let its power/water prerequisites resolve a failed attempt.
-        if (drills < 2 && buildDrillLine(core, level)) return true;
+        if (drills < 2 && !waitingForSand && buildDrillLine(core, level)) return true;
         boolean hasPowerSource = hasGenerator(core);
         if (hasPowerSource && prioritizeArcFurnacePower(core)) return true;
         if ((!hasPowerSource || (hasPowerDeficit(core) && !hasIdleGenerator(core))) && buildPower(core)) return true;
@@ -517,10 +528,10 @@ public class BasePlanner {
         demand = miningDemand.get(core);
         if (demand != null && coreBurnsSand(core) && isSandForSilicon(core, demand)
             && buildDemandProducer(core, mindustry.content.Items.silicon)) return true;
-        if (demand != null && buildMiningDock(core, demand.item)) return true;
+        if (demand != null && !waitingForSand && buildMiningDock(core, demand.item)) return true;
         boolean waitingForTungsten = demand != null && demand.item == mindustry.content.Items.tungsten
             && hasLocalTungstenDrone(core, demand.item);
-        if (demand != null && !waitingForTungsten) {
+        if (demand != null && !waitingForTungsten && !waitingForSand) {
             if (buildSteamForRecovery(core, demand.item)) return true;
             if (demand.item == metrum.content.MetrumItems.pieceRock
                 && buildWallExtractor(core, metrum.content.MetrumBlocks.rockScraper)) return true;
@@ -539,7 +550,7 @@ public class BasePlanner {
         if (drills < 2) return false; // Keep routine expansion behind mining and recovery prerequisites.
         int factories = count(core, b -> b.block == metrum.content.MetrumPhysics.atomizer);
         if (factories < 1 + level.ordinal() / 2 && buildFactory(core)) return true;
-        if (drills < wantDrills) {
+        if (drills < wantDrills && !waitingForSand) {
             if (buildDrillLine(core, level)) return true;
             if (!waitingForTungsten) return false;
         }
