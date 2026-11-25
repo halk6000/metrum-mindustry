@@ -1555,10 +1555,14 @@ public class BasePlanner {
     static void supplyCoreProducers(CoreBuild core) {
         ItemStack demand = miningDemand.get(core);
         if (demand == null || core.items.get(demand.item) >= demand.amount) return;
+        boolean recoveringTungsten = demand.item == mindustry.content.Items.tungsten;
+        if (recoveringTungsten || needsArcFurnaceSand(core, demand)) {
+            drainSalvagerByproducts(core, !recoveringTungsten);
+            if (core.items.get(demand.item) >= demand.amount) return;
+        }
         if (demand.item == mindustry.content.Items.silicon || demand.item == mindustry.content.Items.tungsten
             || demand.item == metrum.content.MetrumItems.steel) {
             deliverBufferedOutput(core, demand);
-            if (demand.item == mindustry.content.Items.tungsten) drainSalvagerByproducts(core);
             if (core.items.get(demand.item) >= demand.amount) return;
         }
         boolean recoveryNeedsSteam = demand.item == metrum.content.MetrumItems.steel
@@ -1619,7 +1623,7 @@ public class BasePlanner {
         }
     }
 
-    private static void drainSalvagerByproducts(CoreBuild core) {
+    private static void drainSalvagerByproducts(CoreBuild core, boolean sandOnly) {
         Item sand = mindustry.content.Items.sand;
         Item tungsten = mindustry.content.Items.tungsten;
         for (Building factory : core.proximity) {
@@ -1629,7 +1633,7 @@ public class BasePlanner {
             for (ItemStack output : salvager.results) {
                 Item item = output.item;
                 int buffered = factory.items.get(item);
-                if (item == tungsten || buffered <= 0) continue;
+                if (item == tungsten || buffered <= 0 || (sandOnly && item != sand)) continue;
                 if (item == sand && coreBurnsSand(core)) {
                     Building furnace = findSandArcFurnace(core);
                     if (furnace == null) continue;
