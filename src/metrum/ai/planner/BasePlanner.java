@@ -1273,6 +1273,8 @@ public class BasePlanner {
                 prioritizeMissingWorkshop(core, metrum.content.MetrumProduction.infusionSmelter);
             } else if (item == mindustry.content.Items.coal && hasRecoveryGoal(core, item)) {
                 prioritizeMissingWorkshop(core, metrum.content.MetrumProduction.graphiteDecompressor);
+            } else if (item == mindustry.content.Items.silicon && hasRecoveryGoal(core, item)) {
+                prioritizeMissingWorkshop(core, Blocks.siliconArcFurnace);
             }
             return false;
         }
