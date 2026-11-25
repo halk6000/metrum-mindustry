@@ -383,9 +383,12 @@ public class BasePlanner {
             && hasLocalTungstenDrone(core, demand.item);
         if (demand != null && !waitingForTungsten) {
             if (buildSteamForRecovery(core, demand.item)) return true;
-            if (demand.item == metrum.content.MetrumItems.pieceRock && buildRockScraper(core)) return true;
+            if (demand.item == metrum.content.MetrumItems.pieceRock
+                && buildWallExtractor(core, metrum.content.MetrumBlocks.rockScraper)) return true;
             if (drills >= 2 || hasRecoveryGoal(core, demand.item)) {
                 if (!minedResources(core).contains(demand.item) && buildDrillLine(core, level, true)) return true;
+                if (demand.item == mindustry.content.Items.sand && hasRecoveryGoal(core, demand.item)
+                    && buildWallExtractor(core, Blocks.cliffCrusher)) return true;
                 if (buildDemandProducer(core, demand.item)) return true;
                 if (demand.item == mindustry.content.Items.tungsten && miningDemand.get(core) == demand
                     && !minedResources(core).contains(demand.item) && buildDrillLine(core, level, true, 60)) return true;
@@ -1144,8 +1147,7 @@ public class BasePlanner {
         return queueExtractor(core, drill, ore, rotation);
     }
 
-    static boolean buildRockScraper(CoreBuild core) {
-        Block scraper = metrum.content.MetrumBlocks.rockScraper;
+    static boolean buildWallExtractor(CoreBuild core, Block scraper) {
         if (scraper == null || !scraper.environmentBuildable() || count(core, b -> b.block == scraper) > 0) return false;
         if (prioritizeWorkshopMaterials(core, scraper)) return false;
         Seq<BuildPlan> sites = new Seq<>();
@@ -1178,12 +1180,12 @@ public class BasePlanner {
         if (cheapestShortages != null) {
             for (java.util.Map.Entry<Item, Integer> shortage : cheapestShortages.entrySet()) {
                 if (prioritizeProducerDependency(core, shortage.getKey(), shortage.getValue())) {
-                    return stalled("brak materiału na skrobak i transport: " + shortage.getKey().localizedName);
+                    return stalled("brak materiału na transport z bloku „" + scraper.localizedName + "”: " + shortage.getKey().localizedName);
                 }
             }
-            return stalled("brak materiałów na skrobak i transport");
+            return stalled("brak materiałów na blok „" + scraper.localizedName + "” i transport");
         }
-        return !sites.isEmpty() && stalled("brak trasy ze skrobaka do rdzenia");
+        return !sites.isEmpty() && stalled("brak trasy z bloku „" + scraper.localizedName + "” do rdzenia");
     }
 
     private static boolean queueExtractor(CoreBuild core, Block drill, Tile site, int rotation) {
