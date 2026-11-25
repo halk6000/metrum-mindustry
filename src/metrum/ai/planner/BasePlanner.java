@@ -37,6 +37,7 @@ public class BasePlanner {
     static int completedSteps;
     static String failureReason;
     static final java.util.Map<CoreBuild, ItemStack> miningDemand = new java.util.HashMap<>();
+    private static final java.util.Set<CoreBuild> blockedSiliconSites = new java.util.HashSet<>();
     static final java.util.Map<CoreBuild, java.util.Deque<ItemStack>> deferredDemand = new java.util.HashMap<>();
     static String plannerAction = "oczekiwanie na pierwszą próbę";
 
@@ -70,6 +71,7 @@ public class BasePlanner {
             abandonedPlans.clear();
             bentRepairCursor.clear();
             miningDemand.clear();
+            blockedSiliconSites.clear();
             deferredDemand.clear();
 
             // the enemy fields Metrum drones: swap the wave units for MonoMets of a similar strength
@@ -110,6 +112,9 @@ public class BasePlanner {
         String status = arc.Core.bundle.format("metrum.ai.resource-status", demand.item.localizedName,
             core.items.get(demand.item), demand.amount);
         if (original != null) status += "\n" + arc.Core.bundle.format("metrum.ai.deferred-status", original.item.localizedName);
+        if (demand.item == mindustry.content.Items.silicon && blockedSiliconSites.contains(core)) {
+            status += "\n" + arc.Core.bundle.get("metrum.ai.silicon-site-blocked");
+        }
         mindustry.gen.Unit drone = assignedMiningDrone(core);
         String droneStatus = drone == null ? arc.Core.bundle.get("metrum.ai.mining-drone-unassigned")
             : arc.Core.bundle.format("metrum.ai.mining-drone-assigned", drone.type.localizedName);
@@ -242,6 +247,7 @@ public class BasePlanner {
         if (timer < level.buildInterval * 60f) return;
         timer = 0f;
         failureReason = null;
+        blockedSiliconSites.clear();
         int before = completedSteps;
         Team team = Vars.state.rules.waveTeam;
         for (CoreBuild core : team.cores()) {
@@ -1497,7 +1503,10 @@ public class BasePlanner {
                 }
             }
         }
-        if (fallback == null && isSiliconArcFurnace(producer)) fallback = findLinkedWorkshopSite(core, producer);
+        if (fallback == null && isSiliconArcFurnace(producer)) {
+            fallback = findLinkedWorkshopSite(core, producer);
+            if (fallback == null) blockedSiliconSites.add(core);
+        }
         return fallback != null && queueConstructionBatch(core, Seq.with(new BuildPlan(fallback.x, fallback.y, 0, producer)), true);
     }
 
