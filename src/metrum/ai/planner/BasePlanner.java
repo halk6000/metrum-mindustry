@@ -552,6 +552,9 @@ public class BasePlanner {
                         && hasRecoveryGoal(core, demand.item));
                 if (explore && miningDemand.get(core) == demand
                     && !minedResources(core).contains(demand.item) && buildDrillLine(core, level, true, 60)) return true;
+                if (miningDemand.get(core) == demand && demand.item == mindustry.content.Items.coal
+                    && hasRecoveryGoal(core, demand.item) && stoneCrusherNeedsRock(core)
+                    && buildWallExtractor(core, metrum.content.MetrumBlocks.rockScraper, false)) return true;
             }
         }
         if (drills < 2) return false; // Keep routine expansion behind mining and recovery prerequisites.
@@ -565,6 +568,12 @@ public class BasePlanner {
         if (turrets < 2 + level.ordinal() * 2 && buildTurret(core, level)) return true;
         if (buildWalls(core, level)) return true;
         return false; // no construction progress; step() may reclaim unused pipe space
+    }
+
+    private static boolean stoneCrusherNeedsRock(CoreBuild core) {
+        Item rock = metrum.content.MetrumItems.pieceRock;
+        return count(core, b -> b.enabled && b.block == metrum.content.MetrumProduction.stoneCrusher
+            && b.items != null && b.closestCore() == core && b.items.get(rock) + core.items.get(rock) < requiredPerBatch(b, rock)) > 0;
     }
 
     private static boolean redirectSandLine(CoreBuild core) {
@@ -1599,8 +1608,13 @@ public class BasePlanner {
     }
 
     static boolean buildWallExtractor(CoreBuild core, Block scraper) {
+        return buildWallExtractor(core, scraper, true);
+    }
+
+    private static boolean buildWallExtractor(CoreBuild core, Block scraper, boolean requestMaterials) {
         if (scraper == null || !scraper.environmentBuildable() || count(core, b -> b.block == scraper) > 0) return false;
-        if (prioritizeWorkshopMaterials(core, scraper)) return false;
+        if (requestMaterials && prioritizeWorkshopMaterials(core, scraper)) return false;
+        if (!requestMaterials && !canSupportDrill(core, scraper)) return false;
         Seq<BuildPlan> sites = new Seq<>();
         for (int dx = -30; dx <= 30; dx++) for (int dy = -30; dy <= 30; dy++) {
             Tile tile = Vars.world.tile(core.tileX() + dx, core.tileY() + dy);
@@ -1629,7 +1643,7 @@ public class BasePlanner {
             cheapestPlanSize = plans.size; // Every option uses the same scraper and duct type.
             cheapestShortages = shortages;
         }
-        if (cheapestShortages != null) {
+        if (cheapestShortages != null && requestMaterials) {
             for (java.util.Map.Entry<Item, Integer> shortage : cheapestShortages.entrySet()) {
                 if (prioritizeProducerDependency(core, shortage.getKey(), shortage.getValue())) {
                     return stalled("brak materiału na transport z bloku „" + scraper.localizedName + "”: " + shortage.getKey().localizedName);
