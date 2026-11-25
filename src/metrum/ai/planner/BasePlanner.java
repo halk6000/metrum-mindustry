@@ -1097,14 +1097,18 @@ public class BasePlanner {
     }
 
     private static boolean buildDrillLine(CoreBuild core, AiLevel level, boolean demandOnly, int searchRadius) {
+        return buildDrillLine(core, demandOnly, searchRadius, new arc.struct.IntSet());
+    }
+
+    private static boolean buildDrillLine(CoreBuild core, boolean demandOnly, int searchRadius, arc.struct.IntSet rejected) {
         Block chosen = Blocks.plasmaBore;
-        Tile ore = findOreSpot(core, chosen, searchRadius);
+        Tile ore = findOreSpot(core, chosen, searchRadius, rejected);
         ItemStack demand = miningDemand.get(core);
         // Consider modded wall drills as well as the vanilla plasma bore.
         for (Block candidate : Vars.content.blocks()) {
             if (!(candidate instanceof mindustry.world.blocks.production.BeamDrill) || candidate == chosen
                 || !candidate.environmentBuildable() || !canSupportDrill(core, candidate)) continue;
-            Tile alternative = findOreSpot(core, candidate, searchRadius);
+            Tile alternative = findOreSpot(core, candidate, searchRadius, rejected);
             if (alternative == null) continue;
             int direction = faceWall(alternative, candidate, core, minedResources(core));
             Item candidateItem = wallOreInDirection(alternative,
@@ -1122,7 +1126,7 @@ public class BasePlanner {
             for (Block candidate : Vars.content.blocks()) {
                 if (!(candidate instanceof mindustry.world.blocks.production.Drill) || !candidate.environmentBuildable()) continue;
                 if (!canSupportDrill(core, candidate)) continue;
-                Tile floorOre = findFloorOreSpot(core, (mindustry.world.blocks.production.Drill) candidate, searchRadius);
+                Tile floorOre = findFloorOreSpot(core, (mindustry.world.blocks.production.Drill) candidate, searchRadius, rejected);
                 if (floorOre == null) continue;
                 boolean meetsDemand = demand != null
                     && ((mindustry.world.blocks.production.Drill) candidate).getDrop(floorOre) == demand.item;
@@ -1146,7 +1150,11 @@ public class BasePlanner {
             }
             return false;
         }
-        return queueExtractor(core, drill, ore, rotation);
+        Seq<BuildPlan> plans = extractorPlans(core, drill, ore, rotation);
+        if (plans != null) return queueConstructionBatch(core, plans);
+        rejected.add(ore.pos());
+        return rejected.size < 4 ? buildDrillLine(core, demandOnly, searchRadius, rejected)
+            : stalled("brak trasy z wiertni do rdzenia");
     }
 
     static boolean buildWallExtractor(CoreBuild core, Block scraper) {
@@ -1188,11 +1196,6 @@ public class BasePlanner {
             return stalled("brak materiałów na blok „" + scraper.localizedName + "” i transport");
         }
         return !sites.isEmpty() && stalled("brak trasy z bloku „" + scraper.localizedName + "” do rdzenia");
-    }
-
-    private static boolean queueExtractor(CoreBuild core, Block drill, Tile site, int rotation) {
-        Seq<BuildPlan> plans = extractorPlans(core, drill, site, rotation);
-        return plans == null ? stalled("brak trasy do rdzenia") : queueConstructionBatch(core, plans);
     }
 
     private static Seq<BuildPlan> extractorPlans(CoreBuild core, Block drill, Tile site, int rotation) {
@@ -1487,7 +1490,7 @@ public class BasePlanner {
         }
         return true;
     }
-    static Tile findFloorOreSpot(CoreBuild core, mindustry.world.blocks.production.Drill drill, int radius) {
+    static Tile findFloorOreSpot(CoreBuild core, mindustry.world.blocks.production.Drill drill, int radius, arc.struct.IntSet rejected) {
         Tile best = null;
         ItemStack demand = miningDemand.get(core);
         boolean bestMeetsDemand = false;
@@ -1495,7 +1498,7 @@ public class BasePlanner {
         float nearest = Float.MAX_VALUE;
         for (int dx = -radius; dx <= radius; dx++) for (int dy = -radius; dy <= radius; dy++) {
             Tile t = Vars.world.tile(core.tileX() + dx, core.tileY() + dy);
-            if (t == null || t.block() != Blocks.air || !drill.canMine(t)
+            if (t == null || t.block() != Blocks.air || rejected.contains(t.pos()) || !drill.canMine(t)
                 || !Build.validPlace(drill, core.team, t.x, t.y, 0, false)) continue;
             Item item = drill.getDrop(t);
             if (item == null) continue;
@@ -1531,7 +1534,7 @@ public class BasePlanner {
     }
 
     /** a free tile next to an ore wall, within radius of the core; prefers the item the core has least of */
-    static Tile findOreSpot(CoreBuild core, Block drill, int radius) {
+    static Tile findOreSpot(CoreBuild core, Block drill, int radius, arc.struct.IntSet rejected) {
         java.util.Set<Item> mined = minedResources(core);
         Tile best = null;
         int bestPriority = Integer.MAX_VALUE;
@@ -1540,7 +1543,7 @@ public class BasePlanner {
         for (int dx = -radius; dx <= radius; dx++) {
             for (int dy = -radius; dy <= radius; dy++) {
                 Tile t = Vars.world.tile(core.tileX() + dx, core.tileY() + dy);
-                if (t == null || t.block() != Blocks.air) continue;
+                if (t == null || t.block() != Blocks.air || rejected.contains(t.pos())) continue;
                 int rotation = faceWall(t, drill, core, mined);
                 if (rotation < 0) continue;
                 Item item = wallOreInDirection(t, (mindustry.world.blocks.production.BeamDrill) drill, rotation);
