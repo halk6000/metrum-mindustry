@@ -45,6 +45,12 @@ public class ColorDuctBridge extends DuctBridge {
         public int circuit;
 
         @Override
+        public boolean acceptItem(mindustry.gen.Building source, mindustry.type.Item item) {
+            int side = relativeToEdge(source.tile);
+            return side >= 0 && (side & 1) != (rotation & 1) && super.acceptItem(source, item);
+        }
+
+        @Override
         public DirectionBridgeBuild findLink() {
             for (int i = 1; i <= range; i++) {
                 Tile other = tile.nearby(arc.math.geom.Geometry.d4x(rotation) * i, arc.math.geom.Geometry.d4y(rotation) * i);
