@@ -96,6 +96,8 @@ public class BuilderQueueTest {
                 mindustry.gen.Groups.unit.add(builder);
             }
             first.addBuild(new BuildPlan(4, 5, 0, drill));
+            check(!BasePlanner.miningDockExitClear(core.team, Vars.world.tile(4, 5)));
+            check(!BasePlanner.miningDockExitClear(core.team, null));
             check(BasePlanner.hasQueuedBlock(core, drill));
             check(!BasePlanner.hasQueuedBlock(core, duct));
             check(BasePlanner.assignedBuilder(core) == second);
@@ -105,6 +107,7 @@ public class BuilderQueueTest {
             check(BasePlanner.constructionReserve(core).get(iron) == 9);
             check(BasePlanner.overlapsQueuedBuild(core.team, drill, 4, 5));
             first.plans.clear();
+            check(BasePlanner.miningDockExitClear(core.team, Vars.world.tile(4, 5)));
             check(!BasePlanner.hasQueuedBlock(core, drill));
             check(BasePlanner.hasQueuedBlock(core, duct));
             check(BasePlanner.assignedBuilder(core) == first);

@@ -695,7 +695,7 @@ public class BasePlanner {
                 if (site == null || !Build.validPlace(dock, core.team, site.x, site.y, direction, false)
                     || overlapsQueuedBuild(core.team, dock, site.x, site.y)) continue;
                 Tile exit = miningDockExit(site, dock, direction);
-                if (exit == null || exit.block() != Blocks.air) continue;
+                if (!miningDockExitClear(core.team, exit)) continue;
                 return queueConstructionBatch(core, Seq.with(new BuildPlan(site.x, site.y, direction, dock)), true);
             }
         }
@@ -704,18 +704,23 @@ public class BasePlanner {
 
     private static boolean redirectMiningDock(CoreBuild core, Building dock) {
         Tile currentExit = miningDockExit(dock.tile, dock.block, dock.rotation);
-        if (currentExit != null && (currentExit.block() == Blocks.air
+        if (currentExit != null && (miningDockExitClear(core.team, currentExit)
             || (currentExit.team() == core.team && currentExit.block().acceptsPayload))) return false;
         mindustry.gen.Unit builder = assignedBuilder(core);
         if (builder == null || !builder.plans.isEmpty()) return false;
         for (int direction = 0; direction < 4; direction++) {
             Tile exit = miningDockExit(dock.tile, dock.block, direction);
-            if (exit == null || exit.block() != Blocks.air
+            if (!miningDockExitClear(core.team, exit)
                 || !Build.validPlace(dock.block, core.team, dock.tileX(), dock.tileY(), direction, false)) continue;
             builder.addBuild(new BuildPlan(dock.tileX(), dock.tileY(), direction, dock.block));
             return true;
         }
         return false;
+    }
+
+    static boolean miningDockExitClear(Team team, Tile exit) {
+        return exit != null && exit.block() == Blocks.air
+            && !overlapsQueuedBuild(team, Blocks.air, exit.x, exit.y);
     }
 
     private static Tile miningDockExit(Tile site, Block dock, int direction) {
