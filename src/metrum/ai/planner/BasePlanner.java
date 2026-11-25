@@ -981,13 +981,7 @@ public class BasePlanner {
         java.util.Map<Item, Integer> reserve = economicReserve(core);
         workshops: for (Building factory : core.proximity) {
             if (factory.team != core.team || !factory.enabled || factory.items == null
-                || !(factory.block instanceof mindustry.world.blocks.production.GenericCrafter)
-                || factory.closestCore() != core) continue;
-            mindustry.world.blocks.production.GenericCrafter recipe =
-                (mindustry.world.blocks.production.GenericCrafter) factory.block;
-            boolean wanted = recipe.outputItem != null && recipe.outputItem.item == demand.item;
-            if (recipe.outputItems != null) for (ItemStack output : recipe.outputItems) wanted |= output.item == demand.item;
-            if (!wanted) continue;
+                || factory.closestCore() != core || !producesItem(factory.block, demand.item)) continue;
             java.util.Map<Item, Integer> required = new java.util.HashMap<>();
             for (mindustry.world.consumers.Consume consume : factory.block.nonOptionalConsumers) {
                 if (!(consume instanceof mindustry.world.consumers.ConsumeItems)) continue;
@@ -1068,18 +1062,28 @@ public class BasePlanner {
         return findProducer(core, item, false);
     }
 
+    static boolean producesItem(Block block, Item item) {
+        ItemStack[] outputs;
+        if (block instanceof mindustry.world.blocks.production.Separator) {
+            outputs = ((mindustry.world.blocks.production.Separator) block).results;
+        } else if (block instanceof mindustry.world.blocks.production.GenericCrafter) {
+            mindustry.world.blocks.production.GenericCrafter crafter = (mindustry.world.blocks.production.GenericCrafter) block;
+            if (crafter.outputItem != null && crafter.outputItem.item == item) return true;
+            outputs = crafter.outputItems;
+        } else return false;
+        if (outputs != null) for (ItemStack output : outputs) {
+            if (output.item == item && output.amount > 0) return true;
+        }
+        return false;
+    }
+
     static Block findProducer(CoreBuild core, Item item, boolean allowMissingInputs) {
         Block best = null;
         long bestCost = Long.MAX_VALUE;
         java.util.Map<Item, Integer> reserve = economicReserve(core);
         candidates: for (Block block : Vars.content.blocks()) {
-            if (!(block instanceof mindustry.world.blocks.production.GenericCrafter) || !block.environmentBuildable()
+            if (!producesItem(block, item) || !block.environmentBuildable()
                 || block instanceof mindustry.world.blocks.production.HeatCrafter) continue;
-            mindustry.world.blocks.production.GenericCrafter crafter =
-                (mindustry.world.blocks.production.GenericCrafter) block;
-            boolean produces = crafter.outputItem != null && crafter.outputItem.item == item;
-            if (crafter.outputItems != null) for (ItemStack output : crafter.outputItems) produces |= output.item == item;
-            if (!produces) continue;
             java.util.Map<Item, Integer> required = new java.util.HashMap<>();
             long totalCost = 0;
             for (ItemStack cost : block.requirements) {
@@ -1096,7 +1100,7 @@ public class BasePlanner {
                     }
                 } else if (consume instanceof mindustry.world.consumers.ConsumeLiquid) {
                     mindustry.type.Liquid liquid = ((mindustry.world.consumers.ConsumeLiquid) consume).liquid;
-                    if (liquid != mindustry.content.Liquids.water || count(core,
+                    if ((liquid != mindustry.content.Liquids.water && liquid != metrum.content.MetrumLiquids.steam) || count(core,
                         b -> b.block.outputsLiquid && b.liquids != null && b.liquids.get(liquid) > 1f) == 0) continue candidates;
                 } else continue candidates;
             }
