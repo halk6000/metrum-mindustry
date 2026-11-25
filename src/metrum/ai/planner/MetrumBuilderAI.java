@@ -41,6 +41,10 @@ public class MetrumBuilderAI extends mindustry.ai.types.BuilderAI {
         }
     };
     public MetrumBuilderAI() { super(true, 600f); }
+    int incomingCargo(mindustry.gen.Building destination, mindustry.type.Item item) {
+        return unit.plans.isEmpty() ? idleMiner.incomingCargo(destination, item) : 0;
+    }
+
     private void mineWhileIdle(boolean deliverCargo) {
         unit.updateBuilding = false;
         idleMiner.unit(unit);

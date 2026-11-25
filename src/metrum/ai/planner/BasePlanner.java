@@ -1987,7 +1987,7 @@ public class BasePlanner {
                 if (input.getValue() > factory.getMaximumAccepted(item)) continue workshops;
                 if (core.items.get(item) - reserve.getOrDefault(item, 0) < missing) {
                     // Feed spare rock while waiting for coal without replacing the coal priority.
-                    if (recoveryCrusher) continue workshops;
+                    if (recoveryCrusher || incomingCargoCovers(factory, item, missing)) continue workshops;
                     if (prioritizeProducerDependency(core, item, missing + reserve.getOrDefault(item, 0))) {
                         // Other workshops still hold the old demand snapshot; resume them next supply tick.
                         return;
@@ -2002,6 +2002,19 @@ public class BasePlanner {
                 factory.items.add(input.getKey(), missing);
             }
         }
+    }
+
+    static boolean incomingCargoCovers(Building destination, Item item, int missing) {
+        for (mindustry.gen.Unit drone : mindustry.gen.Groups.unit) {
+            if (drone.team != destination.team || drone.dead() || drone.stack.item != item || drone.stack.amount <= 0) continue;
+            if (drone.controller() instanceof metrum.ai.SmartMining.SmartMinerAI) {
+                missing -= ((metrum.ai.SmartMining.SmartMinerAI) drone.controller()).incomingCargo(destination, item);
+            } else if (drone.controller() instanceof MetrumBuilderAI) {
+                missing -= ((MetrumBuilderAI) drone.controller()).incomingCargo(destination, item);
+            }
+            if (missing <= 0) return true;
+        }
+        return false;
     }
 
     private static void deliverBufferedOutput(CoreBuild core, ItemStack demand) {

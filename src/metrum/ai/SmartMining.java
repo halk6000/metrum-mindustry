@@ -122,6 +122,12 @@ public class SmartMining {
             return true;
         }
 
+        public int incomingCargo(mindustry.gen.Building destination, Item item) {
+            if (cargoConsumer != destination || unit.stack.item != item || unit.stack.amount <= 0
+                || !canReceiveCargo(unit, destination)) return 0;
+            return Math.min(unit.stack.amount, destination.acceptStack(item, unit.stack.amount, unit));
+        }
+
         private boolean canReceiveCargo(Unit drone, mindustry.gen.Building building) {
             return building.team == drone.team && building.enabled && building.block.consumesItem(drone.stack.item)
                 && building.acceptStack(drone.stack.item, drone.stack.amount, drone) > 0;
