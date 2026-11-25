@@ -61,3 +61,6 @@ Najszybciej w **Edytorze / Sandbox (Erekir)** z nieskończonymi zasobami.
 - Każdy rekonstruktor potrzebuje prądu i swoich surowców — bez nich dron wejdzie, ale nie wyjdzie.
 
 Problemy: zrzut ekranu + `saves/last_log.txt` po zamknięciu gry.
+# Próba kampanii Ferrox: wydobycie drona AI
+
+Mindustry 160.8, sektor Ferrox 12, kopia zapisu w osobnym katalogu gry, tylko Metrum z poprawką `10054db`. W ciągu 900 ticków dron konstrukcyjny pozostawał przy złożu berylu. Odczyty ładunku wynosiły kolejno 50, 10, 26, 42, 59 i 12 sztuk. Przy 720 tickach miał jeden plan budowy, przy 900 kolejka była pusta. Próba potwierdza wydobycie. Stan magazynu rdzenia nie był mierzony.
