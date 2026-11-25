@@ -74,10 +74,13 @@ public class MetrumBuilderAI extends mindustry.ai.types.BuilderAI {
                 return;
             }
             mindustry.world.blocks.storage.CoreBlock.CoreBuild core = unit.closestCore();
-            if (!inProgress && core != null && !mindustry.Vars.state.rules.isInfiniteResources(unit.team)) {
+            if (core != null && !mindustry.Vars.state.rules.isInfiniteResources(unit.team)) {
                 float multiplier = mindustry.Vars.state.rules.buildCostMultiplier;
                 for (mindustry.type.ItemStack cost : plan.block.requirements) {
-                    int missing = Math.round(cost.amount * multiplier) - core.items.get(cost.item);
+                    int needed = Math.round(cost.amount * multiplier);
+                    // The engine tracks paid materials internally. For a started site, refill
+                    // only an empty stock and let the engine consume the remaining cost.
+                    int missing = (inProgress ? Math.min(needed, 1) : needed) - core.items.get(cost.item);
                     if (missing <= 0 || !metrum.ai.SmartMining.canStoreMined(core, cost.item)) continue;
                     boolean deliverCargo = unit.stack.item == cost.item && unit.stack.amount >= missing;
                     if (!deliverCargo && (!unit.canMine(cost.item)

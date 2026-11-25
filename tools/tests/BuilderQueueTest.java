@@ -152,6 +152,27 @@ public class BuilderQueueTest {
         check(!builder.updateBuilding && builder.plans.size == 1 && builder.buildPlan() == plan);
         System.out.println("OK: empty builder starts mining the missing ore and retains its plan");
 
+        mindustry.world.Tile siteTile = Vars.world.tile(plan.x, plan.y);
+        mindustry.world.blocks.ConstructBlock constructBlock = new mindustry.world.blocks.ConstructBlock(1);
+        mindustry.world.blocks.ConstructBlock.ConstructBuild site = constructBlock.new ConstructBuild();
+        site.team = builder.team;
+        site.current = block;
+        site.progress = 0.5f;
+        siteTile.build = site;
+        core.items.set(ore, 0);
+        controller.updateMovement();
+        check(!builder.updateBuilding && builder.mineTile == oreTile && builder.buildPlan() == plan);
+        core.items.set(ore, 1);
+        controller.updateMovement();
+        check(builder.updateBuilding && site.progress == 0.5f && builder.buildPlan() == plan);
+        siteTile.build = null;
+        System.out.println("OK: started construction keeps its progress while the builder replenishes an empty stock");
+
+        core.items.set(ore, 2);
+        arc.util.Time.time += 240f;
+        controller.updateMovement();
+        check(builder.mineTile == oreTile);
+
         builder.stack.amount = 3;
         builder.stack.item = ore;
         builder.plans.clear();
