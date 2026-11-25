@@ -1,0 +1,81 @@
+import arc.util.Time;
+import metrum.world.ColorDuctBridge;
+import mindustry.Vars;
+import mindustry.content.Blocks;
+import mindustry.content.Items;
+import mindustry.core.ContentLoader;
+import mindustry.core.GameState;
+import mindustry.core.World;
+import mindustry.game.Team;
+import mindustry.gen.Building;
+import mindustry.type.Item;
+import mindustry.world.Block;
+import mindustry.world.Tiles;
+import mindustry.world.blocks.distribution.DirectionalUnloader.DirectionalUnloaderBuild;
+import mindustry.world.modules.ItemModule;
+
+public class BridgeFlowTest {
+    static Building place(Block block, int x, int y, int rotation) {
+        Building building = block.buildType.get();
+        building.block = block;
+        building.team = Team.sharded;
+        building.tile = Vars.world.tile(x, y);
+        building.tile.build = building;
+        building.rotation = rotation;
+        building.items = new ItemModule();
+        building.efficiency = 1f;
+        return building;
+    }
+
+    public static void main(String[] args) {
+        Vars.headless = true;
+        Vars.content = new ContentLoader();
+        Vars.state = new GameState();
+        Vars.content.createBaseContent();
+        Vars.world = new World();
+        Vars.world.tiles = new Tiles(14, 8);
+        Vars.world.tiles.fill();
+        Time.delta = 1f;
+        ColorDuctBridge bridge = new ColorDuctBridge("flow");
+        bridge.range = 4;
+        bridge.speed = 4f;
+        bridge.init();
+        Blocks.ductUnloader.init();
+        Blocks.container.init();
+
+        Building feed = place(Blocks.container, 2, 1, 1);
+        Building start = place(bridge, 2, 2, 0);
+        Building middle = place(bridge, 5, 2, 0);
+        Building end = place(bridge, 8, 2, 0);
+        Building forward = place(Blocks.container, 9, 2, 0);
+        Building side = place(Blocks.container, 5, 4, 0);
+        DirectionalUnloaderBuild unloader = (DirectionalUnloaderBuild) place(Blocks.ductUnloader, 5, 3, 1);
+        unloader.unloadItem = Items.graphite;
+
+        // Leave room for five graphite, then let the full receiver divert the next five.
+        int ballast = side.getMaximumAccepted(Items.graphite) - 5;
+        side.items.add(Items.graphite, ballast);
+        for (int phase = 0; phase < 2; phase++) {
+            if (phase == 1) side.items.remove(Items.graphite, ballast);
+            int sent = 0;
+            for (int tick = 0; tick < 400; tick++) {
+                Item item = sent % 2 == 0 ? Items.graphite : Items.beryllium;
+                if (sent < 20 && start.acceptItem(feed, item)) {
+                    start.handleItem(feed, item);
+                    sent++;
+                }
+                start.updateTile();
+                middle.updateTile();
+                end.updateTile();
+                unloader.updateTile();
+            }
+            int expectedSide = phase == 0 ? ballast + 5 : 15;
+            if (sent != 20 || side.items.get(Items.graphite) != expectedSide
+                || side.items.total() != expectedSide || forward.items.get(Items.graphite) != 5
+                || forward.items.get(Items.beryllium) != 10 * (phase + 1)
+                || start.items.total() + middle.items.total() + end.items.total() != 0) {
+                throw new AssertionError("Incorrect delivery after phase " + phase);
+            }
+        }
+    }
+}
