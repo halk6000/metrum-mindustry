@@ -1183,6 +1183,7 @@ public class BasePlanner {
         mindustry.type.Liquid steam = metrum.content.MetrumLiquids.steam;
         if (count(core, b -> b.block == boiler || (b.enabled && b.block.outputsLiquid
             && b.liquids != null && b.liquids.get(steam) > 1f)) > 0) return false;
+        if (prioritizeWorkshopMaterials(core, boiler)) return false;
         return queueCoreWorkshop(core, boiler);
     }
 
@@ -1203,12 +1204,17 @@ public class BasePlanner {
     static void prioritizeSalvagerMaterials(CoreBuild core) {
         Block salvager = metrum.content.MetrumProduction.salvagerAdvanced;
         if (salvager == null || !salvager.environmentBuildable() || count(core, b -> b.block == salvager) > 0) return;
+        prioritizeWorkshopMaterials(core, salvager);
+    }
+
+    private static boolean prioritizeWorkshopMaterials(CoreBuild core, Block workshop) {
         java.util.Map<Item, Integer> reserve = economicReserve(core);
-        for (ItemStack cost : salvager.requirements) {
+        for (ItemStack cost : workshop.requirements) {
             int needed = Math.round(cost.amount * Vars.state.rules.buildCostMultiplier)
                 + reserve.getOrDefault(cost.item, 0);
-            if (core.items.get(cost.item) < needed && prioritizeProducerDependency(core, cost.item, needed)) return;
+            if (core.items.get(cost.item) < needed && prioritizeProducerDependency(core, cost.item, needed)) return true;
         }
+        return false;
     }
 
     static boolean prioritizeProducerDependency(CoreBuild core, Item item, int needed) {
