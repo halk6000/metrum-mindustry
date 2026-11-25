@@ -437,6 +437,7 @@ public class BasePlanner {
         private ItemStack tungstenGoal;
         private int lastTungstenCargo;
         private float lastTungstenProgress;
+        private CoreBuild deliveryTarget;
 
         ResourceDroneAI(CoreBuild home, mindustry.entities.units.UnitController previousController) {
             this.home = home;
@@ -445,6 +446,7 @@ public class BasePlanner {
 
         @Override
         public void updateMovement() {
+            if (unit.stack.amount == 0) deliveryTarget = null;
             if (!home.isValid() || home.team != unit.team) {
                 unit.mineTile = null;
                 if (unit.stack.amount == 0) {
@@ -491,6 +493,12 @@ public class BasePlanner {
             mining = false;
             unit.mineTile = null;
             Item cargo = unit.stack.item;
+            if (deliveryTarget != null && deliveryTarget.isValid() && deliveryTarget.team == unit.team
+                && deliveryTarget.acceptStack(cargo, unit.stack.amount, unit) > 0) {
+                core = deliveryTarget;
+            } else {
+                deliveryTarget = null;
+            }
             int accepted = core.acceptStack(cargo, unit.stack.amount, unit);
             if (accepted <= 0) {
                 CoreBuild alternative = null;
@@ -509,6 +517,7 @@ public class BasePlanner {
                     accepted = core.acceptStack(cargo, unit.stack.amount, unit);
                 }
             }
+            if (accepted > 0) deliveryTarget = core;
             if (accepted > 0 && unit.within(core, unit.type.range)) {
                 mindustry.gen.Call.transferItemTo(unit, cargo, accepted, unit.x, unit.y, core);
                 if (cargo == mindustry.content.Items.tungsten) lastTungstenProgress = Time.time;
