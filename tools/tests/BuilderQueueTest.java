@@ -251,11 +251,11 @@ public class BuilderQueueTest {
             drone.stack.set(cargo, 3);
             drone.set(60f, 0f);
             check(ai.deliver() && factory.items.get(cargo) == 0);
-            check(BasePlanner.incomingCargoCovers(factory, cargo, 3));
-            check(!BasePlanner.incomingCargoCovers(factory, cargo, 4));
+            check(BasePlanner.missingAfterDeliveries(factory, cargo, 3) == 0);
+            check(BasePlanner.missingAfterDeliveries(factory, cargo, 5) == 2);
             drone.set(0f, 0f);
             check(ai.deliver() && factory.items.get(cargo) == 3 && drone.stack.amount == 0);
-            check(!BasePlanner.incomingCargoCovers(factory, cargo, 1));
+            check(BasePlanner.missingAfterDeliveries(factory, cargo, 1) == 1);
             factory.enabled = false;
             drone.stack.set(cargo, 3);
             check(ai.deliver() && drone.stack.amount == 3);
