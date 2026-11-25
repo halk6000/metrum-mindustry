@@ -934,12 +934,24 @@ public class BasePlanner {
         });
     }
 
+    static boolean blocksMiningDockExit(Team team, Block block, int x, int y) {
+        if (block.acceptsPayload) return false;
+        Tile anchor = Vars.world.tile(x, y);
+        if (anchor == null) return false;
+        return mindustry.gen.Groups.build.contains(building -> {
+            if (building.team != team || building.block != metrum.content.MetrumUnitBlocks.airMinerDock) return false;
+            Tile exit = miningDockExit(building.tile, building.block, building.rotation);
+            return exit != null && insideFootprint(exit, anchor, block);
+        });
+    }
+
     /** Queue real construction; the engine consumes resources as the drone builds, not here. */
     static boolean queueConstruction(CoreBuild core, Block block, Tile site, int rotation) {
         mindustry.gen.Unit builder = assignedBuilder(core);
         if (builder == null || !builder.plans.isEmpty()) return stalled("konstruktor zajęty lub niedostępny");
         if (site == null || !Build.validPlace(block, core.team, site.x, site.y, rotation, false)) return false;
         if (overlapsQueuedBuild(core.team, block, site.x, site.y)) return false;
+        if (blocksMiningDockExit(core.team, block, site.x, site.y)) return false;
         java.util.Map<Item, Integer> reserve = constructionReserve(core);
         for (ItemStack cost : block.requirements) {
             long totalNeeded = (long) Math.round(cost.amount * Vars.state.rules.buildCostMultiplier)
@@ -965,6 +977,7 @@ public class BasePlanner {
         for (BuildPlan plan : plans) {
             if (!Build.validPlace(plan.block, core.team, plan.x, plan.y, plan.rotation, false)) return false;
             if (overlapsQueuedBuild(core.team, plan.block, plan.x, plan.y)) return false;
+            if (blocksMiningDockExit(core.team, plan.block, plan.x, plan.y)) return false;
             for (ItemStack cost : plan.block.requirements) {
                 long amount = Math.round(cost.amount * Vars.state.rules.buildCostMultiplier);
                 total.put(cost.item, total.getOrDefault(cost.item, 0L) + amount);
