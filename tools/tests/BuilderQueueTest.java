@@ -183,7 +183,51 @@ public class BuilderQueueTest {
         byte[] broken=java.util.Arrays.copyOf(bytes.toByteArray(),bytes.size()-1);
         try { new AbandonedBuilds().read(new DataInputStream(new ByteArrayInputStream(broken))); throw new AssertionError(); }
         catch(EOFException expected) { check(AbandonedBuilds.pending.isEmpty()); }
+        checkWaterBypassFlow();
         System.out.println("OK: saved plan order, rotations, demolition, controller restoration, queue continuation, reserved materials, released materials, invalid batch cancellation, constructor replacement queue, saved abandoned queue, truncated save");
+    }
+
+    static void checkWaterBypassFlow() {
+        Vars.content = new ContentLoader();
+        Vars.content.createBaseContent();
+        Vars.world.tiles.fill();
+        Block pipe = mindustry.content.Blocks.reinforcedConduit;
+        Block receiverBlock = mindustry.content.Blocks.liquidRouter;
+        pipe.init();
+        receiverBlock.init();
+        mindustry.gen.Building receiver = placeLiquidBlock(receiverBlock, 4, 2, 0);
+        mindustry.world.Tile start = Vars.world.tile(2, 2);
+        mindustry.world.Tile exit = Vars.world.tile(3, 2);
+        mindustry.gen.Building source = placeLiquidBlock(pipe, start.x, start.y, 0);
+        arc.struct.Seq<mindustry.world.Tile> route = BasePlanner.pipeRoute(source, receiver, pipe, t -> t != exit);
+        check(route != null && route.size > 2 && !route.contains(exit));
+        source.rotation = start.relativeTo(route.first());
+        arc.struct.Seq<mindustry.gen.Building> line = arc.struct.Seq.with(source);
+        for (BuildPlan plan : BasePlanner.planConnector(route, route.size, pipe)) {
+            line.add(placeLiquidBlock(pipe, plan.x, plan.y, plan.rotation));
+        }
+        mindustry.type.Liquid water = mindustry.content.Liquids.water;
+        source.liquids.add(water, 8f);
+        for (int tick = 0; tick < 60; tick++) {
+            for (mindustry.gen.Building segment : line) segment.moveLiquidForward(false, water);
+        }
+        float delivered = receiver.liquids.get(water);
+        check(delivered > 0f && exit.build == null);
+        float total = delivered;
+        for (mindustry.gen.Building segment : line) total += segment.liquids.get(water);
+        check(Math.abs(total - 8f) < 0.001f);
+    }
+
+    static mindustry.gen.Building placeLiquidBlock(Block block, int x, int y, int rotation) {
+        mindustry.gen.Building building = block.buildType.get();
+        building.block = block;
+        building.team = mindustry.game.Team.crux;
+        building.tile = Vars.world.tile(x, y);
+        building.tile.build = building;
+        building.set(building.tile.worldx(), building.tile.worldy());
+        building.rotation = rotation;
+        building.liquids = new mindustry.world.modules.LiquidModule();
+        return building;
     }
 
     static void checkExpiredDroneWait(mindustry.type.Item ore) throws Exception {
