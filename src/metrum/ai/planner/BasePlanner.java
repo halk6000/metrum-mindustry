@@ -201,6 +201,15 @@ public class BasePlanner {
     static void keepBuilder(Team team) {
         mindustry.gen.Groups.unit.each(u -> {
             if (u.team != team || u.type != metrum.content.MetrumUnits.monoMetT1 || u.dead() || u.isPlayer()) return;
+            if (u.flag != builderFlag && isBuilderFlag(u.flag)
+                && !team.cores().contains(core -> u.flag == builderHomeFlag(core))) {
+                CoreBuild home = u.closestCore();
+                if (home != null) {
+                    // Plans belong to the lost base; let this drone work for its surviving home.
+                    u.plans.clear();
+                    u.flag = builderHomeFlag(home);
+                }
+            }
             if (u.flag == builderFlag || (u.flag == 0d && u.controller() instanceof mindustry.ai.types.BuilderAI)) {
                 CoreBuild home = u.closestCore();
                 if (home != null) u.flag = builderHomeFlag(home);
