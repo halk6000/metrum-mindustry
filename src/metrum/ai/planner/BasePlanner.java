@@ -523,7 +523,8 @@ public class BasePlanner {
             if (accepted > 0) deliveryTarget = core;
             if (accepted > 0 && unit.within(core, unit.type.range)) {
                 mindustry.gen.Call.transferItemTo(unit, cargo, accepted, unit.x, unit.y, core);
-                if (cargo == mindustry.content.Items.tungsten) lastTungstenProgress = Time.time;
+                // An overflow delivery elsewhere does not advance this home's recovery goal.
+                if (core == home && cargo == mindustry.content.Items.tungsten) lastTungstenProgress = Time.time;
             }
             moveTo(core, unit.type.range * 0.8f);
         }
