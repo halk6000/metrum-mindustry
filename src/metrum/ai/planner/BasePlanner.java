@@ -221,7 +221,10 @@ public class BasePlanner {
         miningBonusTimer += Time.delta;
         if (miningBonusTimer >= 60f) {
             miningBonusTimer = 0f;
-            for (CoreBuild core : Vars.state.rules.waveTeam.cores()) supplyCoreProducers(core);
+            for (CoreBuild core : Vars.state.rules.waveTeam.cores()) {
+                supplyCoreProducers(core);
+                supplyMiningDock(core);
+            }
             mindustry.gen.Groups.build.each(b -> {
                 if (b.team == Vars.state.rules.waveTeam
                     && (b.block instanceof mindustry.world.blocks.production.Drill
@@ -442,13 +445,46 @@ public class BasePlanner {
 
     private static boolean buildMiningDock(CoreBuild core, Item ore) {
         Block dock = metrum.content.MetrumUnitBlocks.airMinerDock;
+        return dock != null && dock.environmentBuildable() && canTrainMiningDrone(core, ore)
+            && count(core, b -> b.block == dock) == 0 && queueCoreWorkshop(core, dock);
+    }
+
+    private static boolean canTrainMiningDrone(CoreBuild core, Item ore) {
         mindustry.type.UnitType drone = metrum.content.MetrumUnits.monoMetT1;
-        if (dock == null || !dock.environmentBuildable() || !drone.mineItems.contains(ore)
-            || ore.hardness > drone.mineTier || assignedMiningDrone(core) != null
-            || count(core, b -> b.block == dock) > 0) return false;
-        boolean depositAvailable = (drone.mineFloor && Vars.indexer.findClosestOre(core.x, core.y, ore) != null)
-            || (drone.mineWalls && Vars.indexer.findClosestWallOre(core.x, core.y, ore) != null);
-        return depositAvailable && queueCoreWorkshop(core, dock);
+        return drone.mineItems.contains(ore) && ore.hardness <= drone.mineTier && assignedMiningDrone(core) == null
+            && ((drone.mineFloor && Vars.indexer.findClosestOre(core.x, core.y, ore) != null)
+                || (drone.mineWalls && Vars.indexer.findClosestWallOre(core.x, core.y, ore) != null));
+    }
+
+    private static void supplyMiningDock(CoreBuild core) {
+        Building dock = core.proximity.find(b -> b.block == metrum.content.MetrumUnitBlocks.airMinerDock
+            && b.team == core.team && b.enabled && b.closestCore() == core);
+        if (!(dock instanceof mindustry.world.blocks.units.UnitFactory.UnitFactoryBuild)) return;
+        mindustry.world.blocks.units.UnitFactory.UnitFactoryBuild factory =
+            (mindustry.world.blocks.units.UnitFactory.UnitFactoryBuild) dock;
+        mindustry.world.blocks.units.UnitFactory block = (mindustry.world.blocks.units.UnitFactory) dock.block;
+        int planIndex = block.plans.indexOf(plan -> plan.unit == metrum.content.MetrumUnits.monoMetT1);
+        if (planIndex < 0) return;
+
+        assignMiningDrone(core);
+        ItemStack demand = miningDemand.get(core);
+        if (demand == null || !canTrainMiningDrone(core, demand.item)) {
+            if (factory.currentPlan == planIndex) mindustry.gen.Call.tileConfig(null, factory, -1);
+            return;
+        }
+        if (factory.currentPlan != planIndex) mindustry.gen.Call.tileConfig(null, factory, planIndex);
+        ItemStack[] requirements = block.plans.get(planIndex).requirements;
+        java.util.Map<Item, Integer> reserve = economicReserve(core);
+        for (ItemStack cost : requirements) {
+            int needed = cost.amount - factory.items.get(cost.item);
+            if (needed > 0 && core.items.get(cost.item) - reserve.getOrDefault(cost.item, 0) < needed) return;
+        }
+        for (ItemStack cost : requirements) {
+            int needed = cost.amount - factory.items.get(cost.item);
+            if (needed <= 0) continue;
+            core.items.remove(cost.item, needed);
+            factory.items.add(cost.item, needed);
+        }
     }
 
     private static boolean hasLocalTungstenDrone(CoreBuild core, Item ore) {
