@@ -62,7 +62,7 @@ public class BuilderQueueTest {
         check(BasePlanner.sandOutletReady(route.first(), furnace, sandInput));
         mindustry.gen.Building lastDuct = route.get(1).build;
         route.get(1).build = null;
-        BuildPlan repair = BasePlanner.sandGapPlan(route.first(), furnace, sandInput).first();
+        BuildPlan repair = BasePlanner.sandGapPlan(route.first(), furnace, sandInput, site -> true).first();
         check(repair != null && repair.block == duct && repair.x == 3 && repair.y == 2 && repair.rotation == 1);
         route.get(1).build = lastDuct;
         // A surviving upstream duct points at a gap before the two installed outlet ducts.
@@ -72,7 +72,7 @@ public class BuilderQueueTest {
         upstream.build.block = duct;
         upstream.build.rotation = 0;
         check(!BasePlanner.sandOutletReady(upstream, furnace, sandInput));
-        BuildPlan middleRepair = BasePlanner.sandGapPlan(upstream, furnace, sandInput).first();
+        BuildPlan middleRepair = BasePlanner.sandGapPlan(upstream, furnace, sandInput, site -> true).first();
         check(middleRepair != null && middleRepair.x == 1 && middleRepair.y == 2
             && middleRepair.rotation == 0 && middleRepair.block == duct);
         mindustry.world.Tile gap = Vars.world.tile(middleRepair.x, middleRepair.y);
@@ -81,19 +81,27 @@ public class BuilderQueueTest {
         gap.build.block = middleRepair.block;
         gap.build.rotation = middleRepair.rotation;
         check(BasePlanner.sandOutletReady(upstream, furnace, sandInput));
-        check(BasePlanner.sandGapPlan(upstream, furnace, sandInput) == null);
+        check(BasePlanner.sandGapPlan(upstream, furnace, sandInput, site -> true) == null);
         gap.build = route.first().build = null;
-        arc.struct.Seq<BuildPlan> pair = BasePlanner.sandGapPlan(upstream, furnace, sandInput);
+        arc.struct.Seq<BuildPlan> pair = BasePlanner.sandGapPlan(upstream, furnace, sandInput, site -> true);
         check(pair != null && pair.size == 2);
         check(pair.first().x == 2 && pair.first().y == 2 && pair.first().rotation == 0);
         check(pair.peek().x == 1 && pair.peek().y == 2 && pair.peek().rotation == 0);
         verifyRepairSequence(pair, upstream, furnace, sandInput);
         // Remove the corner and its approach, keeping the upstream ducts in service.
         route.first().build = route.get(1).build = null;
-        arc.struct.Seq<BuildPlan> corner = BasePlanner.sandGapPlan(upstream, furnace, sandInput);
+        arc.struct.Seq<BuildPlan> corner = BasePlanner.sandGapPlan(upstream, furnace, sandInput, site -> true);
         check(corner != null && corner.size == 2);
         check(corner.first().x == 3 && corner.first().y == 2 && corner.first().rotation == 1);
         check(corner.peek().x == 2 && corner.peek().y == 2 && corner.peek().rotation == 0);
+        mindustry.world.Tile routeCorner = Vars.world.tile(3, 2);
+        arc.struct.Seq<BuildPlan> detour = BasePlanner.sandGapPlan(upstream, furnace, sandInput,
+            site -> site != routeCorner);
+        check(detour != null && detour.size == 2);
+        check(detour.first().x == 2 && detour.first().y == 3 && detour.first().rotation == 0);
+        check(detour.peek().x == 2 && detour.peek().y == 2 && detour.peek().rotation == 1);
+        verifyRepairSequence(detour, upstream, furnace, sandInput);
+        Vars.world.tile(2, 3).build = route.first().build = null;
         verifyRepairSequence(corner, upstream, furnace, sandInput);
         upstream.build = gap.build = null;
         route.get(1).build.rotation = 2;

@@ -670,7 +670,8 @@ public class BasePlanner {
             if (duct.next != core && (duct.next == null || !isLinkedStorage(core, duct.next))) continue;
             if (!isDedicatedSandLine(duct)) continue;
             for (int direction = 0; direction < 4; direction++) {
-                Seq<BuildPlan> repair = sandGapPlan(duct.tile.nearby(direction), furnace, duct);
+                Seq<BuildPlan> repair = sandGapPlan(duct.tile.nearby(direction), furnace, duct,
+                    site -> Build.validPlace(duct.block, core.team, site.x, site.y, 0, false));
                 if (repair != null && queueConstructionBatch(core, repair)) return true;
             }
             Seq<Tile> route = Astar.pathfind(duct.tile, furnace.tile, tile -> 1f,
@@ -693,16 +694,17 @@ public class BasePlanner {
         return sandOutletReady(output, furnace, input, 7);
     }
 
-    static Seq<BuildPlan> sandGapPlan(Tile tile, Building furnace, Building input) {
+    static Seq<BuildPlan> sandGapPlan(Tile tile, Building furnace, Building input, arc.func.Boolf<Tile> canPlace) {
         for (int remaining = 6; tile != null && remaining > 0; remaining--) {
             if (tile.build == null && tile.block() == Blocks.air) {
+                if (!canPlace.get(tile)) return null;
                 for (int dir = 0; dir < 4; dir++) {
                     if (sandOutletReady(tile.nearby(dir), furnace, input, remaining))
                         return Seq.with(new BuildPlan(tile.x, tile.y, dir, input.block));
                 }
                 for (int dir = 0; remaining > 1 && dir < 4; dir++) {
                     Tile second = tile.nearby(dir);
-                    if (second == null || second.build != null || second.block() != Blocks.air) continue;
+                    if (second == null || second.build != null || second.block() != Blocks.air || !canPlace.get(second)) continue;
                     for (int turn = 0; turn < 4; turn++) {
                         if (sandOutletReady(second.nearby(turn), furnace, input, remaining - 1)) {
                             return Seq.with(new BuildPlan(second.x, second.y, turn, input.block),
