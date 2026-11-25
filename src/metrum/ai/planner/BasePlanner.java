@@ -644,8 +644,11 @@ public class BasePlanner {
 
     private static boolean buildMiningDock(CoreBuild core, Item ore) {
         Block dock = metrum.content.MetrumUnitBlocks.airMinerDock;
-        if (dock == null || !dock.environmentBuildable() || !canTrainMiningDrone(core, ore)
-            || count(core, b -> b.block == dock) > 0) return false;
+        if (dock == null || !dock.environmentBuildable() || !canTrainMiningDrone(core, ore)) return false;
+        Building existing = core.proximity.find(b -> b.block == dock && b.team == core.team
+            && b.enabled && b.closestCore() == core);
+        if (existing != null) return redirectMiningDock(core, existing);
+        if (count(core, b -> b.block == dock) > 0) return false;
         int coreMin = -(core.block.size - 1) / 2, coreMax = core.block.size / 2;
         int dockMin = -(dock.size - 1) / 2, dockMax = dock.size / 2;
         for (int direction = 0; direction < 4; direction++) {
@@ -653,12 +656,33 @@ public class BasePlanner {
             int distance = direction < 2 ? coreMax - dockMin + 1 : dockMax - coreMin + 1;
             Tile site = Vars.world.tile(core.tileX() + dx * distance, core.tileY() + dy * distance);
             if (site == null || !Build.validPlace(dock, core.team, site.x, site.y, direction, false)) continue;
-            int exitDistance = direction < 2 ? dockMax + 1 : 1 - dockMin;
-            Tile exit = Vars.world.tile(site.x + dx * exitDistance, site.y + dy * exitDistance);
+            Tile exit = miningDockExit(site, dock, direction);
             if (exit == null || exit.block() != Blocks.air) continue;
             return queueConstructionBatch(core, Seq.with(new BuildPlan(site.x, site.y, direction, dock)), true);
         }
         return false;
+    }
+
+    private static boolean redirectMiningDock(CoreBuild core, Building dock) {
+        Tile currentExit = miningDockExit(dock.tile, dock.block, dock.rotation);
+        if (currentExit != null && (currentExit.block() == Blocks.air
+            || (currentExit.team() == core.team && currentExit.block().acceptsPayload))) return false;
+        mindustry.gen.Unit builder = assignedBuilder(core);
+        if (builder == null || !builder.plans.isEmpty()) return false;
+        for (int direction = 0; direction < 4; direction++) {
+            Tile exit = miningDockExit(dock.tile, dock.block, direction);
+            if (exit == null || exit.block() != Blocks.air
+                || !Build.validPlace(dock.block, core.team, dock.tileX(), dock.tileY(), direction, false)) continue;
+            builder.addBuild(new BuildPlan(dock.tileX(), dock.tileY(), direction, dock.block));
+            return true;
+        }
+        return false;
+    }
+
+    private static Tile miningDockExit(Tile site, Block dock, int direction) {
+        int distance = direction < 2 ? dock.size / 2 + 1 : (dock.size - 1) / 2 + 1;
+        return Vars.world.tile(site.x + arc.math.geom.Geometry.d4x(direction) * distance,
+            site.y + arc.math.geom.Geometry.d4y(direction) * distance);
     }
 
     private static boolean canTrainMiningDrone(CoreBuild core, Item ore) {

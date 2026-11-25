@@ -24,6 +24,7 @@ public class MetrumUnitBlocks {
 
     public static void load() {
         airMinerDock = new UnitFactory("air-miner-dock") {{
+            quickRotate = true;
             requirements(Category.units, with(Items.beryllium, 250, Items.graphite, 80, Items.silicon, 20));
             size = 3;
             health = 300;
