@@ -26,6 +26,22 @@ public class WelcomeDialog {
         show(mod == null ? "?" : mod.meta.version);
     }
 
+    public static void showFeatures() {
+        BaseDialog dialog = new BaseDialog(Core.bundle.get("metrum.features.title"));
+        float scale = arc.scene.ui.layout.Scl.scl(1f);
+        float width = Math.min(Core.graphics.getWidth() / scale - 80f, 640f);
+        dialog.cont.pane(list -> {
+            list.defaults().width(width).left();
+            for (String section : new String[]{"industry", "mining", "drones", "physics", "campaign"}) {
+                String key = "metrum.features." + section;
+                list.add(Core.bundle.get(key + ".title")).color(mindustry.graphics.Pal.accent).wrap().padTop(12f).row();
+                list.add(Core.bundle.get(key + ".text")).wrap().padBottom(8f).row();
+            }
+        }).maxHeight(Core.graphics.getHeight() * 0.72f / scale);
+        dialog.addCloseButton();
+        dialog.show();
+    }
+
     private static void show(String version) {
         BaseDialog d = new BaseDialog(Core.bundle.format("metrum.welcome.title", version));
         float w = Math.min(Core.graphics.getWidth() / arc.scene.ui.layout.Scl.scl(1f) - 80f, 640f);

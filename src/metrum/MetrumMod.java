@@ -108,6 +108,7 @@ public class MetrumMod extends Mod {
                     i -> metrum.ai.planner.AiLevel.values()[i].localized());
                 t.checkPref(metrum.ai.planner.BasePlanner.everywhereSetting, true);
                 t.button("@metrum.welcome.open", mindustry.gen.Icon.info, WelcomeDialog::show).growX().padTop(8f).row();
+                t.button("@metrum.features.title", mindustry.gen.Icon.box, WelcomeDialog::showFeatures).growX().padTop(8f).row();
             });
         }
         metrum.modular.Loadouts.init();
