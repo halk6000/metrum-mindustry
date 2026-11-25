@@ -184,6 +184,7 @@ public class BuilderQueueTest {
         try { new AbandonedBuilds().read(new DataInputStream(new ByteArrayInputStream(broken))); throw new AssertionError(); }
         catch(EOFException expected) { check(AbandonedBuilds.pending.isEmpty()); }
         checkWaterBypassFlow();
+        checkCondenserFeedsImpactDrill();
         System.out.println("OK: saved plan order, rotations, demolition, controller restoration, queue continuation, reserved materials, released materials, invalid batch cancellation, constructor replacement queue, saved abandoned queue, truncated save");
     }
 
@@ -215,6 +216,40 @@ public class BuilderQueueTest {
         check(delivered > 0f && exit.build == null);
         float total = delivered;
         for (mindustry.gen.Building segment : line) total += segment.liquids.get(water);
+        check(Math.abs(total - 8f) < 0.001f);
+    }
+
+    static void checkCondenserFeedsImpactDrill() {
+        Vars.world.tiles.fill();
+        Block condenser = mindustry.content.Blocks.turbineCondenser;
+        Block drill = mindustry.content.Blocks.impactDrill;
+        Block pipe = mindustry.content.Blocks.reinforcedConduit;
+        condenser.init();
+        drill.init();
+        mindustry.gen.Building source = placeLiquidBlock(condenser, 1, 3, 0);
+        mindustry.gen.Building receiver = placeLiquidBlock(drill, 6, 3, 0);
+        for (mindustry.world.Tile tile : Vars.world.tiles) {
+            if (BasePlanner.insideFootprint(tile, source.tile, condenser)) tile.build = source;
+            if (BasePlanner.insideFootprint(tile, receiver.tile, drill)) tile.build = receiver;
+        }
+        arc.struct.Seq<mindustry.world.Tile> route = BasePlanner.pipeRoute(source, receiver, pipe, t -> true);
+        arc.struct.Seq<mindustry.gen.Building> pipes = new arc.struct.Seq<>();
+        for (int i = 0; i < route.size - 1; i++) {
+            mindustry.world.Tile tile = route.get(i);
+            if (tile.build == null) pipes.add(placeLiquidBlock(pipe, tile.x, tile.y, tile.relativeTo(route.get(i + 1))));
+        }
+        check(!pipes.isEmpty());
+        source.proximity.add(pipes.first());
+        pipes.first().proximity.add(source);
+        mindustry.type.Liquid water = mindustry.content.Liquids.water;
+        source.liquids.add(water, 8f);
+        for (int tick = 0; tick < 60; tick++) {
+            source.dumpLiquid(water);
+            for (mindustry.gen.Building segment : pipes) segment.moveLiquidForward(false, water);
+        }
+        check(receiver.liquids.get(water) > 0f);
+        float total = source.liquids.get(water) + receiver.liquids.get(water);
+        for (mindustry.gen.Building segment : pipes) total += segment.liquids.get(water);
         check(Math.abs(total - 8f) < 0.001f);
     }
 
