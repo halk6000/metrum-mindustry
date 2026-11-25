@@ -277,7 +277,17 @@ public class BasePlanner {
 
         @Override
         public void updateMovement() {
-            if (home.isValid() && home.team == unit.team && unit.stack.amount > 0) {
+            if (!home.isValid() || home.team != unit.team) {
+                unit.mineTile = null;
+                if (unit.stack.amount == 0) {
+                    unit.controller(previousController);
+                } else {
+                    CoreBuild fallback = unit.closestCore();
+                    if (fallback != null) deliverCargo(fallback);
+                }
+                return;
+            }
+            if (unit.stack.amount > 0) {
                 Item cargo = unit.stack.item;
                 ItemStack demand = miningDemand.get(home);
                 int accepted = home.acceptStack(cargo, unit.stack.amount, unit);
@@ -290,16 +300,22 @@ public class BasePlanner {
                     || accepted < unit.stack.amount || vanillaWouldDiscardCargo
                     || (demand != null && cargo != demand.item)
                     || (!unit.validMine(unit.mineTile) && !canGather(unit, cargo))) {
-                    mining = false;
-                    unit.mineTile = null;
-                    if (accepted > 0 && unit.within(home, unit.type.range)) {
-                        mindustry.gen.Call.transferItemTo(unit, cargo, accepted, unit.x, unit.y, home);
-                    }
-                    moveTo(home, unit.type.range * 0.8f);
+                    deliverCargo(home);
                     return;
                 }
             }
             super.updateMovement();
+        }
+
+        private void deliverCargo(CoreBuild core) {
+            mining = false;
+            unit.mineTile = null;
+            Item cargo = unit.stack.item;
+            int accepted = core.acceptStack(cargo, unit.stack.amount, unit);
+            if (accepted > 0 && unit.within(core, unit.type.range)) {
+                mindustry.gen.Call.transferItemTo(unit, cargo, accepted, unit.x, unit.y, core);
+            }
+            moveTo(core, unit.type.range * 0.8f);
         }
 
         @Override
