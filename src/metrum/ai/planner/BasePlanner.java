@@ -670,7 +670,7 @@ public class BasePlanner {
             if (duct.next != core && (duct.next == null || !isLinkedStorage(core, duct.next))) continue;
             if (!isDedicatedSandLine(duct)) continue;
             arc.func.Boolf<Tile> available = site -> Build.validPlace(duct.block, core.team, site.x, site.y, 0, false)
-                && ductSiteClear(core.team, duct.block, site);
+                && transportSiteClear(core.team, duct.block, site);
             for (int direction = 0; direction < 4; direction++) {
                 Seq<BuildPlan> repair = sandGapPlan(duct.tile.nearby(direction), furnace, duct, available);
                 if (repair != null && queueConstructionBatch(core, repair)) return true;
@@ -688,7 +688,7 @@ public class BasePlanner {
         return false;
     }
 
-    static boolean ductSiteClear(Team team, Block duct, Tile site) {
+    static boolean transportSiteClear(Team team, Block duct, Tile site) {
         return !overlapsQueuedBuild(team, duct, site.x, site.y)
             && !blocksMiningDockExit(team, duct, site.x, site.y);
     }
@@ -1330,6 +1330,12 @@ public class BasePlanner {
         }
         return new Seq<>();
     }
+    static Seq<Tile> pipeRoute(Building from, Building to, Block conduit, arc.func.Boolf<Tile> canPlace) {
+        return Astar.pathfind(from.tile, to.tile, tile -> 1f,
+            tile -> tile.build == from || tile.build == to || (tile.block() == Blocks.air
+                && canPlace.get(tile) && transportSiteClear(from.team, conduit, tile)));
+    }
+
     static boolean waterSiteSafe(Tile site, Team team) {
         return liquidSiteSafe(site, team, mindustry.content.Liquids.water);
     }
@@ -1570,11 +1576,9 @@ public class BasePlanner {
         if (pipeBudget == 0 && (demand == null || (water && !recoveryWater))) return false;
         for (Building[] pair : pairs) {
             Building from = pair[0], to = pair[1];
-            Seq<Tile> path = Astar.pathfind(from.tile, to.tile, tile -> 1f,
-                t -> t.build == from || t.build == to ||
-                    (t.block() == Blocks.air && Build.validPlace(conduit, core.team, t.x, t.y, 0, false)
-                        && (water ? waterSiteSafe(t, core.team)
-                            : liquidSiteSafe(t, core.team, liquid, from, to))));
+            Seq<Tile> path = pipeRoute(from, to, conduit,
+                t -> Build.validPlace(conduit, core.team, t.x, t.y, 0, false)
+                    && (water ? waterSiteSafe(t, core.team) : liquidSiteSafe(t, core.team, liquid, from, to)));
             if (path == null || path.size < 3) continue;
             Seq<BuildPlan> plans = new Seq<>();
             for (int i = 0; i < path.size - 1; i++) {
@@ -1925,7 +1929,7 @@ public class BasePlanner {
                                     arc.func.Boolf<Tile> canPlace) {
         return Astar.pathfind(site, destination.tile, tile -> 1f,
             tile -> tile.build == destination || insideFootprint(tile, site, drill)
-                || (tile.block() == Blocks.air && canPlace.get(tile) && ductSiteClear(team, duct, tile)));
+                || (tile.block() == Blocks.air && canPlace.get(tile) && transportSiteClear(team, duct, tile)));
     }
 
     static boolean insideFootprint(Tile tile, Tile anchor, Block block) {

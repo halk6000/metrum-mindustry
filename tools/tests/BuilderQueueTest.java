@@ -317,13 +317,22 @@ public class BuilderQueueTest {
             receiver.tile = Vars.world.tile(5, 6);
             receiver.tile.build = receiver;
             arc.struct.Seq<mindustry.world.Tile> aroundDock = BasePlanner.sandRoute(Vars.world.tile(5, 4),
-                receiver, site -> BasePlanner.ductSiteClear(core.team, duct, site));
+                receiver, site -> BasePlanner.transportSiteClear(core.team, duct, site));
             check(aroundDock != null && aroundDock.size > 2 && aroundDock.peek() == receiver.tile);
             check(!aroundDock.contains(Vars.world.tile(5, 5)) && !aroundDock.contains(Vars.world.tile(4, 5)));
             arc.struct.Seq<mindustry.world.Tile> oreRoute = BasePlanner.extractorRoute(
                 Vars.world.tile(5, 4), drill, receiver, core.team, duct, tile -> true);
             check(oreRoute != null && oreRoute.size > 2 && oreRoute.peek() == receiver.tile);
             check(!oreRoute.contains(Vars.world.tile(5, 5)) && !oreRoute.contains(Vars.world.tile(4, 5)));
+            mindustry.gen.Building pump = mindustry.gen.Building.create();
+            pump.team = core.team;
+            pump.tile = Vars.world.tile(5, 4);
+            pump.tile.build = pump;
+            arc.struct.Seq<mindustry.world.Tile> pipes = BasePlanner.pipeRoute(pump, receiver,
+                new Block("test-water-conduit"), tile -> true);
+            check(pipes != null && pipes.size > 2 && pipes.peek() == receiver.tile);
+            check(!pipes.contains(Vars.world.tile(5, 5)) && !pipes.contains(Vars.world.tile(4, 5)));
+            pump.tile.build = null;
             receiver.tile.build = null;
             check(!BasePlanner.blocksMiningDockExit(core.team, duct, 4, 6));
             check(!BasePlanner.blocksMiningDockExit(mindustry.game.Team.sharded, duct, 5, 5));
