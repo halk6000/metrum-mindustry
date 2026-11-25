@@ -278,27 +278,55 @@ public class BasePlanner {
 
     private static void observeSandInputs() {
         lastSandOnInput.keySet().removeIf(core -> !core.isValid() || core.team != Vars.state.rules.waveTeam);
+        Item sand = mindustry.content.Items.sand, silicon = mindustry.content.Items.silicon;
         for (CoreBuild core : Vars.state.rules.waveTeam.cores()) {
             ItemStack demand = miningDemand.get(core);
-            if (demand == null || demand.item != mindustry.content.Items.sand) continue;
-            if (hasSandOnInput(core)) {
-                lastSandOnInput.put(core, Time.time);
-                continue;
+            if (demand == null || (demand.item != sand && demand.item != silicon)) continue;
+            mindustry.world.blocks.distribution.Duct.DuctBuild input = sandInput(core);
+            if (input == null) for (Building storage : core.proximity) {
+                if (!isLinkedStorage(core, storage)) continue;
+                input = sandInput(storage);
+                if (input != null) break;
             }
-            for (Building storage : core.proximity) {
-                if (isLinkedStorage(core, storage) && hasSandOnInput(storage)) {
-                    lastSandOnInput.put(core, Time.time);
-                    break;
-                }
+            if (input != null) lastSandOnInput.put(core, Time.time);
+
+            if (!((mindustry.world.blocks.storage.CoreBlock) core.block).incinerateNonBuildable || sand.buildable) continue;
+            java.util.Deque<ItemStack> pending = deferredDemand.get(core);
+            ItemStack parent = pending == null ? null : pending.peekFirst();
+            boolean sandForSilicon = demand.item == sand && parent != null && parent.item == silicon;
+            if (demand.item == silicon || sandForSilicon) {
+                if (feedArcFurnaceSand(core, input) && sandForSilicon) miningDemand.remove(core);
             }
         }
     }
 
-    private static boolean hasSandOnInput(Building destination) {
-        return destination.proximity.contains(b -> b.team == destination.team
+    private static mindustry.world.blocks.distribution.Duct.DuctBuild sandInput(Building destination) {
+        return (mindustry.world.blocks.distribution.Duct.DuctBuild) destination.proximity.find(b -> b.team == destination.team
             && b instanceof mindustry.world.blocks.distribution.Duct.DuctBuild
             && ((mindustry.world.blocks.distribution.Duct.DuctBuild) b).next == destination
             && ((mindustry.world.blocks.distribution.Duct.DuctBuild) b).current == mindustry.content.Items.sand);
+    }
+
+    private static boolean feedArcFurnaceSand(CoreBuild core, mindustry.world.blocks.distribution.Duct.DuctBuild input) {
+        Item sand = mindustry.content.Items.sand;
+        for (Building furnace : coreWorkshops(core, mindustry.content.Items.silicon)) {
+            if (furnace.team != core.team || !furnace.enabled || furnace.items == null || furnace.closestCore() != core
+                || !isSiliconArcFurnace(furnace.block)) continue;
+            int batch = 0;
+            for (mindustry.world.consumers.Consume consumer : furnace.block.nonOptionalConsumers) {
+                if (!(consumer instanceof mindustry.world.consumers.ConsumeItems)) continue;
+                for (ItemStack ingredient : ((mindustry.world.consumers.ConsumeItems) consumer).items) {
+                    if (ingredient.item == sand) batch += ingredient.amount;
+                }
+            }
+            if (batch == 0 || batch > furnace.getMaximumAccepted(sand)) continue;
+            if (furnace.items.get(sand) < batch && input != null) {
+                int transferred = input.removeStack(sand, 1);
+                if (transferred > 0) furnace.items.add(sand, transferred);
+            }
+            return furnace.items.get(sand) >= batch;
+        }
+        return false;
     }
 
     static void assignMiningDrone(CoreBuild core) {
