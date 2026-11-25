@@ -135,3 +135,10 @@
 ## Mapa użytkownika — aktualizacja 24.11
 - [x] Zaimportowano Stary Wąwóz zapisany 24.11 o 08:34 z katalogu map Steam do obu nazw mapy w assets/maps; kolejny JAR i wydanie mają zawierać tę wersję.
 - Złoża Starego Wąwozu są rozmieszczone ręcznie: mają być skąpe, lecz wystarczające na pierwsze walki. Nie dosypywać losowych rud ani zwiększać złóż jako obejścia problemów gospodarki AI.
+
+## Następny krok AI — planer celów i graf zależności (25.11)
+- [ ] Zastąpić indywidualne reguły dla surowców uniwersalnym grafem zależności opartym na danych bloków, recepturach, kosztach budowy, paliwach, amunicji, energii, płynach i produkcji jednostek. Niestandardowe mechaniki obsługiwać adapterami.
+- [ ] Kolejka celów strategicznych generuje zadania podrzędne według brakujących zależności, dostępnych zapasów i przepustowości dostaw. Wybiera efektywne źródła oraz transport dronami, taśmociągami lub rurami; wykrywa cykle i niedostępne technologie. Weryfikuje faktyczne działanie budynków, a nie tylko ich postawienie.
+- [ ] Początkowy scenariusz rozwoju: (1) wieżyczka obronna wraz z zaopatrzeniem; (2) fabryka dronów wydobywczych; (3) kolejna wieżyczka; (4) ulepszenie rdzenia do poziomu 2; (5) kolejna wieżyczka; (6) przestawienie produkcji dronów wydobywczych na bojowe, np. T2; (7) wyprodukowanie 2 T2 i atak na bazę przeciwnika; (8) wyprodukowanie 5 T2 i kolejny atak; (9) budowa 2 wieżyczek; (10) ulepszenie rdzenia do poziomu 3; dalszy stopniowy rozwój.
+- [ ] Proponowane zabezpieczenia: priorytet awaryjny obrony i podtrzymania gospodarki, ponowne planowanie po stratach, zachowanie niezbędnych dronów wydobywczych przy zmianie produkcji. Poziom inteligencji wpływa na efektywność planowania, niezależnie od poziomu bazy.
+- [ ] Testy: realizacja scenariusza od startu, brak paliwa rdzenia (węgiel i inne), piasek, brak energii, utrata dostaw, zależności cykliczne i odbudowa po ataku. Nie tworzyć osobnych ifów dla każdego surowca.
