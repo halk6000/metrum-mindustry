@@ -233,12 +233,44 @@ public class BasePlanner {
                 stalled("oczekiwanie na konstruktora przy rdzeniu");
                 continue;
             }
+            assignMiningDrone(core);
             for (int i = 0; i < level.stepsPerTick; i++) {
                 if (!step(core, level)) break;
                 completedSteps++;
             }
         }
         plannerAction = completedSteps > before ? "ostatnia próba: wykonano pracę" : (failureReason == null ? "ostatnia próba: bez postępu" : failureReason);
+    }
+
+    static void assignMiningDrone(CoreBuild core) {
+        ItemStack demand = miningDemand.get(core);
+        if (demand == null || !metrum.ai.SmartMining.canStoreMined(core, demand.item)) return;
+        if (mindustry.gen.Groups.unit.contains(u -> !u.dead() && u.team == core.team
+            && u.controller() instanceof ResourceDroneAI && ((ResourceDroneAI) u.controller()).home == core)) return;
+        mindustry.gen.Unit drone = mindustry.gen.Groups.unit.find(u -> u.team == core.team && !u.dead() && !u.isPlayer()
+            && u.flag == 0d && u.plans.isEmpty() && u.closestCore() == core
+            && (u.type == metrum.content.MetrumUnits.monoMetT1 || u.type == metrum.content.MetrumUnits.monoMetT1b)
+            && u.controller() instanceof mindustry.entities.units.AIController
+            && !(u.controller() instanceof ResourceDroneAI) && u.canMine(demand.item)
+            && metrum.ai.SmartMining.findMineableOre(u, demand.item) != null);
+        if (drone != null) drone.controller(new ResourceDroneAI(core));
+    }
+
+    private static class ResourceDroneAI extends metrum.ai.SmartMining.SmartMinerAI {
+        final CoreBuild home;
+
+        ResourceDroneAI(CoreBuild home) {
+            this.home = home;
+        }
+
+        @Override
+        protected Item desired() {
+            ItemStack demand = miningDemand.get(home);
+            if (demand != null && unit.canMine(demand.item)
+                && metrum.ai.SmartMining.canStoreMined(unit.closestCore(), demand.item)
+                && metrum.ai.SmartMining.findMineableOre(unit, demand.item) != null) return demand.item;
+            return super.desired();
+        }
     }
 
     /** picks the next build step in the planned order */
