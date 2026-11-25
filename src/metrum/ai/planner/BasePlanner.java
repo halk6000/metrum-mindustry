@@ -1388,6 +1388,10 @@ public class BasePlanner {
         }
     }
     static boolean buildDemandProducer(CoreBuild core, Item item) {
+        if (item == mindustry.content.Items.silicon && core.proximity.contains(factory -> factory.team == core.team
+            && factory.enabled && factory.items != null && factory.closestCore() == core
+            && (factory.block == Blocks.siliconArcFurnace
+                || factory.block == metrum.content.MetrumProduction.arcFurnaceOverclocked))) return false;
         Block ready = findProducer(core, item);
         final Block producer = ready != null ? ready : findProducer(core, item, true);
         if (producer == null) {
