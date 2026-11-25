@@ -150,3 +150,5 @@
 - [ ] Propozycja: dynamicznie przeliczać stan gospodarki po budowie, zniszczeniu, zmianie aktywności dronów i dostaw. Doprecyzować, które punkty są stanem aktualnym, a które nagrodą za zdarzenie, aby uniknąć sztucznego farmienia punktów. Zapewnić zgodność z symulacją sektorów offline.
 
 - [ ] Doprecyzowanie punktacji kumulacyjnej (25.11): dron T1 = 15 pkt, T2 = 15 + 50 = 65 pkt, T3 = 15 + 50 + ok. 97 = ok. 162 pkt. Przetwórstwo: T1 = 30 pkt, T2 = 30 + 45 = 75 pkt, T3 = 30 + 45 + 60 = 135 pkt; kolejne składniki rosną o 15 pkt. Nie mnożyć całej dotychczasowej sumy przez 1,5. Wzór kolejnych poziomów przebudowy dronów pozostaje do doprecyzowania.
+
+- [ ] Blokada technologiczna AI: poziom rdzenia warunkuje dostęp do zaawansowanych dronów i wieżyczek. Początkowo AI buduje podstawowe jednostki i obronę. Wymagany poziom rdzenia stanowi zależność w uniwersalnym grafie celów; przed produkcją lub budową wyższego poziomu planer zabezpiecza materiały i ulepsza rdzeń. Dokładne wymagania poszczególnych obiektów wynikają z danych technologicznych, nie z osobnych reguł AI.
