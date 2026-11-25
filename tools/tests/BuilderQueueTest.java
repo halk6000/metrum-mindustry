@@ -266,6 +266,7 @@ public class BuilderQueueTest {
 
     static void checkTwoBuilders(Block drill, Block duct, mindustry.type.Item iron) {
         mindustry.gen.Groups.init();
+        Vars.world.tiles.fill();
         mindustry.world.blocks.storage.CoreBlock coreBlock = new mindustry.world.blocks.storage.CoreBlock("two-builder-core");
         mindustry.world.blocks.storage.CoreBlock.CoreBuild core = coreBlock.new CoreBuild();
         core.tile = Vars.world.tile(1, 1);
@@ -312,6 +313,14 @@ public class BuilderQueueTest {
             check(!BasePlanner.batchBlocksDockExit(arc.struct.Seq.with(dockPlan, new BuildPlan(5, 5))));
             first.addBuild(new BuildPlan(4, 5, 0, drill));
             check(BasePlanner.blocksMiningDockExit(core.team, duct, 5, 5));
+            mindustry.gen.Building receiver = mindustry.gen.Building.create();
+            receiver.tile = Vars.world.tile(5, 6);
+            receiver.tile.build = receiver;
+            arc.struct.Seq<mindustry.world.Tile> aroundDock = BasePlanner.sandRoute(Vars.world.tile(5, 4),
+                receiver, site -> BasePlanner.sandSiteClear(core.team, duct, site));
+            check(aroundDock != null && aroundDock.size > 2 && aroundDock.peek() == receiver.tile);
+            check(!aroundDock.contains(Vars.world.tile(5, 5)) && !aroundDock.contains(Vars.world.tile(4, 5)));
+            receiver.tile.build = null;
             check(!BasePlanner.blocksMiningDockExit(core.team, duct, 4, 6));
             check(!BasePlanner.blocksMiningDockExit(mindustry.game.Team.sharded, duct, 5, 5));
             first.plans.clear();

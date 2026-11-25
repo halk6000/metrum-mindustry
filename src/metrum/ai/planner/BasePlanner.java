@@ -670,7 +670,7 @@ public class BasePlanner {
             if (duct.next != core && (duct.next == null || !isLinkedStorage(core, duct.next))) continue;
             if (!isDedicatedSandLine(duct)) continue;
             arc.func.Boolf<Tile> available = site -> Build.validPlace(duct.block, core.team, site.x, site.y, 0, false)
-                && !overlapsQueuedBuild(core.team, duct.block, site.x, site.y);
+                && sandSiteClear(core.team, duct.block, site);
             for (int direction = 0; direction < 4; direction++) {
                 Seq<BuildPlan> repair = sandGapPlan(duct.tile.nearby(direction), furnace, duct, available);
                 if (repair != null && queueConstructionBatch(core, repair)) return true;
@@ -686,6 +686,11 @@ public class BasePlanner {
             return true;
         }
         return false;
+    }
+
+    static boolean sandSiteClear(Team team, Block duct, Tile site) {
+        return !overlapsQueuedBuild(team, duct, site.x, site.y)
+            && !blocksMiningDockExit(team, duct, site.x, site.y);
     }
 
     static Seq<Tile> sandRoute(Tile start, Building furnace, arc.func.Boolf<Tile> available) {
