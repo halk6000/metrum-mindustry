@@ -7,12 +7,17 @@ public class MetrumBuilderAI extends mindustry.ai.types.BuilderAI {
         @Override
         public void updateMovement() {
             mindustry.gen.Building core = unit.closestCore();
-            // Vanilla MinerAI clears cargo even when the core cannot accept the whole delivery.
-            if (!mining && unit.stack.amount > 0 && core != null
-                && core.acceptStack(unit.stack.item, unit.stack.amount, unit) < unit.stack.amount) {
-                unit.mineTile = null;
-                moveTo(core, unit.type.range * 0.8f);
-                return;
+            if (!mining && unit.stack.amount > 0 && core != null) {
+                int accepted = core.acceptStack(unit.stack.item, unit.stack.amount, unit);
+                // Handle partial deliveries here because vanilla MinerAI clears the entire stack.
+                if (accepted < unit.stack.amount) {
+                    unit.mineTile = null;
+                    if (accepted > 0 && unit.within(core, unit.type.range)) {
+                        mindustry.gen.Call.transferItemTo(unit, unit.stack.item, accepted, unit.x, unit.y, core);
+                    }
+                    moveTo(core, unit.type.range * 0.8f);
+                    return;
+                }
             }
             super.updateMovement();
         }
