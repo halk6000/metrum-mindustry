@@ -116,5 +116,28 @@ public class BuilderQueueTest {
         controller.updateMovement();
         check(builder.updateBuilding && builder.buildPlan() == plan);
         System.out.println("OK: partial cargo delivered and original construction resumed");
+
+        mindustry.world.blocks.environment.OreBlock deposit = new mindustry.world.blocks.environment.OreBlock("test-deposit", ore);
+        mindustry.world.Tile oreTile = new mindustry.world.Tile(1, 1, Vars.world.tile(4, 5).floor(), deposit, mindustry.content.Blocks.air);
+        Vars.world.tiles.set(1, 1, oreTile);
+        Vars.indexer = new mindustry.ai.BlockIndexer() {
+            @Override public boolean hasOre(mindustry.type.Item item) { return item == ore; }
+            @Override public mindustry.world.Tile findClosestOre(Unit unit, mindustry.type.Item item) {
+                return findClosestOre(unit.x, unit.y, item);
+            }
+            @Override public mindustry.world.Tile findClosestOre(float x, float y, mindustry.type.Item item) {
+                return item == ore ? oreTile : null;
+            }
+        };
+        builder.type.mineFloor = true;
+        builder.type.mineRange = 30f;
+        builder.type.mineItems.add(ore);
+        builder.set(oreTile.worldx(), oreTile.worldy());
+        core.items.remove(ore, 5);
+        arc.util.Time.time += 240f;
+        controller.updateMovement();
+        check(builder.stack.amount == 0 && builder.mineTile == oreTile);
+        check(!builder.updateBuilding && builder.plans.size == 1 && builder.buildPlan() == plan);
+        System.out.println("OK: empty builder starts mining the missing ore and retains its plan");
     }
 }
