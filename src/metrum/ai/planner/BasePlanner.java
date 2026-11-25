@@ -681,7 +681,7 @@ public class BasePlanner {
             if (deliverySteps < 2 || deliverySteps > 7) continue;
             int direction = duct.tile.relativeTo(route.first());
             if (!Build.validPlace(duct.block, core.team, duct.tileX(), duct.tileY(), direction, false)) continue;
-            if (!queueConstructionBatch(core, planSandConnector(route, deliverySteps, duct.block))) continue;
+            if (!queueConstructionBatch(core, planConnector(route, deliverySteps, duct.block))) continue;
             // Rotate the live input on a later pass once the installed ducts lead to the furnace.
             return true;
         }
@@ -747,7 +747,7 @@ public class BasePlanner {
         return 0;
     }
 
-    static Seq<BuildPlan> planSandConnector(Seq<Tile> route, int deliverySteps, Block duct) {
+    static Seq<BuildPlan> planConnector(Seq<Tile> route, int deliverySteps, Block duct) {
         Seq<BuildPlan> plans = new Seq<>();
         for (int i = 0; i < deliverySteps - 1; i++) {
             Tile tile = route.get(i);
@@ -1486,13 +1486,8 @@ public class BasePlanner {
                         if (next.block == conduit && !waterCompatible(next)) continue;
                         if (next.block == conduit && next.tile.nearby(next.rotation) == tail) continue;
                         if (!destinations.contains(to -> next == to || connections.connected(next, to))) continue;
-                        Seq<BuildPlan> plans = new Seq<>();
-                        for (int i = 0; i < path.size; i++) {
-                            Tile t = path.get(i);
-                            int rotation = i + 1 < path.size ? t.relativeTo(path.get(i + 1)) : direction;
-                            plans.add(new BuildPlan(t.x, t.y, rotation, conduit));
-                        }
-                        return queueConstructionBatch(core, plans);
+                        path.add(nextTile);
+                        return queueConstructionBatch(core, planConnector(path, path.size, conduit));
                     }
                     if (path.size >= 6 || seen.contains(nextTile) || nextTile.block() != Blocks.air
                         || !(waterRepairSiteClear(nextTile, core.team, conduit) && Build.validPlace(conduit, core.team, nextTile.x, nextTile.y, 0, false))) continue;

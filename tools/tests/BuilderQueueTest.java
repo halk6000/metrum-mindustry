@@ -43,7 +43,7 @@ public class BuilderQueueTest {
         route = arc.struct.Seq.with(Vars.world.tile(2, 2), Vars.world.tile(3, 2),
             Vars.world.tile(3, 3), Vars.world.tile(4, 3));
         route.get(2).build = route.get(3).build = furnace;
-        arc.struct.Seq<BuildPlan> connector = BasePlanner.planSandConnector(route,
+        arc.struct.Seq<BuildPlan> connector = BasePlanner.planConnector(route,
             BasePlanner.stepsToEntrance(route, furnace), duct);
         check(connector.size == 2 && connector.first().rotation == 0);
         BuildPlan outlet = connector.peek();
@@ -334,9 +334,20 @@ public class BuilderQueueTest {
             check(!pipes.contains(Vars.world.tile(5, 5)) && !pipes.contains(Vars.world.tile(4, 5)));
             pump.tile.build = null;
             Block repairPipe = new Block("repair-water-conduit");
+            repairPipe.rotate = true;
             check(!BasePlanner.waterRepairSiteClear(Vars.world.tile(4, 5), core.team, repairPipe));
             check(!BasePlanner.waterRepairSiteClear(Vars.world.tile(5, 5), core.team, repairPipe));
             check(BasePlanner.waterRepairSiteClear(Vars.world.tile(6, 5), core.team, repairPipe));
+            arc.struct.Seq<BuildPlan> bypass = BasePlanner.planConnector(pipes, pipes.size, repairPipe);
+            for (BuildPlan segment : bypass) second.addBuild(segment);
+            check(second.plans.size == pipes.size - 1);
+            for (int i = 0; i < second.plans.size; i++) {
+                BuildPlan segment = second.plans.get(i);
+                mindustry.world.Tile site = Vars.world.tile(segment.x, segment.y);
+                check(segment.block == repairPipe && site == pipes.get(i));
+                check(site.nearby(segment.rotation) == pipes.get(i + 1));
+            }
+            second.plans.clear();
             receiver.tile.build = null;
             check(!BasePlanner.blocksMiningDockExit(core.team, duct, 4, 6));
             check(!BasePlanner.blocksMiningDockExit(mindustry.game.Team.sharded, duct, 5, 5));
