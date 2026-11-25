@@ -387,6 +387,8 @@ public class BasePlanner {
             if (drills >= 2 || hasRecoveryGoal(core, demand.item)) {
                 if (!minedResources(core).contains(demand.item) && buildDrillLine(core, level, true)) return true;
                 if (buildDemandProducer(core, demand.item)) return true;
+                if (demand.item == mindustry.content.Items.tungsten && miningDemand.get(core) == demand
+                    && !minedResources(core).contains(demand.item) && buildDrillLine(core, level, true, 60)) return true;
             }
         }
         if (drills < 2) return false; // Keep routine expansion behind mining and recovery prerequisites.
@@ -1086,14 +1088,18 @@ public class BasePlanner {
     }
 
     static boolean buildDrillLine(CoreBuild core, AiLevel level, boolean demandOnly) {
+        return buildDrillLine(core, level, demandOnly, 30);
+    }
+
+    private static boolean buildDrillLine(CoreBuild core, AiLevel level, boolean demandOnly, int searchRadius) {
         Block chosen = Blocks.plasmaBore;
-        Tile ore = findOreSpot(core, chosen, 30);
+        Tile ore = findOreSpot(core, chosen, searchRadius);
         ItemStack demand = miningDemand.get(core);
         // Consider modded wall drills as well as the vanilla plasma bore.
         for (Block candidate : Vars.content.blocks()) {
             if (!(candidate instanceof mindustry.world.blocks.production.BeamDrill) || candidate == chosen
                 || !candidate.environmentBuildable() || !canSupportDrill(core, candidate)) continue;
-            Tile alternative = findOreSpot(core, candidate, 30);
+            Tile alternative = findOreSpot(core, candidate, searchRadius);
             if (alternative == null) continue;
             int direction = faceWall(alternative, candidate, core, minedResources(core));
             Item candidateItem = wallOreInDirection(alternative,
@@ -1111,7 +1117,7 @@ public class BasePlanner {
             for (Block candidate : Vars.content.blocks()) {
                 if (!(candidate instanceof mindustry.world.blocks.production.Drill) || !candidate.environmentBuildable()) continue;
                 if (!canSupportDrill(core, candidate)) continue;
-                Tile floorOre = findFloorOreSpot(core, (mindustry.world.blocks.production.Drill) candidate, 30);
+                Tile floorOre = findFloorOreSpot(core, (mindustry.world.blocks.production.Drill) candidate, searchRadius);
                 if (floorOre == null) continue;
                 boolean meetsDemand = demand != null
                     && ((mindustry.world.blocks.production.Drill) candidate).getDrop(floorOre) == demand.item;
