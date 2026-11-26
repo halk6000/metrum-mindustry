@@ -25,7 +25,8 @@ public class MetrumUnits {
     private static final String P = "metrum-";
 
     public static void load() {
-        monoMetT1 = miner("monomet-t1", 8f, 3.8f, 0.12f, 120f, 1.8f, 90, 60f, 0.5f, 3, 6.2f, true, Items.beryllium, MetrumItems.iron);
+        // The old team-color mask was drawn for the previous hull.
+        monoMetT1 = miner("monomet-t1", 8f, 3.8f, 0.12f, 120f, 1.8f, 90, 60f, 0.5f, 3, 6.2f, false, Items.beryllium, MetrumItems.iron);
 
         monoMetT1b = miner("monomet-t1b", 8f, 7.8f, 0.32f, 140f, 1.8f, 120, 120f, 2.1f, 4, 6.2f, false, Items.beryllium, MetrumItems.iron);
         LightningBulletType heal = new LightningBulletType();
