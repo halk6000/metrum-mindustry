@@ -1724,7 +1724,10 @@ public class BasePlanner {
     static boolean wallNeedsOpening(CoreBuild core, Tile tile) {
         return tile != null && isRingWall(tile.block()) && tile.team() == core.team
             && Math.abs(core.dst(tile) - 20f * Vars.tilesize) <= Vars.tilesize
-            && arc.math.Angles.angleDist(core.angleTo(tile), wallGapAngle(core)) < 12f;
+            && insideWallGap(core, tile, wallGapAngle(core));
+    }
+    private static boolean insideWallGap(CoreBuild core, Tile tile, float gapAngle) {
+        return arc.math.Angles.angleDist(core.angleTo(tile), gapAngle) < 12f;
     }
     static boolean isRingWall(Block block) {
         return block == Blocks.tungstenWall || block == Blocks.berylliumWall;
@@ -1736,14 +1739,13 @@ public class BasePlanner {
         float radius = 20f * Vars.tilesize;
         // where to leave the gap: sector with the most recorded damage, else towards the player's core
         float gapAngle = wallGapAngle(core);
-        float gapHalf = 12f; // ~3 tiles wide at radius 20
         // A new fire direction can move the passage onto walls built during earlier cycles.
         int cleared = 0;
         for (int dx = -21; dx <= 21 && cleared < 6; dx++) for (int dy = -21; dy <= 21 && cleared < 6; dy++) {
             Tile t = Vars.world.tile(core.tileX() + dx, core.tileY() + dy);
             if (t == null || !isRingWall(t.block()) || t.team() != core.team) continue;
             if (Math.abs(core.dst(t) - radius) > Vars.tilesize) continue;
-            if (arc.math.Angles.angleDist(core.angleTo(t), gapAngle) >= gapHalf) continue;
+            if (!insideWallGap(core, t, gapAngle)) continue;
             if (!Build.validBreak(core.team, t.x, t.y)) continue;
             builder.addBuild(new BuildPlan(t.x, t.y));
             cleared++;
@@ -1752,16 +1754,15 @@ public class BasePlanner {
         Block wall = canAffordRingWall(core, Blocks.tungstenWall) ? Blocks.tungstenWall : Blocks.berylliumWall;
         if (!canAffordRingWall(core, wall)) return stalled("brak surowców na plan muru");
         // wall arc facing the threat (+-70 degrees around the gap direction)
-        int placed = 0;
-        for (float a = gapAngle - 70f; a <= gapAngle + 70f && placed < 6; a += 3f) {
-            if (Math.abs(arc.math.Angles.angleDist(a, gapAngle)) < gapHalf) continue; // the passage
+        for (float a = gapAngle - 70f; a <= gapAngle + 70f; a += 3f) {
             Tile t = Vars.world.tileWorld(core.x + arc.math.Angles.trnsx(a, radius), core.y + arc.math.Angles.trnsy(a, radius));
-            if (t == null || t.block() != Blocks.air || !Build.validPlace(wall, core.team, t.x, t.y, 0, false)) continue;
+            if (t == null || insideWallGap(core, t, gapAngle) || t.block() != Blocks.air
+                || !Build.validPlace(wall, core.team, t.x, t.y, 0, false)) continue;
             builder.addBuild(new mindustry.entities.units.BuildPlan(t.x, t.y, 0, wall));
             return true; // the unit constructs it and the engine charges actual construction materials
 
         }
-        return placed > 0;
+        return false;
     }
 
     private static boolean canAffordRingWall(CoreBuild core, Block wall) {
