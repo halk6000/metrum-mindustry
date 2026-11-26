@@ -234,10 +234,19 @@ public class BuilderQueueTest {
             }
             north.setBlock(mindustry.content.Blocks.air);
             core.items = new mindustry.world.modules.ItemModule();
-            for (mindustry.type.ItemStack cost : wall.requirements) core.items.add(cost.item, 1000);
+            check(!BasePlanner.buildWalls(core, AiLevel.DUMB) && builder.plans.isEmpty());
+            java.util.Map<mindustry.type.Item, Integer> reserve = BasePlanner.economicReserve(core);
+            mindustry.type.Item missing = wall.requirements[0].item;
+            for (mindustry.type.ItemStack cost : wall.requirements) {
+                int amount = Math.round(cost.amount * Vars.state.rules.buildCostMultiplier);
+                core.items.add(cost.item, amount + reserve.getOrDefault(cost.item, 0));
+            }
+            core.items.remove(missing, 1);
+            check(!BasePlanner.buildWalls(core, AiLevel.DUMB) && builder.plans.isEmpty());
+            core.items.add(missing, 1);
             check(BasePlanner.buildWalls(core, AiLevel.DUMB));
             BuildPlan firstWall = builder.plans.first();
-            check(!firstWall.breaking);
+            check(!firstWall.breaking && firstWall.block == wall);
             builder.plans.clear();
             checkWallAvoidsDockExit(core, builder, firstWall);
             float gap = BasePlanner.wallGapAngle(core);
