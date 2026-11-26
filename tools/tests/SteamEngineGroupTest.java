@@ -178,8 +178,49 @@ public class SteamEngineGroupTest {
         factory.items.remove(bufferedOutput, 3);
         factory.updateConsumption();
         check(factory.activeSlots() == 3);
+        checkAtomizerSharesOneMaterial(block, minerals[0]);
         checkAtomizerSaveMigration(block, minerals[0]);
         System.out.println("OK: flexible Atomizer Factory routing, independent production, legacy save and 510 power/s");
+    }
+
+    static void checkAtomizerSharesOneMaterial(metrum.world.AtomizerFactory block, mindustry.type.Item input) {
+        metrum.world.AtomizerFactory.FactoryBuild factory = factoryFixture(block);
+        mindustry.world.Block duct = mindustry.content.Blocks.duct;
+        mindustry.gen.Building feeder = duct.buildType.get();
+        feeder.tile = Vars.world.tile(6, 4);
+        feeder.block = duct;
+        feeder.rotation = 2;
+        feeder.items = new mindustry.world.modules.ItemModule();
+        feeder.team = factory.team;
+        factory.proximity.add(feeder);
+        mindustry.type.Item output = block.conversions.get(input);
+        for (int item = 0; item < 8; item++) factory.handleItem(feeder, input);
+        tickFactory(factory);
+        check(factory.activeSlots() == 4 && near(block.consPower.requestedPower(factory) * 60f, 510f));
+        for (int tick = 0; tick < block.craftTime; tick++) tickFactory(factory);
+        check(factory.items.get(input) == 0 && factory.items.get(output) == 4);
+        for (int turn = 0; turn < 4; turn++) {
+            factory.handleItem(feeder, input);
+            factory.handleItem(feeder, input);
+            tickFactory(factory);
+            check(factory.activeSlots() == 1);
+            java.io.ByteArrayOutputStream snapshot = new java.io.ByteArrayOutputStream();
+            factory.write(new arc.util.io.Writes(new java.io.DataOutputStream(snapshot)));
+            arc.util.io.Reads saved = new arc.util.io.Reads(new java.io.DataInputStream(
+                new java.io.ByteArrayInputStream(snapshot.toByteArray())));
+            for (int slot = 0; slot < 4; slot++) {
+                check(saved.s() == (slot == turn ? input.id : -1));
+                saved.f();
+            }
+            check(saved.ub() == (turn + 1) % 4);
+            for (int tick = 0; tick < block.craftTime; tick++) tickFactory(factory);
+            check(factory.items.get(output) == 5 + turn);
+        }
+    }
+
+    static void tickFactory(metrum.world.AtomizerFactory.FactoryBuild factory) {
+        factory.updateConsumption();
+        factory.updateTile();
     }
 
     static metrum.world.AtomizerFactory.FactoryBuild factoryFixture(metrum.world.AtomizerFactory block) {

@@ -63,7 +63,7 @@ public class AtomizerFactory extends Block {
     public class FactoryBuild extends Building {
         private final Item[] material = new Item[slots], recentProduct = new Item[slots];
         private final float[] progress = new float[slots], glow = new float[slots];
-        private int nextRecipe;
+        private int nextRecipe, nextSlot;
 
         private int reservedInputs(Item item) {
             int count = 0;
@@ -102,8 +102,14 @@ public class AtomizerFactory extends Block {
 
         @Override public void updateConsumption() {
             if (enabled) {
-                for (int slot = 0; slot < slots; slot++) {
-                    if (material[slot] == null) material[slot] = takeRecipe();
+                int firstSlot = nextSlot;
+                for (int offset = 0; offset < slots; offset++) {
+                    int slot = (firstSlot + offset) % slots;
+                    if (material[slot] != null) continue;
+                    Item input = takeRecipe();
+                    if (input == null) break;
+                    material[slot] = input;
+                    nextSlot = (slot + 1) % slots;
                 }
             }
             super.updateConsumption();
@@ -166,7 +172,7 @@ public class AtomizerFactory extends Block {
             Draw.rect(top,x,y,24f,24f); Draw.reset();
         }
 
-        @Override public byte version() { return 1; }
+        @Override public byte version() { return 2; }
 
         @Override public void write(Writes w) {
             super.write(w);
@@ -174,6 +180,7 @@ public class AtomizerFactory extends Block {
                 w.s(material[slot] == null ? -1 : material[slot].id);
                 w.f(progress[slot]);
             }
+            w.b(nextSlot);
         }
 
         @Override public void read(Reads r, byte revision) {
@@ -195,6 +202,7 @@ public class AtomizerFactory extends Block {
                     progress[slot] = savedProgress;
                 }
             }
+            nextSlot = revision >= 2 ? r.ub() % slots : 0;
         }
     }
 }
