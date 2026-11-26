@@ -323,7 +323,7 @@ public class BuilderQueueTest {
     }
 
     static void checkCondenserFeedsImpactDrill() {
-        Vars.world.tiles = new mindustry.world.Tiles(14, 8);
+        Vars.world.tiles = new mindustry.world.Tiles(14, 12);
         Vars.world.tiles.fill();
         Block condenser = mindustry.content.Blocks.turbineCondenser;
         Block drill = mindustry.content.Blocks.impactDrill;
@@ -391,6 +391,13 @@ public class BuilderQueueTest {
         extraGeothermal.sum = geothermal.sum;
         extraGeothermal.updateTile();
         extra.liquids.add(water, 2f);
+        mindustry.gen.Building spare = placeLiquidBlock(condenser, 6, 9, 0);
+        for (mindustry.world.Tile tile : Vars.world.tiles) {
+            if (BasePlanner.insideFootprint(tile, spare.tile, condenser)) tile.build = spare;
+        }
+        mindustry.world.blocks.power.ThermalGenerator.ThermalGeneratorBuild spareGeothermal =
+            (mindustry.world.blocks.power.ThermalGenerator.ThermalGeneratorBuild) spare;
+        spareGeothermal.sum = geothermal.sum;
         mindustry.world.blocks.storage.CoreBlock coreBlock =
             (mindustry.world.blocks.storage.CoreBlock) mindustry.content.Blocks.coreBastion;
         mindustry.world.blocks.storage.CoreBlock.CoreBuild core = coreBlock.new CoreBuild();
@@ -413,7 +420,7 @@ public class BuilderQueueTest {
                 @Override public boolean eachBlock(mindustry.game.Team team, float x, float y, float range,
                         arc.func.Boolf<mindustry.gen.Building> filter, arc.func.Cons<mindustry.gen.Building> action) {
                     boolean found = false;
-                    for (mindustry.gen.Building building : new mindustry.gen.Building[]{source, extra, receiver}) {
+                    for (mindustry.gen.Building building : new mindustry.gen.Building[]{source, extra, spare, receiver}) {
                         if (!filter.get(building)) continue;
                         action.get(building);
                         found = true;
@@ -447,6 +454,13 @@ public class BuilderQueueTest {
             }
             System.out.println("Water delivered per second with two condensers: " + combined * 60f / ticks);
             check(combined >= ticks * demand * 0.99f);
+            builder.plans.clear();
+            spareGeothermal.updateTile();
+            spare.liquids.add(water, 2f);
+            receiver.liquids.clear();
+            check(BasePlanner.canSupplyWater(spare) && BasePlanner.thermalWaterRate(spare) > 0f);
+            check(!BasePlanner.waterLineConnected(spare, receiver));
+            check(!BasePlanner.pipeWater(core) && builder.plans.isEmpty());
         } finally {
             mindustry.gen.Groups.unit.remove(builder);
             metrum.content.MetrumUnits.monoMetT1 = previous;

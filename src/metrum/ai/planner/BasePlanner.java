@@ -1504,7 +1504,7 @@ public class BasePlanner {
         mindustry.type.Liquid water = mindustry.content.Liquids.water;
         Seq<Building> sources = new Seq<>(), destinations = new Seq<>();
         Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
-            b -> canSupplyWater(b), sources::add);
+            b -> canSupplyWater(b) || thermalWaterRate(b) > 0f, sources::add);
         if (sources.isEmpty()) return false;
         Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
             b -> b.block.consumesLiquid(water) && b.liquids != null && b.liquids.get(water) < 1f,
