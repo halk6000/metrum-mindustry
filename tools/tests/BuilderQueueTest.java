@@ -243,6 +243,7 @@ public class BuilderQueueTest {
         build.updateConsumption();
         build.updateTile();
         check(build.progress > progressBeforeOutage);
+        checkDroneAssemblerResumesAfterUnitCap(build, hull, hullItem, module);
         for (int tick = 0; tick <= assembler.buildTime && build.items.get(hullItem) > 0; tick++) {
             build.updateConsumption();
             build.updateTile();
@@ -256,6 +257,39 @@ public class BuilderQueueTest {
         build.updateTile();
         check(build.progress == 0f && mindustry.gen.Groups.unit.size() == existingUnits + 1);
         assembled.remove();
+    }
+
+    static void checkDroneAssemblerResumesAfterUnitCap(metrum.modular.DroneAssembler.DroneAssemblerBuild build,
+                                                       metrum.modular.ModularUnitType hull,
+                                                       mindustry.type.Item hullItem, mindustry.type.Item module) {
+        mindustry.game.Rules rules = Vars.state.rules;
+        int previousCap = rules.unitCap;
+        boolean previousVariableCap = rules.unitCapVariable;
+        mindustry.game.Team previousTeam = build.team;
+        rules.unitCap = 1;
+        rules.unitCapVariable = false;
+        build.team = mindustry.game.Team.sharded;
+        Unit occupyingSlot = hull.spawn(build.team, build.x, build.y);
+        try {
+            float progressAtCap = build.progress;
+            check(!mindustry.entities.Units.canCreate(build.team, hull) && !build.shouldConsume());
+            for (int tick = 0; tick < 120; tick++) {
+                build.updateConsumption();
+                build.updateTile();
+            }
+            check(build.progress == progressAtCap);
+            check(build.items.get(hullItem) == 1 && build.items.get(module) == 2);
+            occupyingSlot.remove();
+            check(mindustry.entities.Units.canCreate(build.team, hull));
+            build.updateConsumption();
+            build.updateTile();
+            check(build.progress > progressAtCap);
+        } finally {
+            occupyingSlot.remove();
+            build.team = previousTeam;
+            rules.unitCap = previousCap;
+            rules.unitCapVariable = previousVariableCap;
+        }
     }
 
     static void checkWaterBypassFlow() {
