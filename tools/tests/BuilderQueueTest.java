@@ -237,12 +237,20 @@ public class BuilderQueueTest {
             factory.tile.build = factory;
             factory.team = drone.team;
             factory.items = new mindustry.world.modules.ItemModule();
+            mindustry.gen.Building overflow = consumer.buildType.get();
+            overflow.block = consumer;
+            overflow.tile = Vars.world.tile(7, 0);
+            overflow.tile.build = overflow;
+            overflow.set(overflow.tile.worldx(), overflow.tile.worldy());
+            overflow.team = drone.team;
+            overflow.items = new mindustry.world.modules.ItemModule();
             mindustry.type.Item cargo = consumer == mindustry.content.Blocks.graphitePress
                 ? mindustry.content.Items.coal : mindustry.content.Items.sand;
             Vars.indexer = new mindustry.ai.BlockIndexer() {
                 @Override public mindustry.gen.Building findTile(mindustry.game.Team team, float x, float y,
                         float range, arc.func.Boolf<mindustry.gen.Building> filter) {
-                    return filter.get(factory) ? factory : null;
+                    if (filter.get(factory)) return factory;
+                    return filter.get(overflow) ? overflow : null;
                 }
             };
             Delivery ai = new Delivery();
@@ -270,8 +278,17 @@ public class BuilderQueueTest {
             secondDrone.set(0f, 0f);
             check(secondDelivery.deliver() && factory.items.get(cargo) == 5 && secondDrone.stack.amount == 0);
             check(BasePlanner.missingAfterDeliveries(factory, cargo, 1) == 1);
+            int capacity = factory.getMaximumAccepted(cargo);
+            factory.items.set(cargo, capacity - 1);
+            secondDrone.stack.set(cargo, 3);
+            check(secondDelivery.deliver() && factory.items.get(cargo) == capacity && secondDrone.stack.amount == 2);
+            check(secondDelivery.deliver() && secondDrone.stack.amount == 2);
+            check(BasePlanner.missingAfterDeliveries(overflow, cargo, 2) == 0);
+            secondDrone.set(overflow.x, overflow.y);
+            check(secondDelivery.deliver() && overflow.items.get(cargo) == 2 && secondDrone.stack.amount == 0);
             mindustry.gen.Groups.unit.remove(secondDrone);
             factory.enabled = false;
+            overflow.enabled = false;
             drone.stack.set(cargo, 3);
             check(ai.deliver() && drone.stack.amount == 3);
             mindustry.gen.Groups.unit.remove(drone);
