@@ -1111,6 +1111,11 @@ public class BasePlanner {
     }
 
     static boolean queueConstructionBatch(CoreBuild core, Seq<BuildPlan> plans, boolean protectReserve) {
+        return queueConstructionBatch(core, plans, protectReserve, true);
+    }
+
+    private static boolean queueConstructionBatch(CoreBuild core, Seq<BuildPlan> plans, boolean protectReserve,
+                                                  boolean requestMaterials) {
         mindustry.gen.Unit builder = assignedBuilder(core);
         if (builder == null || !builder.plans.isEmpty() || plans.isEmpty()) return false;
         if (batchBlocksDockExit(plans)) return false;
@@ -1127,6 +1132,7 @@ public class BasePlanner {
         java.util.Map<Item, Integer> reserve = protectReserve ? economicReserve(core) : constructionReserve(core);
         for (java.util.Map.Entry<Item, Long> cost : total.entrySet()) {
             if ((long) core.items.get(cost.getKey()) - reserve.getOrDefault(cost.getKey(), 0) < cost.getValue()) {
+                if (!requestMaterials) return false;
                 long needed = cost.getValue() + reserve.getOrDefault(cost.getKey(), 0);
                 if (needed <= Integer.MAX_VALUE) miningDemand.putIfAbsent(core, new ItemStack(cost.getKey(), (int) needed));
                 return stalled("brak materiałów na cały plan: " + cost.getKey().localizedName);
@@ -1700,12 +1706,11 @@ public class BasePlanner {
                     break;
                 }
             }
-            if (queueConstructionBatch(core, plans, true)) return true;
             if (plans.size > 1) {
+                if (queueConstructionBatch(core, plans, true, false)) return true;
                 plans.pop(); // optional magazine must not prevent an affordable turret
-                return queueConstructionBatch(core, plans, true);
             }
-            return false;
+            return queueConstructionBatch(core, plans, true);
         }
         return false;
     }

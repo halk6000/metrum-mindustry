@@ -273,6 +273,13 @@ public class BuilderQueueTest {
             if (expectedMagazine) check(builder.plans.last().block == magazine);
             builder.plans.clear();
         }
+        for (mindustry.type.ItemStack cost : magazine.requirements) {
+            core.items.remove(cost.item, cost.amount);
+        }
+        check(BasePlanner.buildTurret(core, AiLevel.HARD));
+        check(builder.plans.size == 1 && builder.plans.first().block == turret);
+        check(!BasePlanner.miningDemand.containsKey(core));
+        builder.plans.clear();
     }
 
     static void checkDroneAssemblerCompletesRecipe() {
