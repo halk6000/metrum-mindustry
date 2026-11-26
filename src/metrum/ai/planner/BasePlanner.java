@@ -1772,7 +1772,7 @@ public class BasePlanner {
         for (float a = gapAngle - 70f; a <= gapAngle + 70f; a += 3f) {
             Tile t = Vars.world.tileWorld(core.x + arc.math.Angles.trnsx(a, radius), core.y + arc.math.Angles.trnsy(a, radius));
             if (t == null || insideWallGap(core, t, gapAngle) || t.block() != Blocks.air
-                || !Build.validPlace(wall, core.team, t.x, t.y, 0, false)) continue;
+                || !defenseSiteAvailable(t, wall, core.team)) continue;
             builder.addBuild(new mindustry.entities.units.BuildPlan(t.x, t.y, 0, wall));
             return true; // the unit constructs it and the engine charges actual construction materials
 

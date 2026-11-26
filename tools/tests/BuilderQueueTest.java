@@ -235,6 +235,11 @@ public class BuilderQueueTest {
             north.setBlock(mindustry.content.Blocks.air);
             core.items = new mindustry.world.modules.ItemModule();
             for (mindustry.type.ItemStack cost : wall.requirements) core.items.add(cost.item, 1000);
+            check(BasePlanner.buildWalls(core, AiLevel.DUMB));
+            BuildPlan firstWall = builder.plans.first();
+            check(!firstWall.breaking);
+            builder.plans.clear();
+            checkWallAvoidsDockExit(core, builder, firstWall);
             float gap = BasePlanner.wallGapAngle(core);
             int wallsPlaced = 0;
             while (wallsPlaced < 100 && BasePlanner.buildWalls(core, AiLevel.values()[0])) {
@@ -252,6 +257,30 @@ public class BuilderQueueTest {
             BasePlanner.fireByCore.remove(core);
             mindustry.gen.Groups.unit.remove(builder);
             metrum.content.MetrumUnits.monoMetT1 = previous;
+        }
+    }
+
+    static void checkWallAvoidsDockExit(mindustry.world.blocks.storage.CoreBlock.CoreBuild core, Unit builder,
+                                       BuildPlan firstWall) {
+        Block previousDock = metrum.content.MetrumUnitBlocks.airMinerDock;
+        Block dock = new Block("test-wall-dock");
+        Unit other = UnitEntity.create();
+        other.type = builder.type;
+        other.team = core.team;
+        other.addBuild(new BuildPlan(firstWall.x - 1, firstWall.y, 0, dock));
+        mindustry.gen.Groups.unit.add(other);
+        metrum.content.MetrumUnitBlocks.airMinerDock = dock;
+        try {
+            check(!BasePlanner.overlapsQueuedBuild(core.team, firstWall.block, firstWall.x, firstWall.y));
+            check(BasePlanner.blocksMiningDockExit(core.team, firstWall.block, firstWall.x, firstWall.y));
+            check(BasePlanner.buildWalls(core, AiLevel.DUMB));
+            BuildPlan alternative = builder.plans.first();
+            check(!alternative.breaking && (alternative.x != firstWall.x || alternative.y != firstWall.y));
+            check(!BasePlanner.blocksMiningDockExit(core.team, alternative.block, alternative.x, alternative.y));
+        } finally {
+            builder.plans.clear();
+            mindustry.gen.Groups.unit.remove(other);
+            metrum.content.MetrumUnitBlocks.airMinerDock = previousDock;
         }
     }
 
