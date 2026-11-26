@@ -461,6 +461,12 @@ public class BuilderQueueTest {
             check(BasePlanner.canSupplyWater(spare) && BasePlanner.thermalWaterRate(spare) > 0f);
             check(!BasePlanner.waterLineConnected(spare, receiver));
             check(!BasePlanner.pipeWater(core) && builder.plans.isEmpty());
+            extra.enabled = false;
+            check(BasePlanner.waterLineConnected(extra, receiver));
+            check(BasePlanner.pipeWater(core));
+            BuildPlan spareInlet = builder.plans.first(), spareOutlet = builder.plans.last();
+            check(Vars.world.tile(spareInlet.x, spareInlet.y).nearby((spareInlet.rotation + 2) % 4).build == spare);
+            check(Vars.world.tile(spareOutlet.x, spareOutlet.y).nearby(spareOutlet.rotation).build == receiver);
         } finally {
             mindustry.gen.Groups.unit.remove(builder);
             metrum.content.MetrumUnits.monoMetT1 = previous;
