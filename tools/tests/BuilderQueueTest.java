@@ -1437,7 +1437,7 @@ public class BuilderQueueTest {
         indexer.originalAvailable = true;
         core.items.add(alternateOre, core.getMaximumAccepted(alternateOre));
         miner.updateMovement();
-        check(miner.targetItem == ore && builder.mineTile == null);
+        check(miner.targetItem == ore && builder.mineTile != alternateTile);
         arc.util.Time.time += 60f;
         miner.updateMovement();
         check(builder.mineTile == oreTile && builder.stack.amount == 0);

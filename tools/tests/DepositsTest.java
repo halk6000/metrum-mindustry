@@ -150,8 +150,13 @@ public class DepositsTest {
         Tile natural = Vars.world.tile(30, 30);
         natural.setOverlayQuiet(secondBlock);
         Deposits.scatter(30, 30, found, 25, 8, 24);
-        check(stock(ore) == 610 && stock(second) == 407 && stock(oreless) == 0 && !Deposits.all.containsKey(natural.pos()));
-        check(Deposits.all.size == 25 + 17);
+        // Independent compact patches receive the density bonus at their respective sizes.
+        int firstTileCount = 25, secondTileCount = 17;
+        if (stock(ore) != firstTileCount * 273 || stock(second) != secondTileCount * 117) {
+            throw new AssertionError("Density: " + stock(ore) + ", " + stock(second) + ", tiles: " + Deposits.all.size);
+        }
+        check(stock(oreless) == 0 && !Deposits.all.containsKey(natural.pos()));
+        check(Deposits.all.size == firstTileCount + secondTileCount);
         for (arc.struct.IntMap.Entry<Deposits.Deposit> e : Deposits.all.entries()) {
             Tile t = Vars.world.tile(e.key);
             check(t.x >= 28 && t.x <= 34 && t.drop() == e.value.item);
@@ -163,6 +168,14 @@ public class DepositsTest {
         }
         Deposits.scatter(30, 30, found, 25, 8, 24);
         check(stock(ore) == 610 && stock(second) == 407 && Deposits.all.size == 3);
+        for (Deposits.Deposit deposit : Deposits.all.values()) check(deposit.layers == 1);
+        for (int layer = 2; layer <= 3; layer++) {
+            Deposits.scatter(30, 30, found, 25, 8, 24);
+            check(stock(ore) == 610 * layer && stock(second) == 407 * layer && Deposits.all.size == 3);
+            for (Deposits.Deposit deposit : Deposits.all.values()) check(deposit.layers == layer);
+        }
+        Deposits.scatter(30, 30, found, 25, 8, 24);
+        check(stock(ore) == 610 * 3 && stock(second) == 407 * 3);
         // No room at all must not crash.
         Deposits.clear();
         for (int y = 30; y < 33; y++) Vars.world.tiles.set(30, y, new Tile(30, y, water, Blocks.air, Blocks.air));

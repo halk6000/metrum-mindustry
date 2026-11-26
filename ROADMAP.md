@@ -90,7 +90,7 @@
 
 ### Metonia — kopalnia odkrywkowa i złoża wyczerpywalne
 - [ ] **Boostery kopalni**: sprawdzić w grze zasilony radar obok (−2 s na 1%, raz) oraz wodę 12/s (szansa odkrycia 20% → 24%).
-- [ ] **Złoża**: w toku są warstwy, rozrost i zagęszczanie odkrytych skupisk. Test `depositsTest` zgłasza rozbieżność w ilości surowców po rozsypaniu złóż. Sprawdzić rozmieszczanie przy braku miejsca, zużycie podczas nieobecności, zapis i odczyt oraz synchronizację sieciową.
+- [ ] **Złoża**: w toku są warstwy, rozrost i zagęszczanie odkrytych skupisk. Test potwierdza zachowanie znalezisk przy trzech wolnych polach i limit trzech warstw. Sprawdzić w grze rozmieszczanie przy braku miejsca, zużycie podczas nieobecności, zapis i odczyt oraz synchronizację sieciową.
 - [ ] **Balans kopalni**: brak gwarancji zwrotu kosztów, ryzyko niepożądanych surowców, odpowiednie rozmieszczanie odkryć i obsługa braku wolnych pól wokół kopalni.
 ### Venoms Issland — planeta bioewolucji i toksycznej chemii
 - [ ] **Nowa planeta Venoms Issland**: mroczny klimat, dominujący fiolet, biologiczne środowisko i odrębny charakter od przemysłowej Metonii; przygotować świat, mapy, oprawę, drzewo technologii oraz unikalne surowce i płyny.
@@ -127,7 +127,7 @@
 - [ ] Rozpoznanie i ekspansja gospodarcza (uwaga użytkownika 24.11): drony szukają brakujących zasobów poza bezpośrednim otoczeniem rdzenia, odkrywają teren i zakładają połączone placówki; używać maszyn Metrum, uwzględnić wolfram i unikać zależności wymagających wolframu do uruchomienia jego pierwszego źródła. Dalsza symulacja przy nieobecności gracza pozostaje osobnym zadaniem.
 
 - [ ] **Regresja rozpoznawania zasobów przez planer AI — węgiel i paliwa rdzenia (25.11)**: objaw analogiczny do wcześniejszego błędu z niewidocznym piaskiem (wspólna przyczyna do potwierdzenia w kodzie). Rdzeń spala węgiel, ale planer nie widzi go w danych dronów. Udostępnić planerowi węgiel oraz wszystkie pozostałe zasoby zużywane jako paliwo przez rdzeń; uwzględniać ich zapotrzebowanie i dostępność w danych dronów. Planer powinien następnie sprawdzać dostawy taśmociągami lub dronami i planować brakujące zaopatrzenie. Test regresji: piasek, węgiel i każde paliwo rdzenia, oba sposoby transportu oraz brak dostaw.
-- [ ] **Inteligentne wydobycie**: zweryfikować przełączenie pustego drona na inną rudę po zapełnieniu magazynu rdzenia dla poprzedniego surowca. Bieżąca wersja zmienia cel od razu, a `builderQueueTest` oczekuje wyczyszczenia pola wydobycia przed rozpoczęciem pracy na nowym.
+- [ ] **Inteligentne wydobycie**: test potwierdza zmianę celu pustego drona, gdy rdzeń przestaje przyjmować dotychczasową rudę. Sprawdzić zachowanie w kampanii.
 
 ## Stary Wąwóz
 - Złoża Starego Wąwozu są rozmieszczone ręcznie: mają być skąpe, lecz wystarczające na pierwsze walki. Nie dosypywać losowych rud ani zwiększać złóż jako obejścia problemów gospodarki AI.

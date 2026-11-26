@@ -44,6 +44,7 @@ public class Deposits {
     public static class Deposit {
         public final Item item;
         public int amount;
+        public int layers = 1;
 
         Deposit(Item item, int amount) {
             this.item = item;
@@ -89,7 +90,10 @@ public class Deposits {
         int total = 0;
         for (Tile t : tile.build.tile.getLinkedTilesAs(tile.build.block, new Seq<>())) {
             Deposit d = all.get(t.pos());
-            if (d != null && (mined == null || d.item == mined)) total += d.amount;
+            if (d != null && (mined == null || d.item == mined)) {
+                if (d.amount == Integer.MAX_VALUE) return Integer.MAX_VALUE;
+                total = (int)Math.min(Integer.MAX_VALUE, (long)total + d.amount);
+            }
         }
         return total;
     }
@@ -110,7 +114,7 @@ public class Deposits {
         font.setUseIntegerPositions(false);
         font.getData().setScale(0.25f / Scl.scl(1f));
         font.setColor(Pal.accent);
-        font.draw(Core.bundle.format("metrum.deposit.left", amount), x, y, Align.center);
+        font.draw(Core.bundle.format("metrum.deposit.left", amount == Integer.MAX_VALUE ? "∞" : amount), x, y, Align.center);
         font.setColor(Color.white);
         font.getData().setScale(scaleX, scaleY);
         font.setUseIntegerPositions(ints);
@@ -149,7 +153,9 @@ public class Deposits {
         Deposit old = all.get(tile.pos());
         if (old != null) {
             if (old.item != item) return false;
-            old.amount += amount;
+            if (old.amount == Integer.MAX_VALUE || old.layers >= 3) return false;
+            old.amount = (int)Math.min(Integer.MAX_VALUE - 1L, (long)old.amount + amount);
+            old.layers++;
             return true;
         }
         Block ore = oreFor(item);
@@ -171,34 +177,118 @@ public class Deposits {
      * The search widens up to {@code maxRadius} when there is little room; crowded finds get richer tiles instead of vanishing.
      */
     public static void scatter(int cx, int cy, arc.struct.ObjectIntMap<Item> found, int perTile, int radius, int maxRadius) {
-        Seq<Item> items = new Seq<>();
-        int wanted = 0;
+        if (perTile <= 0) return;
+        Seq<ScatterPatch> patches = new Seq<>();
         for (Item item : Vars.content.items()) {
-            if (found.get(item) <= 0 || oreFor(item) == null) continue;
-            items.add(item);
-            wanted += tilesFor(found.get(item), perTile);
-        }
-        Seq<Tile> ground = new Seq<>();
-        for (int r = radius; ; r = Math.min(r + 4, maxRadius)) {
-            ground.clear();
-            for (int x = cx - r; x <= cx + r; x++) for (int y = cy - r; y <= cy + r; y++) {
-                Tile t = Vars.world.tile(x, y);
-                if (Mathf.within(cx, cy, x, y, r + 0.5f) && free(t)) ground.add(t);
-            }
-            if (ground.size >= wanted || r >= maxRadius) break;
-        }
-        for (int i = 0; i < items.size && !ground.isEmpty(); i++) {
-            Item item = items.get(i);
             int amount = found.get(item);
-            // leave room for the remaining finds
-            int count = Mathf.clamp(tilesFor(amount, perTile), 1, Math.max(1, ground.size / (items.size - i)));
-            Tile seed = ground.min(t -> Mathf.dst2(cx, cy, t.x, t.y));
-            ground.sort(t -> Mathf.dst2(seed.x, seed.y, t.x, t.y));
-            for (int k = 0; k < count; k++) {
-                // spread the remainder so that the patch holds exactly the discovered amount
-                place(ground.get(k), item, amount / count + (k < amount % count ? 1 : 0));
+            if (amount <= 0 || oreFor(item) == null) continue;
+            ScatterPatch patch = new ScatterPatch(item, amount);
+            Tile seed = nearestDeposit(item, cx, cy, radius);
+            if (seed != null) collectPatch(seed, item, patch.tiles);
+            patch.originalSize = patch.tiles.size;
+            for (Tile tile : patch.tiles) {
+                if (patch.remaining == 0) break;
+                patch.add(tile, perTile);
             }
-            ground.removeRange(0, count - 1);
+            patches.add(patch);
+        }
+        // Expand each mineral in turn so the first patch cannot consume all available ground.
+        boolean expanded;
+        do {
+            expanded = false;
+            for (ScatterPatch patch : patches) {
+                if (patch.remaining == 0) continue;
+                Tile next = nearestFree(cx, cy, maxRadius, patch.tiles);
+                if (next == null || !patch.add(next, perTile)) continue;
+                collectPatch(next, patch.item, patch.tiles);
+                expanded = true;
+            }
+        } while (expanded);
+        for (ScatterPatch patch : patches) {
+            // Store the rest in a tile that already received this discovery, without adding a layer.
+            if (patch.remaining > 0 && patch.stocked != null) {
+                Deposit deposit = all.get(patch.stocked.pos());
+                deposit.amount = (int)Math.min(Integer.MAX_VALUE - 1L, (long)deposit.amount + patch.remaining);
+            }
+            // Density is a growth bonus, not merely redistribution of the discovery.
+            int n = patch.tiles.size;
+            if (n > patch.originalSize && n >= 9) {
+                int density = perTile + (n - 9) * (n + 6) / 2;
+                for (Tile t : patch.tiles) {
+                    Deposit d = all.get(t.pos());
+                    d.amount = n >= 30 ? Integer.MAX_VALUE : Math.max(d.amount, density);
+                }
+            }
+        }
+    }
+
+    private static class ScatterPatch {
+        final Item item;
+        final Seq<Tile> tiles = new Seq<>();
+        int remaining, originalSize;
+        Tile stocked;
+
+        ScatterPatch(Item item, int amount) {
+            this.item = item;
+            remaining = amount;
+        }
+
+        boolean add(Tile tile, int perTile) {
+            int amount = Math.min(remaining, perTile);
+            if (!place(tile, item, amount)) return false;
+            remaining -= amount;
+            stocked = tile;
+            return true;
+        }
+    }
+
+    private static Tile nearestDeposit(Item item, int cx, int cy, int radius) {
+        Tile best = null;
+        float bestDistance = Float.MAX_VALUE;
+        for (IntMap.Entry<Deposit> entry : all.entries()) {
+            if (entry.value.item != item) continue;
+            Tile tile = Vars.world.tile(entry.key);
+            if (tile == null) continue;
+            float distance = Mathf.dst2(cx, cy, tile.x, tile.y);
+            if (distance <= radius * radius && distance < bestDistance) {
+                best = tile;
+                bestDistance = distance;
+            }
+        }
+        return best;
+    }
+
+    private static Tile nearestFree(int cx, int cy, int radius, Seq<Tile> patch) {
+        Tile best = null;
+        float bestDistance = Float.MAX_VALUE;
+        for (int x = cx - radius; x <= cx + radius; x++) for (int y = cy - radius; y <= cy + radius; y++) {
+            Tile tile = Vars.world.tile(x, y);
+            if (!free(tile) || !Mathf.within(cx, cy, x, y, radius + 0.5f)) continue;
+            if (!patch.isEmpty() && !touches(tile, patch)) continue;
+            float distance = Mathf.dst2(cx, cy, x, y);
+            if (distance < bestDistance) {
+                best = tile;
+                bestDistance = distance;
+            }
+        }
+        return best;
+    }
+
+    private static boolean touches(Tile t, Seq<Tile> patch) {
+        for (Tile p : patch) if (Math.abs(t.x - p.x) + Math.abs(t.y - p.y) == 1) return true;
+        return false;
+    }
+
+    private static void collectPatch(Tile seed, Item item, Seq<Tile> patch) {
+        if (!patch.contains(seed)) patch.add(seed);
+        for (int i = 0; i < patch.size; i++) {
+            Tile t = patch.get(i);
+            for (int j = 0; j < 4; j++) {
+                Tile next = Vars.world.tile(t.x + (j == 0 ? 1 : j == 1 ? -1 : 0), t.y + (j == 2 ? 1 : j == 3 ? -1 : 0));
+                if (next == null || patch.contains(next)) continue;
+                Deposit d = all.get(next.pos());
+                if (d != null && d.item == item) patch.add(next);
+            }
         }
     }
 
@@ -210,6 +300,7 @@ public class Deposits {
     public static int take(Tile tile, int amount) {
         Deposit d = all.get(tile.pos());
         if (d == null) return 0;
+        if (d.amount == Integer.MAX_VALUE) return amount;
         int taken = Math.min(amount, d.amount);
         d.amount -= taken;
         if (d.amount <= 0) {
@@ -312,11 +403,12 @@ public class Deposits {
     public static class Chunk implements SaveFileReader.CustomChunk {
         @Override
         public void write(DataOutput out) throws IOException {
-            out.writeInt(all.size);
+            out.writeInt(-all.size - 1);
             for (IntMap.Entry<Deposit> e : all.entries()) {
                 out.writeInt(e.key);
                 out.writeUTF(e.value.item.name);
                 out.writeInt(e.value.amount);
+                out.writeByte(e.value.layers);
             }
         }
 
@@ -324,11 +416,18 @@ public class Deposits {
         public void read(DataInput in) throws IOException {
             all.clear();
             int count = in.readInt();
+            boolean layered = count < 0;
+            if (layered) count = -count - 1;
             for (int i = 0; i < count; i++) {
                 int pos = in.readInt();
                 Item item = Vars.content.item(in.readUTF());
                 int amount = in.readInt();
-                if (item != null && amount > 0) all.put(pos, new Deposit(item, amount));
+                int layers = layered ? in.readUnsignedByte() : 1;
+                if (item != null && amount > 0) {
+                    Deposit d = new Deposit(item, amount);
+                    d.layers = layers;
+                    all.put(pos, d);
+                }
             }
         }
     }
