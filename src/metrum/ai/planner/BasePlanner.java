@@ -1715,7 +1715,8 @@ public class BasePlanner {
             Tile site = Vars.world.tile(turretSite.x + arc.math.geom.Geometry.d4x(direction) * distance,
                 turretSite.y + arc.math.geom.Geometry.d4y(direction) * distance);
             if (site != null && Build.validPlace(magazine, team, site.x, site.y, 0, false)
-                && !overlapsQueuedBuild(team, magazine, site.x, site.y)) return site;
+                && !overlapsQueuedBuild(team, magazine, site.x, site.y)
+                && !blocksMiningDockExit(team, magazine, site.x, site.y)) return site;
         }
         return null;
     }

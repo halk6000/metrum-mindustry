@@ -277,6 +277,19 @@ public class BuilderQueueTest {
         } finally {
             builder.plans.clear();
         }
+        Block previousDock = metrum.content.MetrumUnitBlocks.airMinerDock;
+        Block dock = new Block("test-magazine-dock");
+        metrum.content.MetrumUnitBlocks.airMinerDock = dock;
+        builder.addBuild(new BuildPlan(back.x - 1, back.y, 0, dock));
+        try {
+            check(!BasePlanner.overlapsQueuedBuild(core.team, magazine, back.x, back.y));
+            check(BasePlanner.blocksMiningDockExit(core.team, magazine, back.x, back.y));
+            mindustry.world.Tile side = BasePlanner.turretMagazineSite(turretSite, turret, magazine, core.team, 0f);
+            check(side != null && side.x == turretSite.x && side.y != turretSite.y);
+        } finally {
+            builder.plans.clear();
+            metrum.content.MetrumUnitBlocks.airMinerDock = previousDock;
+        }
         core.items = new mindustry.world.modules.ItemModule();
         BasePlanner.economicReserve(core).forEach((item, amount) -> core.items.add(item, amount));
         for (Block block : new Block[]{turret, magazine}) {
