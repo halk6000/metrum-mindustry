@@ -104,6 +104,7 @@ public class FusionReactor extends PowerGenerator {
             for (arc.struct.ObjectMap.Entry<Item, Item> e : transmute) {
                 if (items.get(e.key) <= 0) continue;
                 if (e.key == target) continue; // reached the reaction target: stop fusing it
+                if (items.get(e.value) >= itemCapacity) continue;
                 transmuteProgress += Time.delta / transmuteTime;
                 if (transmuteProgress >= 1f) {
                     transmuteProgress = 0f;

@@ -239,6 +239,16 @@ public class BuilderQueueTest {
         configured.items.remove(target, 1);
         build.updateTile();
         check(build.items.get(target) == 0 && configured.items.get(target) == control.itemCapacity);
+        mindustry.type.Item input = mindustry.content.Items.graphite;
+        build.items.set(target, reactor.itemCapacity);
+        build.items.add(input, 1);
+        build.updateTile();
+        check(build.items.get(input) == 1 && build.items.get(target) == reactor.itemCapacity);
+        check(build.transmuteProgress == 0f);
+        configured.items.remove(target, 1);
+        build.updateTile();
+        check(build.items.get(input) == 0 && build.items.get(target) == reactor.itemCapacity);
+        check(configured.items.get(target) == control.itemCapacity);
     }
 
     static void checkBaseDefenses() {
