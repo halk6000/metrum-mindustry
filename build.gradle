@@ -16,10 +16,33 @@ dependencies {
     compileOnly files(gameJar)
 }
 tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8'; options.compilerArgs << '-Xlint:-options' }
+def heavyPodSprite = 'sprites/units/weapons/missile-pod-heavy.png'
+def importedSprites = layout.buildDirectory.dir('imported-sprites')
+def importHeavyPodSprite = tasks.register('importHeavyPodSprite') {
+    def source = layout.projectDirectory.file("assets/${heavyPodSprite}")
+    def target = importedSprites.map { it.file(heavyPodSprite) }
+    inputs.file(source)
+    outputs.file(target)
+    doLast {
+        def sprite = javax.imageio.ImageIO.read(source.asFile)
+        for (int y = 0; y < sprite.height; y++) {
+            for (int x = 0; x < sprite.width; x++) {
+                int pixel = sprite.getRGB(x, y)
+                // The atlas outline pass expects solid interior pixels to be fully opaque.
+                if ((pixel >>> 24) >= 250) sprite.setRGB(x, y, pixel | -16777216)
+            }
+        }
+        File output = target.get().asFile
+        output.parentFile.mkdirs()
+        javax.imageio.ImageIO.write(sprite, 'png', output)
+    }
+}
 jar {
     archiveFileName = "${rootProject.name}.jar"
     from(rootDir) { include 'mod.hjson', 'icon.png' }
-    from('assets/') { include '**' }
+    from('assets/') { exclude heavyPodSprite }
+    from(importedSprites) { include heavyPodSprite }
+    dependsOn importHeavyPodSprite
 }
 
 // Static check: every content name has a sprite and EN/PL bundle entries
