@@ -1714,7 +1714,8 @@ public class BasePlanner {
                 ? turretMax - magazineMin + 1 : magazineMax - turretMin + 1;
             Tile site = Vars.world.tile(turretSite.x + arc.math.geom.Geometry.d4x(direction) * distance,
                 turretSite.y + arc.math.geom.Geometry.d4y(direction) * distance);
-            if (site != null && Build.validPlace(magazine, team, site.x, site.y, 0, false)) return site;
+            if (site != null && Build.validPlace(magazine, team, site.x, site.y, 0, false)
+                && !overlapsQueuedBuild(team, magazine, site.x, site.y)) return site;
         }
         return null;
     }
