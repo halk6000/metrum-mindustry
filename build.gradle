@@ -16,33 +16,35 @@ dependencies {
     compileOnly files(gameJar)
 }
 tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8'; options.compilerArgs << '-Xlint:-options' }
-def heavyPodSprite = 'sprites/units/weapons/missile-pod-heavy.png'
+def missilePodSprites = ['missile-pod-heavy.png', 'missile-put.png'].collect {
+    "sprites/units/weapons/${it}"
+}
 def importedSprites = layout.buildDirectory.dir('imported-sprites')
-def importHeavyPodSprite = tasks.register('importHeavyPodSprite') {
-    def source = layout.projectDirectory.file("assets/${heavyPodSprite}")
-    def target = importedSprites.map { it.file(heavyPodSprite) }
-    inputs.file(source)
-    outputs.file(target)
+def importMissilePodSprites = tasks.register('importMissilePodSprites') {
+    inputs.files(missilePodSprites.collect { layout.projectDirectory.file("assets/${it}") })
+    outputs.files(importedSprites.map { directory -> missilePodSprites.collect { directory.file(it) } })
     doLast {
-        def sprite = javax.imageio.ImageIO.read(source.asFile)
-        for (int y = 0; y < sprite.height; y++) {
-            for (int x = 0; x < sprite.width; x++) {
-                int pixel = sprite.getRGB(x, y)
-                // The atlas outline pass expects solid interior pixels to be fully opaque.
-                if ((pixel >>> 24) >= 250) sprite.setRGB(x, y, pixel | -16777216)
+        missilePodSprites.each { path ->
+            def sprite = javax.imageio.ImageIO.read(layout.projectDirectory.file("assets/${path}").asFile)
+            for (int y = 0; y < sprite.height; y++) {
+                for (int x = 0; x < sprite.width; x++) {
+                    int pixel = sprite.getRGB(x, y)
+                    // The atlas outline pass expects solid interior pixels to be fully opaque.
+                    if ((pixel >>> 24) >= 250) sprite.setRGB(x, y, pixel | (0xff << 24))
+                }
             }
+            File output = importedSprites.get().file(path).asFile
+            output.parentFile.mkdirs()
+            javax.imageio.ImageIO.write(sprite, 'png', output)
         }
-        File output = target.get().asFile
-        output.parentFile.mkdirs()
-        javax.imageio.ImageIO.write(sprite, 'png', output)
     }
 }
 jar {
     archiveFileName = "${rootProject.name}.jar"
     from(rootDir) { include 'mod.hjson', 'icon.png' }
-    from('assets/') { exclude heavyPodSprite }
-    from(importedSprites) { include heavyPodSprite }
-    dependsOn importHeavyPodSprite
+    from('assets/') { exclude missilePodSprites }
+    from(importedSprites) { include missilePodSprites }
+    dependsOn importMissilePodSprites
 }
 
 // Static check: every content name has a sprite and EN/PL bundle entries
