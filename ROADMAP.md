@@ -8,7 +8,7 @@
 ## Funkcje w rozwoju i do potwierdzenia
 - [ ] Atomy i Panel kontroli reakcji są w grze. Do potwierdzenia cały przebieg fuzji z panelem, w tym pełny bufor, zmiana celu i wznowienie po wczytaniu.
 - [ ] De-atomizer zamienia atomy na surowce. Do potwierdzenia w grze.
-- [ ] Fabryka atomizacji: test automatyczny potwierdził cztery niezależne pary portów, limit poboru 510 jednostek energii/s i badanie po Atomizerze oraz karborundzie. Do potwierdzenia wygląd i obsługa w grze.
+- [ ] Fabryka atomizacji: cztery niezależne sloty produkcyjne korzystają z osobnych buforów dla każdego surowca. Dostawy i odbiór atomów można podłączyć z dowolnej strony. Maksymalny pobór to 510 jednostek energii/s, badanie po Atomizerze i karborundzie. Do potwierdzenia obsługa w grze.
 - [x] Maszyna parowa rozpędza ciepło 3 -> 6 -> 9 -> 12
 - [x] Huta Infuzyjna bez wody jako produktu ubocznego
 - [ ] Inteligentne mosty: kolory obiegów (most łączy się tylko z mostem tego samego koloru)

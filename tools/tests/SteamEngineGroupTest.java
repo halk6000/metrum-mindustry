@@ -120,54 +120,110 @@ public class SteamEngineGroupTest {
         Vars.world = new mindustry.core.World();
         Vars.world.tiles = new mindustry.world.Tiles(9, 9);
         Vars.world.tiles.fill();
-        metrum.world.AtomizerFactory.FactoryBuild factory = block.new FactoryBuild();
-        factory.block = block;
-        factory.team = Team.sharded;
-        factory.tile = Vars.world.tile(4, 4);
-        factory.items = new mindustry.world.modules.ItemModule();
-        factory.power = new mindustry.world.modules.PowerModule();
-        factory.power.status = 1f;
-        int[][] inputs = {{2, 5}, {2, 3}, {3, 6}, {5, 6}};
-        int[][] outputs = {{6, 5}, {6, 3}, {3, 2}, {5, 2}};
+        mindustry.gen.Groups.init();
+        metrum.world.AtomizerFactory.FactoryBuild factory = factoryFixture(block);
+        int[][] sides = {{6, 4}, {4, 6}, {2, 4}, {4, 2}};
         mindustry.type.Item[] minerals = {mindustry.content.Items.copper, mindustry.content.Items.lead,
             mindustry.content.Items.graphite, mindustry.content.Items.silicon};
-        mindustry.gen.Building[] receivers = new mindustry.gen.Building[4];
         mindustry.world.Block duct = mindustry.content.Blocks.duct;
-        for (int lane = 0; lane < minerals.length; lane++) {
-            mindustry.world.Tile input = Vars.world.tile(inputs[lane][0], inputs[lane][1]);
+        for (int side = 0; side < sides.length; side++) {
+            mindustry.world.Tile tile = Vars.world.tile(sides[side][0], sides[side][1]);
             mindustry.gen.Building feeder = mindustry.gen.Building.create();
-            input.build = feeder;
-            feeder.tile = input;
+            feeder.tile = tile;
             feeder.block = duct;
+            factory.proximity.add(feeder);
             feeder.team = Team.crux;
-            check(!factory.acceptItem(feeder, minerals[lane]));
+            check(!factory.acceptItem(feeder, minerals[side]));
             feeder.team = factory.team;
-            check(factory.acceptItem(feeder, minerals[lane]));
-            factory.handleItem(feeder, minerals[lane]);
-            check(factory.activeSlots() == lane);
-            check(!factory.acceptItem(feeder, minerals[(lane + 1) % minerals.length]));
-            factory.handleItem(feeder, minerals[lane]);
-            check(factory.activeSlots() == lane + 1);
-
-            mindustry.world.Tile output = Vars.world.tile(outputs[lane][0], outputs[lane][1]);
-            mindustry.gen.Building receiver = duct.buildType.get();
-            receiver.tile = output;
-            receiver.block = duct;
-            receiver.rotation = lane < 2 ? 0 : 3;
-            receiver.team = factory.team;
-            receiver.items = new mindustry.world.modules.ItemModule();
-            receivers[lane] = output.build = receiver;
+            check(factory.acceptItem(feeder, minerals[side]));
+            factory.handleItem(feeder, minerals[side]);
+            // The same connection can feed more than one raw material.
+            mindustry.type.Item next = minerals[(side + 1) % minerals.length];
+            check(factory.acceptItem(feeder, next));
+            factory.handleItem(feeder, next);
         }
-        check(near(block.consPower.requestedPower(factory) * 60f, 510f));
+        factory.proximity.clear();
+        factory.updateConsumption();
+        check(factory.activeSlots() == 4 && near(block.consPower.requestedPower(factory) * 60f, 510f));
         for (int tick = 0; tick <= block.craftTime; tick++) {
             factory.updateConsumption();
             factory.updateTile();
         }
-        check(factory.items.total() == 0 && factory.activeSlots() == 0);
-        for (int lane = 0; lane < minerals.length; lane++) {
-            check(receivers[lane].items.get(block.conversions.get(minerals[lane])) == 1);
+        check(factory.items.total() == 4 && factory.activeSlots() == 0);
+        for (int side = 0; side < sides.length; side++) {
+            mindustry.gen.Building receiver = duct.buildType.get();
+            receiver.tile = Vars.world.tile(sides[side][0], sides[side][1]);
+            receiver.block = duct;
+            receiver.rotation = side;
+            receiver.team = factory.team;
+            receiver.items = new mindustry.world.modules.ItemModule();
+            factory.proximity.add(receiver);
+            factory.updateTile();
+            check(receiver.items.total() == 1);
+            factory.proximity.clear();
         }
-        System.out.println("OK: four independent Atomizer Factory ports and 510 power/s");
+        check(factory.items.total() == 0);
+        mindustry.type.Item bufferedOutput = block.conversions.get(minerals[0]);
+        factory.items.add(bufferedOutput, block.capacity - 1);
+        factory.items.add(minerals[0], 8);
+        factory.items.add(minerals[1], 2);
+        factory.updateConsumption();
+        check(factory.activeSlots() == 2);
+        for (int tick = 0; tick <= block.craftTime; tick++) {
+            factory.updateConsumption();
+            factory.updateTile();
+        }
+        check(factory.items.get(bufferedOutput) == block.capacity && factory.items.get(minerals[0]) == 6);
+        check(factory.items.get(block.conversions.get(minerals[1])) == 1 && factory.activeSlots() == 0);
+        factory.items.remove(bufferedOutput, 3);
+        factory.updateConsumption();
+        check(factory.activeSlots() == 3);
+        checkAtomizerSaveMigration(block, minerals[0]);
+        System.out.println("OK: flexible Atomizer Factory routing, independent production, legacy save and 510 power/s");
+    }
+
+    static metrum.world.AtomizerFactory.FactoryBuild factoryFixture(metrum.world.AtomizerFactory block) {
+        mindustry.world.Tile tile = Vars.world.tile(4, 4);
+        Vars.world.setGenerating(true);
+        try {
+            tile.setBlock(mindustry.content.Blocks.air);
+            tile.setBlock(block, Team.sharded);
+        } finally {
+            Vars.world.setGenerating(false);
+        }
+        metrum.world.AtomizerFactory.FactoryBuild factory = (metrum.world.AtomizerFactory.FactoryBuild)tile.build;
+        factory.power.status = 1f;
+        return factory;
+    }
+
+    static void checkAtomizerSaveMigration(metrum.world.AtomizerFactory block, mindustry.type.Item input) {
+        metrum.world.AtomizerFactory.FactoryBuild factory = factoryFixture(block);
+        mindustry.type.Item output = block.conversions.get(input);
+        factory.items.add(input, 3);
+        factory.items.add(output, 1);
+        java.io.ByteArrayOutputStream saved = new java.io.ByteArrayOutputStream();
+        arc.util.io.Writes write = new arc.util.io.Writes(new java.io.DataOutputStream(saved));
+        factory.writeBase(write);
+        for (int slot = 0; slot < 4; slot++) {
+            write.s(slot == 0 ? input.id : -1);
+            write.i(slot == 0 ? 3 : 0);
+            write.i(slot == 0 ? 1 : 0);
+            write.f(slot == 0 ? 0.5f : 0f);
+        }
+        factory = factoryFixture(block);
+        factory.readAll(new arc.util.io.Reads(new java.io.DataInputStream(
+            new java.io.ByteArrayInputStream(saved.toByteArray()))), (byte)0);
+        check(factory.items.get(input) == 3 && factory.items.get(output) == 1 && factory.activeSlots() == 1);
+        saved.reset();
+        factory.writeAll(write);
+        factory = factoryFixture(block);
+        factory.readAll(new arc.util.io.Reads(new java.io.DataInputStream(
+            new java.io.ByteArrayInputStream(saved.toByteArray()))), factory.version());
+        for (int tick = 0; tick <= block.craftTime / 2f; tick++) {
+            factory.updateConsumption();
+            factory.updateTile();
+        }
+        check(factory.items.get(input) == 1 && factory.items.get(output) == 2 && factory.activeSlots() == 0);
     }
 
     public static void main(String[] args) {
