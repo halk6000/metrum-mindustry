@@ -187,7 +187,55 @@ public class BuilderQueueTest {
         checkCondenserFeedsImpactDrill();
         checkIncineratedCargo();
         checkDroneAssemblerCompletesRecipe();
+        checkWallPassageFollowsIncomingFire();
         System.out.println("OK: saved plan order, rotations, demolition, controller restoration, queue continuation, reserved materials, released materials, invalid batch cancellation, constructor replacement queue, saved abandoned queue, truncated save");
+    }
+
+    static void checkWallPassageFollowsIncomingFire() {
+        Vars.world.tiles = new mindustry.world.Tiles(48, 48);
+        Vars.world.tiles.fill();
+        mindustry.world.blocks.storage.CoreBlock coreBlock =
+            (mindustry.world.blocks.storage.CoreBlock) mindustry.content.Blocks.coreBastion;
+        mindustry.world.blocks.storage.CoreBlock.CoreBuild core = coreBlock.new CoreBuild();
+        core.tile = Vars.world.tile(24, 24);
+        core.set(core.tile.worldx(), core.tile.worldy());
+        core.team = mindustry.game.Team.crux;
+        Block wall = mindustry.content.Blocks.berylliumWall;
+        wall.init();
+        mindustry.world.Tile east = Vars.world.tile(43, 29);
+        mindustry.world.Tile north = Vars.world.tile(19, 43);
+        east.setBlock(wall, core.team);
+        north.setBlock(wall, core.team);
+        Unit builder = UnitEntity.create();
+        builder.type = new UnitType("wall-test-builder");
+        builder.type.buildSpeed = 1f;
+        builder.team = core.team;
+        builder.flag = BasePlanner.builderHomeFlag(core);
+        builder.controller(new MetrumBuilderAI());
+        UnitType previous = metrum.content.MetrumUnits.monoMetT1;
+        metrum.content.MetrumUnits.monoMetT1 = builder.type;
+        mindustry.gen.Groups.unit.add(builder);
+        float[] fire = new float[12];
+        BasePlanner.fireByCore.put(core, fire);
+        try {
+            for (AiLevel level : AiLevel.values()) {
+                fire[0] = 100f;
+                fire[3] = 0f;
+                check(BasePlanner.buildWalls(core, level));
+                check(builder.plans.size == 1 && builder.plans.first().breaking);
+                check(builder.plans.first().x == east.x && builder.plans.first().y == east.y);
+                builder.plans.clear();
+                fire[3] = 200f;
+                check(BasePlanner.buildWalls(core, level));
+                check(builder.plans.size == 1 && builder.plans.first().breaking);
+                check(builder.plans.first().x == north.x && builder.plans.first().y == north.y);
+                builder.plans.clear();
+            }
+        } finally {
+            BasePlanner.fireByCore.remove(core);
+            mindustry.gen.Groups.unit.remove(builder);
+            metrum.content.MetrumUnits.monoMetT1 = previous;
+        }
     }
 
     static void checkDroneAssemblerCompletesRecipe() {
