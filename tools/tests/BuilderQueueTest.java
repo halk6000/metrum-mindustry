@@ -287,6 +287,16 @@ public class BuilderQueueTest {
         check(duct.items.get(module) == 1);
         for (int tick = 0; tick < 60 && duct.items.get(module) > 0; tick++) duct.updateTile();
         check(duct.items.get(module) == 0 && build.items.get(module) == 1);
+        check(deliverThroughDuct(input, duct, hullItem));
+        build.updateConsumption();
+        build.updateTile();
+        check(build.progress == 0f);
+        check(deliverThroughDuct(input, duct, module));
+        build.updateConsumption();
+        build.updateTile();
+        check(build.progress > 0f);
+        check(build.items.get(hullItem) == 1 && build.items.get(module) == 2);
+        check(mindustry.gen.Groups.unit.size() == existingUnits + 1);
         assembled.remove();
     }
 
