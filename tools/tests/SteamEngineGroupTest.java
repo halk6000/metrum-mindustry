@@ -86,6 +86,19 @@ public class SteamEngineGroupTest {
             previousHeat = heat;
         }
         check(near(previousPower, 0f) && near(previousHeat, 0f));
+        for (int tick = 0; tick < 600; tick++) {
+            Vars.state.updateId++;
+            single.liquids.set(metrum.content.MetrumLiquids.steam, 1f);
+            single.updateConsumption();
+            single.updateTile();
+            float power = single.getPowerProduction() * 60f;
+            float heat = receiver.calculateHeat(sides);
+            check(power >= previousPower && heat >= previousHeat);
+            previousPower = power;
+            previousHeat = heat;
+        }
+        check(near(previousPower, 600f) && near(previousHeat, 12f));
+        System.out.println("Recovered steam engine output: " + previousPower + " power/s, " + previousHeat + " heat");
     }
 
     public static void main(String[] args) {
