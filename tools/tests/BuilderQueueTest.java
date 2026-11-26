@@ -320,6 +320,7 @@ public class BuilderQueueTest {
     static void checkBaseDefenses() {
         Vars.world.tiles = new mindustry.world.Tiles(48, 48);
         Vars.world.tiles.fill();
+        for (mindustry.world.Tile tile : Vars.world.tiles) tile.setFloor(mindustry.content.Blocks.rhyolite.asFloor());
         mindustry.world.blocks.storage.CoreBlock coreBlock =
             (mindustry.world.blocks.storage.CoreBlock) mindustry.content.Blocks.coreBastion;
         mindustry.world.blocks.storage.CoreBlock.CoreBuild core = coreBlock.new CoreBuild();
@@ -344,6 +345,7 @@ public class BuilderQueueTest {
         float[] fire = new float[12];
         BasePlanner.fireByCore.put(core, fire);
         try {
+            checkDrillLineStartsWithExtractor(core, builder);
             checkTurretMagazinesByDifficulty(core, builder);
             core.items.clear();
             for (AiLevel level : AiLevel.values()) {
@@ -409,6 +411,58 @@ public class BuilderQueueTest {
             BasePlanner.fireByCore.remove(core);
             mindustry.gen.Groups.unit.remove(builder);
             metrum.content.MetrumUnits.monoMetT1 = previous;
+        }
+    }
+
+    static void checkDrillLineStartsWithExtractor(mindustry.world.blocks.storage.CoreBlock.CoreBuild core, Unit builder) {
+        Block drill = mindustry.content.Blocks.mechanicalDrill;
+        Block duct = mindustry.content.Blocks.duct;
+        for (Block block : Vars.content.blocks()) {
+            if (block instanceof mindustry.world.blocks.production.Drill
+                || block instanceof mindustry.world.blocks.production.BeamDrill) block.init();
+        }
+        duct.init();
+        core.block = mindustry.content.Blocks.coreBastion;
+        core.items = new mindustry.world.modules.ItemModule();
+        for (Block block : new Block[]{drill, duct}) {
+            for (mindustry.type.ItemStack cost : block.requirements) core.items.add(cost.item, cost.amount * 20);
+        }
+        mindustry.world.Tile ore = Vars.world.tile(core.tileX() - 9, core.tileY());
+        ore.setOverlay(mindustry.content.Blocks.oreCopper);
+        for (mindustry.world.Tile tile : Vars.world.tiles) {
+            if (BasePlanner.insideFootprint(tile, core.tile, core.block)) tile.build = core;
+        }
+        mindustry.graphics.CacheLayer previousWallsLayer = mindustry.graphics.CacheLayer.walls;
+        // The headless fixture has no renderer to initialize the wall layer.
+        if (previousWallsLayer == null) mindustry.graphics.CacheLayer.walls = new mindustry.graphics.CacheLayer();
+        try {
+            check(BasePlanner.buildDrillLine(core, AiLevel.DUMB));
+            check(builder.plans.size > 1);
+            BuildPlan extractor = builder.plans.first();
+            check(extractor.block == drill && !extractor.breaking);
+            mindustry.world.Tile drillSite = Vars.world.tile(extractor.x, extractor.y);
+            check(BasePlanner.insideFootprint(ore, drillSite, drill));
+            BuildPlan firstDuct = builder.plans.get(1);
+            mindustry.world.Tile ductSite = Vars.world.tile(firstDuct.x, firstDuct.y);
+            check(BasePlanner.insideFootprint(ductSite.nearby((firstDuct.rotation + 2) % 4), drillSite, drill));
+            for (int i = 1; i < builder.plans.size; i++) {
+                BuildPlan segment = builder.plans.get(i);
+                check(segment.block == duct && !segment.breaking);
+                mindustry.world.Tile output = Vars.world.tile(segment.x, segment.y).nearby(segment.rotation);
+                if (i + 1 == builder.plans.size) {
+                    check(output.build == core);
+                } else {
+                    BuildPlan next = builder.plans.get(i + 1);
+                    check(output.x == next.x && output.y == next.y);
+                }
+            }
+        } finally {
+            mindustry.graphics.CacheLayer.walls = previousWallsLayer;
+            builder.plans.clear();
+            ore.setOverlay(mindustry.content.Blocks.air);
+            for (mindustry.world.Tile tile : Vars.world.tiles) {
+                if (tile.build == core) tile.build = null;
+            }
         }
     }
 
