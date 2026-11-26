@@ -2,14 +2,13 @@
 
 Źródło: `original/Metrum` (JSON/HJSON mod v1.0.3, minGameVersion 145).
 
-## Wykonane
-- [x] Rozpakowanie oryginału, repo git, roadmapa
-
+## Wdrożone lub testowane
 - [x] Edytor balansu (suwaki z limitami) + eksport do jar: `Edytor balansu.bat`
 
-## Pozostałe (lista z 23.11)
-- [ ] Atom dla każdego pierwiastka + blok „Panel kontrolny reakcji” obok reaktora (cel fuzji, przechwytuje produkt)
-- [ ] De-atomizer: atomy -> z powrotem surowiec
+## Funkcje w rozwoju i do potwierdzenia
+- [ ] Atomy i Panel kontroli reakcji są w grze. Do potwierdzenia cały przebieg fuzji z panelem, w tym pełny bufor, zmiana celu i wznowienie po wczytaniu.
+- [ ] De-atomizer zamienia atomy na surowce. Do potwierdzenia w grze.
+- [ ] Fabryka atomizacji: test automatyczny potwierdził cztery niezależne pary portów, limit poboru 510 jednostek energii/s i badanie po Atomizerze oraz karborundzie. Do potwierdzenia wygląd i obsługa w grze.
 - [x] Maszyna parowa rozpędza ciepło 3 -> 6 -> 9 -> 12
 - [x] Huta Infuzyjna bez wody jako produktu ubocznego
 - [ ] Inteligentne mosty: kolory obiegów (most łączy się tylko z mostem tego samego koloru)
@@ -26,13 +25,12 @@
 - [x] Drukarka broni (laser, rakiety, ładunki, zbiornik paliwa, karabin) + Magazyn broni
 - [x] Montownia dronów 4x4: wybór kadłuba, sloty-kwadraty (klik = moduł), 60 s, okno nazwy statku
 - [x] Wieżyczki z kadłubów (karabin, rakiety; 1 skrzynka/strzał), drony C+ mogą je podnosić (PayloadUnit 2x2): drony C+ przenoszą kadłub i montują jako wieżyczkę; amunicja wg broni albo 1 skrzynka/strzał
-- [x] Szkielet Java (Gradle 8.10 wrapper, Mindustry v146 compileOnly) — `gradlew jar` → build/libs/Metrum.jar
 - [x] Port: itemy (5) + płyn steam
 - [x] Port: wiertła (5), produkcja (6)
 - [x] Port: turbina zaawansowana
 - [x] Port: jednostki MonoMet T1–T3 + warianty b
 - [x] Port: doki (Air Miner Dock, Rebuilder) — cały oryginał przeniesiony
-- [x] Kompilacja pod grę 160.8 (desktop.jar ze Steam), dźwięki zaktualizowane
+- [ ] Dźwięki po aktualizacji do sprawdzenia w grze.
 - [x] Turbina: bez pary 75% mocy; duży piec parowy 3x3
 - [x] Test w grze: wczytanie OK, 0 błędów, 0 brakujących grafik
 - [x] Falownik cieplny 2x2 (HeatCrafter: ciepło 6, woda 0.25 → para 0.5, przegrzanie do 300%)
@@ -53,7 +51,6 @@
 - [x] Warianty D (zasięg 11/13/15, co 7.5 s), Advanced Booster Rebuilder 5x5 na plazmie (C -> D)
 - [x] AI wroga na Ferrox: vanilla buildAi + rtsAi + BaseExpander (co 20 s fortyfikacja przy rdzeniu z zasobów rdzenia, tier obrony rośnie co 10 fal)
 - [x] BaseExpander: tylko wieżyczki na amunicję (breach/diffuse/titan/disperse/scathe/smite), co 5 s dosypuje amunicję z rdzenia
-- [x] tools/check.py (sprite + EN/PL dla każdej zawartości) wpięty w gradlew jar
 - [x] Wróg na Ferrox: od fali 15 wystawia prawdziwe wzmacniacze (T2C, od fali 30 T3C), max 1 + (fala-15)/10, lecą za armią (do zestrzelenia)
 - [x] Fabryka amunicji 3x3 (2 Fe + 1 stal + 3 Be + woda -> 2 skrzynki, para uboczna)
 - [x] Rekonstruktor Wojenny = ostateczny (B->C i C->D), koszt bazowy 1 skrzynka + 2 stal + 0.09 pary/s, rośnie x1.5 na poziom (C->D: 2 skrzynki, 3 stal, 0.135 pary/s)
@@ -92,10 +89,8 @@
 - [ ] **Migracja techniczna nazwy**: przed zmianą wewnętrznego identyfikatora planety sprawdzić zgodność istniejących zapisów kampanii, sektorów i powiązanych danych; nie zmieniać go bez strategii migracji. Wcześniejsze wpisy „Ferrox” w historii realizacji roadmapy opisują dawną nazwę i nie oznaczają cofnięcia wykonanej pracy.
 
 ### Metonia — kopalnia odkrywkowa i złoża wyczerpywalne
-- Stan: etap 1 gotowy (blok 4x4, badanie po kruszarce i stali, postęp, odkrycia, menu, zapis). Etap 2 gotowy: mechanizm wyczerpywalnych złóż z zapisem (metrum.world.Deposits). Etap 3 gotowy: zawalenie przy 100% i rozsypanie złóż. Złoża zużywają się też podczas nieobecności. Odkrycia zależą od planety (podstawowe: beryl i grafit na Erekirze/Metonii, miedź i ołów na Serpulo), wagi w edytorze balansu. Boostery: zasilony radar obok (-2 s na 1%, raz), woda 12/s (szansa 20% -> 24%). Cykl potwierdzony w grze przez użytkownika. Pozostało: test boosterów w grze i gry w sieci.
-- [ ] **Kopalnia odkrywkowa (koszt przykładowy: 1000 berylu + 200 stali)**: co 10 s dodaje 1% postępu. Każdy 1% daje niezależnie 20% szansy na zdarzenie odkrycia podziemnych surowców, maksymalnie 200 jednostek zasobu na zdarzenie; odkrycia kumulują się (np. 600 berylu i 400 toru).
-- [ ] **Menu odkrytych złóż**: podczas pracy kopalnia pokazuje sumy znalezionych surowców; przy 100% postępu kopalnia się zawala i odsłania/rozsypuje odkryte złoża wokół swojej lokalizacji.
-- [ ] **Wyczerpywalne złoża**: po zawaleniu można stawiać zwykłe wiertnice na ujawnionych polach. Złoża mają ograniczony zapas, maleją podczas wydobycia i znikają po wyczerpaniu. Zapewnić zapis i odczyt pozostałych ilości oraz synchronizację sieciową; moduł mechaniki może być wewnętrzną biblioteką Metrum.
+- [ ] **Boostery kopalni**: sprawdzić w grze zasilony radar obok (−2 s na 1%, raz) oraz wodę 12/s (szansa odkrycia 20% → 24%).
+- [ ] **Złoża**: w toku są warstwy, rozrost i zagęszczanie odkrytych skupisk. Test `depositsTest` zgłasza rozbieżność w ilości surowców po rozsypaniu złóż. Sprawdzić rozmieszczanie przy braku miejsca, zużycie podczas nieobecności, zapis i odczyt oraz synchronizację sieciową.
 - [ ] **Balans kopalni**: brak gwarancji zwrotu kosztów, ryzyko niepożądanych surowców, odpowiednie rozmieszczanie odkryć i obsługa braku wolnych pól wokół kopalni.
 ### Venoms Issland — planeta bioewolucji i toksycznej chemii
 - [ ] **Nowa planeta Venoms Issland**: mroczny klimat, dominujący fiolet, biologiczne środowisko i odrębny charakter od przemysłowej Metonii; przygotować świat, mapy, oprawę, drzewo technologii oraz unikalne surowce i płyny.
@@ -132,9 +127,9 @@
 - [ ] Rozpoznanie i ekspansja gospodarcza (uwaga użytkownika 24.11): drony szukają brakujących zasobów poza bezpośrednim otoczeniem rdzenia, odkrywają teren i zakładają połączone placówki; używać maszyn Metrum, uwzględnić wolfram i unikać zależności wymagających wolframu do uruchomienia jego pierwszego źródła. Dalsza symulacja przy nieobecności gracza pozostaje osobnym zadaniem.
 
 - [ ] **Regresja rozpoznawania zasobów przez planer AI — węgiel i paliwa rdzenia (25.11)**: objaw analogiczny do wcześniejszego błędu z niewidocznym piaskiem (wspólna przyczyna do potwierdzenia w kodzie). Rdzeń spala węgiel, ale planer nie widzi go w danych dronów. Udostępnić planerowi węgiel oraz wszystkie pozostałe zasoby zużywane jako paliwo przez rdzeń; uwzględniać ich zapotrzebowanie i dostępność w danych dronów. Planer powinien następnie sprawdzać dostawy taśmociągami lub dronami i planować brakujące zaopatrzenie. Test regresji: piasek, węgiel i każde paliwo rdzenia, oba sposoby transportu oraz brak dostaw.
+- [ ] **Inteligentne wydobycie**: zweryfikować przełączenie pustego drona na inną rudę po zapełnieniu magazynu rdzenia dla poprzedniego surowca. Bieżąca wersja zmienia cel od razu, a `builderQueueTest` oczekuje wyczyszczenia pola wydobycia przed rozpoczęciem pracy na nowym.
 
-## Mapa użytkownika — aktualizacja 24.11
-- [x] Zaimportowano Stary Wąwóz zapisany 24.11 o 08:34 z katalogu map Steam do obu nazw mapy w assets/maps; kolejny JAR i wydanie mają zawierać tę wersję.
+## Stary Wąwóz
 - Złoża Starego Wąwozu są rozmieszczone ręcznie: mają być skąpe, lecz wystarczające na pierwsze walki. Nie dosypywać losowych rud ani zwiększać złóż jako obejścia problemów gospodarki AI.
 
 ## Ustalenia użytkownika — maszyny parowe i stapiacz
