@@ -173,6 +173,11 @@ public class MetrumUnits {
             frontColor = Color.valueOf("fff4c8"); backColor = Color.valueOf("d9a441");
         }};
         monoMetT1c.weapons.add(barrage);
+
+        // Keep the imported body pixels when Mindustry packs the separate outline.
+        for (UnitType type : new UnitType[]{monoMetT1, monoMetT1b, monoMetT1c, monoMetT1d}) {
+            type.outlines = false;
+        }
     }
 
     /**
