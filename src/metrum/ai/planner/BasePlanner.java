@@ -1542,7 +1542,7 @@ public class BasePlanner {
                 }
             }
             if (connected && connectedRate + 0.001f < requiredWaterRate(drill)
-                && queueLiquidLine(core, additionalSources, Seq.with(drill), water)) return true;
+                && queueLiquidLine(core, additionalSources, Seq.with(drill), water, true)) return true;
         }
         return false;
     }
@@ -1577,6 +1577,11 @@ public class BasePlanner {
     }
 
     static boolean queueLiquidLine(CoreBuild core, Seq<Building> sources, Seq<Building> destinations, mindustry.type.Liquid liquid) {
+        return queueLiquidLine(core, sources, destinations, liquid, false);
+    }
+
+    private static boolean queueLiquidLine(CoreBuild core, Seq<Building> sources, Seq<Building> destinations,
+                                           mindustry.type.Liquid liquid, boolean requestMaterials) {
         Seq<Building[]> pairs = new Seq<>();
         for (Building from : sources) for (Building to : destinations) {
             if (from != to) pairs.add(new Building[]{from, to});
@@ -1592,7 +1597,8 @@ public class BasePlanner {
             int perPipe = Math.round(cost.amount * Vars.state.rules.buildCostMultiplier);
             if (perPipe > 0) pipeBudget = Math.min(pipeBudget, core.items.get(cost.item) / perPipe);
         }
-        if (pipeBudget == 0 && (demand == null || (water && !recoveryWater))) return false;
+        if (!requestMaterials && pipeBudget == 0 && (demand == null || (water && !recoveryWater))) return false;
+        Seq<BuildPlan> shortestUnaffordable = null;
         for (Building[] pair : pairs) {
             Building from = pair[0], to = pair[1];
             Seq<Tile> path = pipeRoute(from, to, conduit,
@@ -1606,6 +1612,9 @@ public class BasePlanner {
                 plans.add(new BuildPlan(t.x, t.y, t.relativeTo(next), conduit));
             }
             if (plans.size <= pipeBudget) return queueConstructionBatch(core, plans);
+            if (requestMaterials && (shortestUnaffordable == null || plans.size < shortestUnaffordable.size)) {
+                shortestUnaffordable = plans;
+            }
             boolean neededForDemand = water ? recoveryWater && to.enabled && to.closestCore() == core
                 && (to.block == metrum.content.MetrumProduction.steamFurnace
                     || to.block == metrum.content.MetrumProduction.stoneCrusher)
@@ -1614,6 +1623,7 @@ public class BasePlanner {
                 shortestDemandLine = Math.min(shortestDemandLine, plans.size);
             }
         }
+        if (shortestUnaffordable != null) return queueConstructionBatch(core, shortestUnaffordable);
         if (shortestDemandLine != Integer.MAX_VALUE) {
             for (ItemStack cost : conduit.requirements) {
                 long needed = (long) Math.round(cost.amount * Vars.state.rules.buildCostMultiplier) * shortestDemandLine;

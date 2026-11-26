@@ -472,6 +472,15 @@ public class BuilderQueueTest {
             check(!BasePlanner.canSupplyWater(extra));
             check(BasePlanner.waterLineConnected(source, receiver));
             check(!BasePlanner.waterLineConnected(extra, receiver));
+            mindustry.type.ItemStack pipeCost = pipe.requirements[0];
+            int stock = core.items.get(pipeCost.item);
+            core.items.set(pipeCost.item, 0);
+            check(!BasePlanner.pipeWater(core) && builder.plans.isEmpty());
+            mindustry.type.ItemStack materialDemand = BasePlanner.miningDemand.get(core);
+            check(materialDemand != null && materialDemand.item == pipeCost.item);
+            check(materialDemand.amount >= pipeCost.amount);
+            core.items.set(pipeCost.item, stock);
+            BasePlanner.miningDemand.remove(core);
             check(BasePlanner.pipeWater(core));
             BuildPlan inlet = builder.plans.first(), outlet = builder.plans.last();
             check(Vars.world.tile(inlet.x, inlet.y).nearby((inlet.rotation + 2) % 4).build == extra);
