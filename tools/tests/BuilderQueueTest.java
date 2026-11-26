@@ -186,7 +186,43 @@ public class BuilderQueueTest {
         checkWaterBypassFlow();
         checkCondenserFeedsImpactDrill();
         checkIncineratedCargo();
+        checkDroneAssemblerStartsWithCompleteRecipe();
         System.out.println("OK: saved plan order, rotations, demolition, controller restoration, queue continuation, reserved materials, released materials, invalid batch cancellation, constructor replacement queue, saved abandoned queue, truncated save");
+    }
+
+    static void checkDroneAssemblerStartsWithCompleteRecipe() {
+        mindustry.type.Item hullItem = mindustry.content.Items.beryllium;
+        mindustry.type.Item module = mindustry.content.Items.silicon;
+        metrum.modular.ModularUnitType hull = new metrum.modular.ModularUnitType("assembler-test-hull", hullItem, 2);
+        metrum.modular.DroneAssembler assembler = new metrum.modular.DroneAssembler("assembler-test-block");
+        assembler.hulls.add(hull);
+        assembler.modules.add(module);
+        assembler.consumePower(3f);
+        assembler.init();
+        metrum.modular.DroneAssembler.DroneAssemblerBuild build = assembler.new DroneAssemblerBuild();
+        build.block = assembler;
+        build.team = Vars.state.rules.waveTeam;
+        build.items = new mindustry.world.modules.ItemModule();
+        build.power = new mindustry.world.modules.PowerModule();
+        build.configured(null, hull.id + ";" + module.id + "," + module.id);
+        build.handleItem(build, hullItem);
+        build.handleItem(build, module);
+        build.power.status = 1f;
+        build.updateConsumption();
+        build.updateTile();
+        check(build.progress == 0f);
+        check(build.acceptItem(build, module));
+        build.handleItem(build, module);
+        check(!build.acceptItem(build, module) && build.shouldConsume());
+        build.power.status = 0f;
+        build.updateConsumption();
+        build.updateTile();
+        check(build.progress == 0f);
+        build.power.status = 1f;
+        build.updateConsumption();
+        build.updateTile();
+        check(build.progress > 0f);
+        check(build.items.get(hullItem) == 1 && build.items.get(module) == 2);
     }
 
     static void checkWaterBypassFlow() {
