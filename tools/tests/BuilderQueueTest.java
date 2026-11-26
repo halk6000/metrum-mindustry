@@ -456,12 +456,43 @@ public class BuilderQueueTest {
                     check(output.x == next.x && output.y == next.y);
                 }
             }
+            checkMinedCopperReachesCore(core, builder);
         } finally {
             mindustry.graphics.CacheLayer.walls = previousWallsLayer;
             builder.plans.clear();
             ore.setOverlay(mindustry.content.Blocks.air);
             for (mindustry.world.Tile tile : Vars.world.tiles) {
                 if (tile.build == core) tile.build = null;
+            }
+        }
+    }
+
+    static void checkMinedCopperReachesCore(mindustry.world.blocks.storage.CoreBlock.CoreBuild core, Unit builder) {
+        arc.struct.Seq<mindustry.gen.Building> line = new arc.struct.Seq<>();
+        for (BuildPlan plan : builder.plans) {
+            mindustry.world.Tile site = Vars.world.tile(plan.x, plan.y);
+            site.setBlock(plan.block, core.team, plan.rotation);
+            line.add(site.build);
+        }
+        try {
+            core.storageCapacity = 10_000;
+            mindustry.type.Item copper = mindustry.content.Items.copper;
+            int initialCopper = core.items.get(copper);
+            for (mindustry.gen.Building segment : line) segment.onProximityUpdate();
+            check(((mindustry.world.blocks.production.Drill.DrillBuild)line.first()).dominantItem == copper);
+            for (int tick = 0; tick < 1000 && core.items.get(copper) == initialCopper; tick++) {
+                for (mindustry.gen.Building segment : line) {
+                    segment.updateConsumption();
+                    segment.updateTile();
+                }
+            }
+            check(core.items.get(copper) > initialCopper);
+        } finally {
+            Vars.world.setGenerating(true);
+            try {
+                for (mindustry.gen.Building segment : line) segment.tile.setBlock(mindustry.content.Blocks.air);
+            } finally {
+                Vars.world.setGenerating(false);
             }
         }
     }
