@@ -84,7 +84,12 @@ public class FusionReactor extends PowerGenerator {
 
         /** reaction control panel next to the reactor (null = free fusion, one step at a time) */
         ReactionControl.ReactionControlBuild panel() {
-            for (mindustry.gen.Building b : proximity) if (b instanceof ReactionControl.ReactionControlBuild) return (ReactionControl.ReactionControlBuild) b;
+            for (mindustry.gen.Building b : proximity) {
+                if (b.team == team && b instanceof ReactionControl.ReactionControlBuild) {
+                    ReactionControl.ReactionControlBuild control = (ReactionControl.ReactionControlBuild) b;
+                    if (control.target != null) return control;
+                }
+            }
             return null;
         }
 

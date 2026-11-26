@@ -188,7 +188,37 @@ public class BuilderQueueTest {
         checkIncineratedCargo();
         checkDroneAssemblerCompletesRecipe();
         checkBaseDefenses();
+        checkFusionUsesConfiguredAlliedPanel();
         System.out.println("OK: saved plan order, rotations, demolition, controller restoration, queue continuation, reserved materials, released materials, invalid batch cancellation, constructor replacement queue, saved abandoned queue, truncated save");
+    }
+
+    static void checkFusionUsesConfiguredAlliedPanel() {
+        metrum.world.FusionReactor reactor = new metrum.world.FusionReactor("test-fusion-reactor");
+        reactor.fuel = mindustry.content.Items.coal;
+        reactor.coolant = mindustry.content.Liquids.water;
+        reactor.steam = mindustry.content.Liquids.ozone;
+        metrum.world.FusionReactor.FusionReactorBuild build = reactor.new FusionReactorBuild();
+        build.block = reactor;
+        build.team = mindustry.game.Team.crux;
+        build.items = new mindustry.world.modules.ItemModule();
+        build.liquids = new mindustry.world.modules.LiquidModule();
+        metrum.world.ReactionControl control = new metrum.world.ReactionControl("test-reaction-control");
+        metrum.world.ReactionControl.ReactionControlBuild foreign = control.new ReactionControlBuild();
+        metrum.world.ReactionControl.ReactionControlBuild unconfigured = control.new ReactionControlBuild();
+        metrum.world.ReactionControl.ReactionControlBuild configured = control.new ReactionControlBuild();
+        mindustry.type.Item target = mindustry.content.Items.silicon;
+        foreign.target = configured.target = target;
+        foreign.team = mindustry.game.Team.sharded;
+        unconfigured.team = configured.team = build.team;
+        for (mindustry.gen.Building panel : new mindustry.gen.Building[]{foreign, unconfigured, configured}) {
+            panel.block = control;
+            panel.items = new mindustry.world.modules.ItemModule();
+            build.proximity.add(panel);
+        }
+        build.items.add(target, 1);
+        build.updateTile();
+        check(build.items.get(target) == 0 && configured.items.get(target) == 1);
+        check(foreign.items.total() == 0 && unconfigured.items.total() == 0);
     }
 
     static void checkBaseDefenses() {
