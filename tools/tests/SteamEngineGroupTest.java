@@ -122,6 +122,20 @@ public class SteamEngineGroupTest {
         a.proximity.clear(); b.proximity.clear(); c.proximity.clear(); h.proximity.clear();
         a.proximity.add(h); h.proximity.add(a);
         check(near(h.calculateHeat(new float[4]), 12f));
+        mindustry.world.blocks.production.HeatCrafter.HeatCrafterBuild opposite = crucible.new HeatCrafterBuild();
+        opposite.block = crucible;
+        opposite.team = Team.sharded;
+        opposite.tile = new mindustry.world.Tile(0, 0);
+        opposite.x = 40f;
+        a.proximity.add(opposite);
+        opposite.proximity.add(a);
+        float[] warmupThresholds = {0f, 0.05f, 0.25f, 0.5f, 0.75f};
+        for (int stage = 0; stage < warmupThresholds.length; stage++) {
+            a.warmup = warmupThresholds[stage];
+            float expectedHeat = stage * 3f;
+            check(near(h.calculateHeat(new float[4]), expectedHeat));
+            check(near(opposite.calculateHeat(new float[4]), expectedHeat));
+        }
         // Output follows the steam actually supplied, also when it arrives in bursts.
         check(near(settled(a, 0.2f, 0.2f), 0.2f) && Math.abs(settled(a, 0.6f, 0f) - 0.3f) < 0.03f);
         check(settled(a, 1f, 1f) > 0.48f && near(settled(a, 0f, 0f), 0f));
