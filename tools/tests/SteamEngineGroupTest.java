@@ -45,6 +45,8 @@ public class SteamEngineGroupTest {
         new metrum.MetrumMod().loadContent();
         checkResearchParent(metrum.content.MetrumBlocks.hullGunTurret, metrum.content.MetrumItems.weaponMachineGun);
         checkResearchParent(metrum.content.MetrumBlocks.hullMissileTurret, metrum.content.MetrumItems.weaponMissiles);
+        checkResearchParent(metrum.content.MetrumPower.fusionReactor, metrum.content.MetrumItems.quarkMatter);
+        checkResearchParent(metrum.content.MetrumPower.reactionControl, metrum.content.MetrumPower.fusionReactor);
         SteamEngine block = metrum.content.MetrumPower.steamEngine;
         checkResearchParent(block, metrum.content.MetrumProduction.steamFurnace);
         block.init();
