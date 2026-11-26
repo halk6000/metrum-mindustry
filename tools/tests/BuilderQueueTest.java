@@ -249,6 +249,23 @@ public class BuilderQueueTest {
         build.updateTile();
         check(build.items.get(input) == 0 && build.items.get(target) == reactor.itemCapacity);
         check(configured.items.get(target) == control.itemCapacity);
+
+        reactor.transmuteTime = 4f;
+        build.items.remove(target, 1);
+        build.items.add(input, 1);
+        build.updateTile();
+        float progressBeforeBlock = build.transmuteProgress;
+        check(progressBeforeBlock > 0f && progressBeforeBlock < 1f);
+        build.items.add(target, 1);
+        for (int tick = 0; tick < 4; tick++) build.updateTile();
+        check(build.transmuteProgress == progressBeforeBlock && build.items.get(input) == 1);
+        configured.items.remove(target, 1);
+        build.updateTile();
+        check(build.transmuteProgress > progressBeforeBlock);
+        build.updateTile();
+        check(build.items.get(input) == 1);
+        build.updateTile();
+        check(build.items.get(input) == 0 && build.items.get(target) == reactor.itemCapacity);
     }
 
     static void checkBaseDefenses() {
