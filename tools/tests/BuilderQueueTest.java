@@ -248,6 +248,21 @@ public class BuilderQueueTest {
             BuildPlan firstWall = builder.plans.first();
             check(!firstWall.breaking && firstWall.block == wall);
             builder.plans.clear();
+            Block tungstenWall = mindustry.content.Blocks.tungstenWall;
+            tungstenWall.init();
+            for (mindustry.type.ItemStack cost : tungstenWall.requirements) {
+                int amount = Math.round(cost.amount * Vars.state.rules.buildCostMultiplier);
+                core.items.set(cost.item, amount + reserve.getOrDefault(cost.item, 0));
+            }
+            check(BasePlanner.buildWalls(core, AiLevel.DUMB));
+            check(builder.plans.first().block == tungstenWall);
+            builder.plans.clear();
+            for (mindustry.type.ItemStack cost : tungstenWall.requirements) {
+                core.items.set(cost.item, reserve.getOrDefault(cost.item, 0));
+            }
+            check(BasePlanner.buildWalls(core, AiLevel.DUMB));
+            check(builder.plans.first().block == wall);
+            builder.plans.clear();
             checkWallAvoidsDockExit(core, builder, firstWall);
             float gap = BasePlanner.wallGapAngle(core);
             int wallsPlaced = 0;
