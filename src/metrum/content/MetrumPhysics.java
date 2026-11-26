@@ -3,6 +3,7 @@ package metrum.content;
 import mindustry.content.Items;
 import mindustry.type.Category;
 import metrum.world.Atomizer;
+import metrum.world.AtomizerFactory;
 import metrum.world.HadronCollider;
 
 import static mindustry.type.ItemStack.with;
@@ -11,6 +12,7 @@ import static metrum.content.MetrumItems.*;
 /** Particle physics line: atomizer -> hadron collider. */
 public class MetrumPhysics {
     public static Atomizer atomizer, deAtomizer;
+    public static AtomizerFactory atomizerFactory;
     public static HadronCollider hadronCollider;
 
     public static void load() {
@@ -29,6 +31,13 @@ public class MetrumPhysics {
             .convert(Items.copper, atomicCopper)
             .convert(Items.lead, atomicLead)
             .convert(Items.titanium, atomicTitanium);
+
+        atomizerFactory = new AtomizerFactory("atomizer-factory");
+        atomizerFactory.requirements(Category.crafting, with(steel, 100, carborundum, 10, Items.surgeAlloy, 12));
+        atomizerFactory.size = 3;
+        atomizerFactory.health = 750;
+        atomizerFactory.conversions.putAll(atomizer.conversions);
+        atomizerFactory.consumePowerDynamic((AtomizerFactory.FactoryBuild b) -> b.activeSlots() * 2.125f);
 
         // reverse: atoms back into the material (1 atom -> 1 item)
         deAtomizer = new Atomizer("de-atomizer");

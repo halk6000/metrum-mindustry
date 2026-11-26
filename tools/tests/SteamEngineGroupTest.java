@@ -43,6 +43,7 @@ public class SteamEngineGroupTest {
         Vars.headless = true;
         Vars.content.createBaseContent();
         new metrum.MetrumMod().loadContent();
+        checkAtomizerFactory();
         checkResearchParent(metrum.content.MetrumBlocks.hullGunTurret, metrum.content.MetrumItems.weaponMachineGun);
         checkResearchParent(metrum.content.MetrumBlocks.hullMissileTurret, metrum.content.MetrumItems.weaponMissiles);
         checkResearchParent(metrum.content.MetrumPower.fusionReactor, metrum.content.MetrumItems.quarkMatter);
@@ -108,6 +109,65 @@ public class SteamEngineGroupTest {
                                     mindustry.ctype.UnlockableContent parent) {
         check(content.techNode != null && parent.techNode != null && content.techNode.parent == parent.techNode);
         check(parent.techNode.children.contains(content.techNode, true));
+    }
+
+    static void checkAtomizerFactory() {
+        metrum.world.AtomizerFactory block = metrum.content.MetrumPhysics.atomizerFactory;
+        checkResearchParent(block, metrum.content.MetrumPhysics.atomizer);
+        check(block.techNode.objectives.contains(objective -> objective instanceof mindustry.game.Objectives.Research
+            && ((mindustry.game.Objectives.Research)objective).content == metrum.content.MetrumItems.carborundum));
+        block.init();
+        Vars.world = new mindustry.core.World();
+        Vars.world.tiles = new mindustry.world.Tiles(9, 9);
+        Vars.world.tiles.fill();
+        metrum.world.AtomizerFactory.FactoryBuild factory = block.new FactoryBuild();
+        factory.block = block;
+        factory.team = Team.sharded;
+        factory.tile = Vars.world.tile(4, 4);
+        factory.items = new mindustry.world.modules.ItemModule();
+        factory.power = new mindustry.world.modules.PowerModule();
+        factory.power.status = 1f;
+        int[][] inputs = {{2, 5}, {2, 3}, {3, 6}, {5, 6}};
+        int[][] outputs = {{6, 5}, {6, 3}, {3, 2}, {5, 2}};
+        mindustry.type.Item[] minerals = {mindustry.content.Items.copper, mindustry.content.Items.lead,
+            mindustry.content.Items.graphite, mindustry.content.Items.silicon};
+        mindustry.gen.Building[] receivers = new mindustry.gen.Building[4];
+        mindustry.world.Block duct = mindustry.content.Blocks.duct;
+        for (int lane = 0; lane < minerals.length; lane++) {
+            mindustry.world.Tile input = Vars.world.tile(inputs[lane][0], inputs[lane][1]);
+            mindustry.gen.Building feeder = mindustry.gen.Building.create();
+            input.build = feeder;
+            feeder.tile = input;
+            feeder.block = duct;
+            feeder.team = Team.crux;
+            check(!factory.acceptItem(feeder, minerals[lane]));
+            feeder.team = factory.team;
+            check(factory.acceptItem(feeder, minerals[lane]));
+            factory.handleItem(feeder, minerals[lane]);
+            check(factory.activeSlots() == lane);
+            check(!factory.acceptItem(feeder, minerals[(lane + 1) % minerals.length]));
+            factory.handleItem(feeder, minerals[lane]);
+            check(factory.activeSlots() == lane + 1);
+
+            mindustry.world.Tile output = Vars.world.tile(outputs[lane][0], outputs[lane][1]);
+            mindustry.gen.Building receiver = duct.buildType.get();
+            receiver.tile = output;
+            receiver.block = duct;
+            receiver.rotation = lane < 2 ? 0 : 3;
+            receiver.team = factory.team;
+            receiver.items = new mindustry.world.modules.ItemModule();
+            receivers[lane] = output.build = receiver;
+        }
+        check(near(block.consPower.requestedPower(factory) * 60f, 510f));
+        for (int tick = 0; tick <= block.craftTime; tick++) {
+            factory.updateConsumption();
+            factory.updateTile();
+        }
+        check(factory.items.total() == 0 && factory.activeSlots() == 0);
+        for (int lane = 0; lane < minerals.length; lane++) {
+            check(receivers[lane].items.get(block.conversions.get(minerals[lane])) == 1);
+        }
+        System.out.println("OK: four independent Atomizer Factory ports and 510 power/s");
     }
 
     public static void main(String[] args) {

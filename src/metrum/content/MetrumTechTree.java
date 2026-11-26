@@ -80,6 +80,8 @@ public class MetrumTechTree {
             atomicCopper, 2, atomicLead, 2, atomicTitanium, 2)); // setupRequirements keeps the progress array in sync
         node(MetrumPhysics.atomizer, MetrumPhysics.hadronCollider);
         node(MetrumPhysics.hadronCollider, carborundum);
+        TechNode factory = node(MetrumPhysics.atomizer, MetrumPhysics.atomizerFactory);
+        if (factory != null) factory.objectives.add(new mindustry.game.Objectives.Research(carborundum));
         node(carborundum, carborundumWall);
         node(carborundum, carborundumBore);
         node(carborundumWall, carborundumWallLarge);
