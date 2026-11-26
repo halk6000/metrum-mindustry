@@ -284,6 +284,11 @@ public class BuilderQueueTest {
         try {
             check(!BasePlanner.overlapsQueuedBuild(core.team, magazine, back.x, back.y));
             check(BasePlanner.blocksMiningDockExit(core.team, magazine, back.x, back.y));
+            mindustry.world.Tile obstructingTurret = back.nearby((turret.size - 1) / 2, 0);
+            check(mindustry.world.Build.validPlace(turret, core.team, obstructingTurret.x, obstructingTurret.y, 0, false));
+            check(!BasePlanner.overlapsQueuedBuild(core.team, turret, obstructingTurret.x, obstructingTurret.y));
+            check(!BasePlanner.defenseSiteAvailable(obstructingTurret, turret, core.team));
+            check(BasePlanner.defenseSiteAvailable(turretSite, turret, core.team));
             mindustry.world.Tile side = BasePlanner.turretMagazineSite(turretSite, turret, magazine, core.team, 0f);
             check(side != null && side.x == turretSite.x && side.y != turretSite.y);
         } finally {

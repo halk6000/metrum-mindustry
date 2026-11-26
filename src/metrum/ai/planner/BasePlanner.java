@@ -1689,7 +1689,7 @@ public class BasePlanner {
         for (int attempt = 0; attempt < 16; attempt++) {
             float a = ang + arc.math.Mathf.range(55f), d = arc.math.Mathf.random(9f, 16f) * Vars.tilesize;
             Tile t = Vars.world.tileWorld(core.x + arc.math.Angles.trnsx(a, d), core.y + arc.math.Angles.trnsy(a, d));
-            if (t == null || !Build.validPlace(turret, core.team, t.x, t.y, 0, false)) continue;
+            if (!defenseSiteAvailable(t, turret, core.team)) continue;
             Seq<BuildPlan> plans = Seq.with(new BuildPlan(t.x, t.y, 0, turret));
             if (level.turretMagazines) {
                 Tile site = turretMagazineSite(t, turret, magazine, core.team, a);
@@ -1714,11 +1714,15 @@ public class BasePlanner {
                 ? turretMax - magazineMin + 1 : magazineMax - turretMin + 1;
             Tile site = Vars.world.tile(turretSite.x + arc.math.geom.Geometry.d4x(direction) * distance,
                 turretSite.y + arc.math.geom.Geometry.d4y(direction) * distance);
-            if (site != null && Build.validPlace(magazine, team, site.x, site.y, 0, false)
-                && !overlapsQueuedBuild(team, magazine, site.x, site.y)
-                && !blocksMiningDockExit(team, magazine, site.x, site.y)) return site;
+            if (defenseSiteAvailable(site, magazine, team)) return site;
         }
         return null;
+    }
+
+    static boolean defenseSiteAvailable(Tile site, Block block, Team team) {
+        return site != null && Build.validPlace(block, team, site.x, site.y, 0, false)
+            && !overlapsQueuedBuild(team, block, site.x, site.y)
+            && !blocksMiningDockExit(team, block, site.x, site.y);
     }
 
     // ---------- step 6: wall ring; leaves a gap where the fire is heaviest (all AI levels) ----------
