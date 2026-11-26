@@ -441,17 +441,7 @@ public class BuilderQueueTest {
             extra.proximity.add(extraPipes.first());
             extraPipes.first().proximity.add(extra);
             check(BasePlanner.waterLineConnected(extra, receiver));
-            receiver.liquids.clear();
-            float combined = 0f;
-            for (int tick = 0; tick < ticks; tick++) {
-                geothermal.updateTile();
-                extraGeothermal.updateTile();
-                for (mindustry.gen.Building segment : pipes) segment.moveLiquidForward(false, water);
-                for (mindustry.gen.Building segment : extraPipes) segment.moveLiquidForward(false, water);
-                float used = Math.min(demand, receiver.liquids.get(water));
-                receiver.liquids.remove(water, used);
-                combined += used;
-            }
+            float combined = measureDrillWater(receiver, source, extra, pipes, extraPipes, ticks, demand);
             System.out.println("Water delivered per second with two condensers: " + combined * 60f / ticks);
             check(combined >= ticks * demand * 0.99f);
             builder.plans.clear();
@@ -467,11 +457,39 @@ public class BuilderQueueTest {
             BuildPlan spareInlet = builder.plans.first(), spareOutlet = builder.plans.last();
             check(Vars.world.tile(spareInlet.x, spareInlet.y).nearby((spareInlet.rotation + 2) % 4).build == spare);
             check(Vars.world.tile(spareOutlet.x, spareOutlet.y).nearby(spareOutlet.rotation).build == receiver);
+            arc.struct.Seq<mindustry.gen.Building> sparePipes = new arc.struct.Seq<>();
+            for (BuildPlan plan : builder.plans) {
+                sparePipes.add(placeLiquidBlock(plan.block, plan.x, plan.y, plan.rotation));
+            }
+            spare.proximity.add(sparePipes.first());
+            sparePipes.first().proximity.add(spare);
+            check(BasePlanner.waterLineConnected(spare, receiver));
+            float restored = measureDrillWater(receiver, source, spare, pipes, sparePipes, ticks, demand);
+            System.out.println("Water delivered per second after switching to backup condenser: " + restored * 60f / ticks);
+            check(restored >= ticks * demand * 0.99f);
         } finally {
             mindustry.gen.Groups.unit.remove(builder);
             metrum.content.MetrumUnits.monoMetT1 = previous;
             Vars.indexer = previousIndexer;
         }
+    }
+
+    static float measureDrillWater(mindustry.gen.Building receiver, mindustry.gen.Building first,
+                                  mindustry.gen.Building second, arc.struct.Seq<mindustry.gen.Building> firstLine,
+                                  arc.struct.Seq<mindustry.gen.Building> secondLine, int ticks, float demand) {
+        mindustry.type.Liquid water = mindustry.content.Liquids.water;
+        receiver.liquids.clear();
+        float consumed = 0f;
+        for (int tick = 0; tick < ticks; tick++) {
+            first.updateTile();
+            second.updateTile();
+            for (mindustry.gen.Building segment : firstLine) segment.moveLiquidForward(false, water);
+            for (mindustry.gen.Building segment : secondLine) segment.moveLiquidForward(false, water);
+            float used = Math.min(demand, receiver.liquids.get(water));
+            receiver.liquids.remove(water, used);
+            consumed += used;
+        }
+        return consumed;
     }
 
     static mindustry.gen.Building placeLiquidBlock(Block block, int x, int y, int rotation) {
