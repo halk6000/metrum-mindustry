@@ -187,11 +187,11 @@ public class BuilderQueueTest {
         checkCondenserFeedsImpactDrill();
         checkIncineratedCargo();
         checkDroneAssemblerCompletesRecipe();
-        checkWallPassageFollowsIncomingFire();
+        checkBaseDefenses();
         System.out.println("OK: saved plan order, rotations, demolition, controller restoration, queue continuation, reserved materials, released materials, invalid batch cancellation, constructor replacement queue, saved abandoned queue, truncated save");
     }
 
-    static void checkWallPassageFollowsIncomingFire() {
+    static void checkBaseDefenses() {
         Vars.world.tiles = new mindustry.world.Tiles(48, 48);
         Vars.world.tiles.fill();
         mindustry.world.blocks.storage.CoreBlock coreBlock =
@@ -218,6 +218,7 @@ public class BuilderQueueTest {
         float[] fire = new float[12];
         BasePlanner.fireByCore.put(core, fire);
         try {
+            checkTurretMagazinesByDifficulty(core, builder);
             for (AiLevel level : AiLevel.values()) {
                 fire[0] = 100f;
                 fire[3] = 0f;
@@ -251,6 +252,26 @@ public class BuilderQueueTest {
             BasePlanner.fireByCore.remove(core);
             mindustry.gen.Groups.unit.remove(builder);
             metrum.content.MetrumUnits.monoMetT1 = previous;
+        }
+    }
+
+    static void checkTurretMagazinesByDifficulty(mindustry.world.blocks.storage.CoreBlock.CoreBuild core, Unit builder) {
+        Block turret = mindustry.content.Blocks.breach;
+        Block magazine = mindustry.content.Blocks.reinforcedContainer;
+        turret.init();
+        magazine.init();
+        core.items = new mindustry.world.modules.ItemModule();
+        BasePlanner.economicReserve(core).forEach((item, amount) -> core.items.add(item, amount));
+        for (Block block : new Block[]{turret, magazine}) {
+            for (mindustry.type.ItemStack cost : block.requirements) core.items.add(cost.item, cost.amount);
+        }
+        for (AiLevel level : AiLevel.values()) {
+            check(BasePlanner.buildTurret(core, level));
+            check(builder.plans.first().block == turret);
+            boolean expectedMagazine = level != AiLevel.DUMB && level != AiLevel.EASY;
+            check(builder.plans.size == (expectedMagazine ? 2 : 1));
+            if (expectedMagazine) check(builder.plans.last().block == magazine);
+            builder.plans.clear();
         }
     }
 
