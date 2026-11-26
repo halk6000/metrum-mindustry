@@ -38,6 +38,28 @@ public class SteamEngineGroupTest {
         }
         return b.warmup;
     }
+
+    static void checkSingleEngineRatedPower() {
+        Vars.headless = true;
+        Vars.content.createBaseContent();
+        metrum.content.MetrumItems.load();
+        metrum.content.MetrumLiquids.load();
+        metrum.content.MetrumPower.loadReactors();
+        SteamEngine block = metrum.content.MetrumPower.steamEngine;
+        block.init();
+        SteamEngine.SteamEngineBuild single = engine(block, Team.sharded);
+        single.liquids = new mindustry.world.modules.LiquidModule();
+        for (int tick = 0; tick < 600; tick++) {
+            Vars.state.updateId++;
+            single.liquids.set(metrum.content.MetrumLiquids.steam, 1f);
+            single.updateConsumption();
+            single.updateTile();
+        }
+        float powerPerSecond = single.getPowerProduction() * 60f;
+        check(near(powerPerSecond, 600f));
+        System.out.println("Single steam engine power per second: " + powerPerSecond);
+    }
+
     public static void main(String[] args) {
         Vars.content = new ContentLoader();
         Vars.state = new mindustry.core.GameState();
@@ -140,5 +162,6 @@ public class SteamEngineGroupTest {
         check(near(settled(a, 0.2f, 0.2f), 0.2f) && Math.abs(settled(a, 0.6f, 0f) - 0.3f) < 0.03f);
         check(settled(a, 1f, 1f) > 0.48f && near(settled(a, 0f, 0f), 0f));
         System.out.println("OK: isolated, chained, cyclic, split and enemy engine groups");
+        checkSingleEngineRatedPower();
     }
 }
