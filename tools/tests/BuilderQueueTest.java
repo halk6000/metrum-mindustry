@@ -244,7 +244,20 @@ public class BuilderQueueTest {
         build.updateTile();
         check(build.progress > progressBeforeOutage);
         checkDroneAssemblerResumesAfterUnitCap(build, hull, hullItem, module);
-        for (int tick = 0; tick <= assembler.buildTime && build.items.get(hullItem) > 0; tick++) {
+        ByteArrayOutputStream saved = new ByteArrayOutputStream();
+        build.writeAll(new Writes(new DataOutputStream(saved)));
+        metrum.modular.DroneAssembler.DroneAssemblerBuild restored = assembler.new DroneAssemblerBuild();
+        restored.block = assembler;
+        restored.items = new mindustry.world.modules.ItemModule();
+        restored.power = new mindustry.world.modules.PowerModule();
+        restored.readAll(new Reads(new DataInputStream(new ByteArrayInputStream(saved.toByteArray()))), build.version());
+        check(restored.team == build.team && restored.config().equals(build.config()));
+        check(restored.progress == build.progress && restored.hull == hull);
+        check(restored.items.get(hullItem) == 1 && restored.items.get(module) == 2);
+        restored.power.status = 1f;
+        build = restored;
+        int remainingTicks = (int)Math.ceil((1f - build.progress) * assembler.buildTime);
+        for (int tick = 0; tick <= remainingTicks && build.items.get(hullItem) > 0; tick++) {
             build.updateConsumption();
             build.updateTile();
         }
