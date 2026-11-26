@@ -389,8 +389,6 @@ public class BuilderQueueTest {
         mindustry.world.blocks.power.ThermalGenerator.ThermalGeneratorBuild extraGeothermal =
             (mindustry.world.blocks.power.ThermalGenerator.ThermalGeneratorBuild) extra;
         extraGeothermal.sum = geothermal.sum;
-        extraGeothermal.updateTile();
-        extra.liquids.add(water, 2f);
         mindustry.gen.Building spare = placeLiquidBlock(condenser, 6, 9, 0);
         for (mindustry.world.Tile tile : Vars.world.tiles) {
             if (BasePlanner.insideFootprint(tile, spare.tile, condenser)) tile.build = spare;
@@ -468,6 +466,10 @@ public class BuilderQueueTest {
                 mindustry.gen.Groups.unit.remove(busyBuilder);
             }
             indexed.addAll(extra, spare);
+            check(extra.liquids.get(water) == 0f);
+            extraGeothermal.updateTile();
+            check(extra.liquids.get(water) < 1f && BasePlanner.thermalWaterRate(extra) > 0f);
+            check(!BasePlanner.canSupplyWater(extra));
             check(BasePlanner.waterLineConnected(source, receiver));
             check(!BasePlanner.waterLineConnected(extra, receiver));
             check(BasePlanner.pipeWater(core));
