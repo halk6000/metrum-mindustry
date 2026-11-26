@@ -249,7 +249,7 @@ public class BuilderQueueTest {
             Vars.indexer = new mindustry.ai.BlockIndexer() {
                 @Override public mindustry.gen.Building findTile(mindustry.game.Team team, float x, float y,
                         float range, arc.func.Boolf<mindustry.gen.Building> filter) {
-                    if (filter.get(factory)) return factory;
+                    if (factory.isValid() && filter.get(factory)) return factory;
                     return filter.get(overflow) ? overflow : null;
                 }
             };
@@ -304,6 +304,20 @@ public class BuilderQueueTest {
             overflow.enabled = false;
             drone.stack.set(cargo, 3);
             check(ai.deliver() && drone.stack.amount == 3);
+
+            factory.enabled = true;
+            overflow.enabled = true;
+            factory.items.clear();
+            overflow.items.clear();
+            drone.set(80f, 0f);
+            for (int tick = 0; tick < 30; tick++) check(ai.deliver());
+            check(BasePlanner.missingAfterDeliveries(factory, cargo, 3) == 0);
+            factory.tile.build = null;
+            check(!factory.isValid());
+            drone.set(overflow.x, overflow.y);
+            for (int tick = 0; tick < 30 && drone.stack.amount > 0; tick++) check(ai.deliver());
+            check(drone.stack.amount == 0 && overflow.items.get(cargo) == 3);
+            check(factory.items.get(cargo) == 0);
             mindustry.gen.Groups.unit.remove(drone);
         }
     }
