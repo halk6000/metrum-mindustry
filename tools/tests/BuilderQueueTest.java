@@ -405,6 +405,7 @@ public class BuilderQueueTest {
         core.tile = Vars.world.tile(1, 1);
         core.items = new mindustry.world.modules.ItemModule();
         for (mindustry.type.ItemStack cost : pipe.requirements) core.items.add(cost.item, 100);
+        for (mindustry.type.ItemStack cost : condenser.requirements) core.items.add(cost.item, 1000);
         Unit builder = UnitEntity.create();
         builder.type = new UnitType("water-line-builder");
         builder.type.buildSpeed = 1f;
@@ -416,11 +417,12 @@ public class BuilderQueueTest {
         metrum.content.MetrumUnits.monoMetT1 = builder.type;
         mindustry.gen.Groups.unit.add(builder);
         try {
+            arc.struct.Seq<mindustry.gen.Building> indexed = arc.struct.Seq.with(source, receiver);
             Vars.indexer = new mindustry.ai.BlockIndexer() {
                 @Override public boolean eachBlock(mindustry.game.Team team, float x, float y, float range,
                         arc.func.Boolf<mindustry.gen.Building> filter, arc.func.Cons<mindustry.gen.Building> action) {
                     boolean found = false;
-                    for (mindustry.gen.Building building : new mindustry.gen.Building[]{source, extra, spare, receiver}) {
+                    for (mindustry.gen.Building building : indexed) {
                         if (!filter.get(building)) continue;
                         action.get(building);
                         found = true;
@@ -428,6 +430,21 @@ public class BuilderQueueTest {
                     return found;
                 }
             };
+            mindustry.world.Tile vent = Vars.world.tile(3, 9);
+            for (arc.math.geom.Point2 offset : mindustry.world.blocks.environment.SteamVent.offsets) {
+                vent.nearby(offset.x, offset.y).setFloor(mindustry.content.Blocks.rhyoliteVent.asFloor());
+            }
+            source.power = new mindustry.world.modules.PowerModule();
+            check(BasePlanner.hasIdleGenerator(core) && BasePlanner.hasWaterDeficit(core));
+            check(!BasePlanner.pipeWater(core));
+            check(BasePlanner.buildGeothermalForWater(core));
+            BuildPlan generatorPlan = builder.plans.first();
+            check(builder.plans.size == 1 && generatorPlan.block == condenser);
+            mindustry.world.Tile generatorSite = Vars.world.tile(generatorPlan.x, generatorPlan.y);
+            check(generatorSite.floor() == mindustry.content.Blocks.rhyoliteVent);
+            check(((mindustry.world.blocks.environment.SteamVent) generatorSite.floor()).isCenterVent(generatorSite));
+            builder.plans.clear();
+            indexed.addAll(extra, spare);
             check(BasePlanner.waterLineConnected(source, receiver));
             check(!BasePlanner.waterLineConnected(extra, receiver));
             check(BasePlanner.pipeWater(core));

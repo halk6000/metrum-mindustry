@@ -591,8 +591,8 @@ public class BasePlanner {
         if (hasPowerSource && prioritizeArcFurnacePower(core)) return true;
         if ((!hasPowerSource || (hasPowerDeficit(core) && !hasIdleGenerator(core))) && buildPower(core)) return true;
         if (!powerGridDone(core) && extendPowerGrid(core)) return true;
-        if (hasWaterDeficit(core) && !hasIdleGenerator(core) && buildPower(core)) return true;
         if (pipeWater(core)) return true;
+        if (buildGeothermalForWater(core)) return true;
         ItemStack demand = miningDemand.get(core);
         if (demand != null && hasRecoveryGoal(core, demand.item) && needsRecoveryWater(core)
             && hasWaterDeficit(core) && buildPower(core, true)) return true;
@@ -2391,6 +2391,10 @@ public class BasePlanner {
                 result += ((mindustry.world.consumers.ConsumeLiquid) consume).amount * consumer.timeScale();
         }
         return result;
+    }
+
+    static boolean buildGeothermalForWater(CoreBuild core) {
+        return hasWaterDeficit(core) && buildPower(core);
     }
 
     static boolean hasWaterDeficit(CoreBuild core) {
