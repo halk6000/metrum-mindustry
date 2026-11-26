@@ -286,6 +286,19 @@ public class BuilderQueueTest {
             check(BasePlanner.missingAfterDeliveries(overflow, cargo, 2) == 0);
             secondDrone.set(overflow.x, overflow.y);
             check(secondDelivery.deliver() && overflow.items.get(cargo) == 2 && secondDrone.stack.amount == 0);
+            overflow.items.set(cargo, capacity);
+            secondDrone.stack.set(cargo, 3);
+            arc.util.Time.delta = 1f;
+            for (int tick = 0; tick < 40; tick++) {
+                check(secondDelivery.deliver() && secondDrone.stack.amount == 3);
+                check(factory.items.get(cargo) == capacity && overflow.items.get(cargo) == capacity);
+            }
+            overflow.items.remove(cargo, 3);
+            for (int tick = 0; tick < 30 && secondDrone.stack.amount > 0; tick++) {
+                check(secondDelivery.deliver());
+            }
+            check(secondDrone.stack.amount == 0 && overflow.items.get(cargo) == capacity);
+            check(factory.items.get(cargo) == capacity);
             mindustry.gen.Groups.unit.remove(secondDrone);
             factory.enabled = false;
             overflow.enabled = false;
