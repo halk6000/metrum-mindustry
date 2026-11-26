@@ -112,14 +112,14 @@ public class MetrumTechTree {
         node(partPrinter, partsMagazine);
         node(partPrinter, weaponPrinter);
         node(weaponPrinter, weaponsMagazine);
-        node(weaponMachineGun, hullGunTurret);
-        node(weaponMissiles, hullMissileTurret);
         node(weaponPrinter, metrum.modular.MetrumModular.assembler);
         node(weaponPrinter, weaponMiningLaser);
         node(weaponPrinter, weaponMissiles);
         node(weaponPrinter, weaponExplosives);
         node(weaponPrinter, weaponFuelTank);
         node(weaponPrinter, weaponMachineGun);
+        node(weaponMachineGun, hullGunTurret);
+        node(weaponMissiles, hullMissileTurret);
         node(fuelStation, magmaForge);
         node(magmaForge, MetrumLiquids.magma);
         node(magmaForge, plasmaIonizer);

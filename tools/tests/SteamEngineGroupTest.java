@@ -43,10 +43,10 @@ public class SteamEngineGroupTest {
         Vars.headless = true;
         Vars.content.createBaseContent();
         new metrum.MetrumMod().loadContent();
+        checkResearchParent(metrum.content.MetrumBlocks.hullGunTurret, metrum.content.MetrumItems.weaponMachineGun);
+        checkResearchParent(metrum.content.MetrumBlocks.hullMissileTurret, metrum.content.MetrumItems.weaponMissiles);
         SteamEngine block = metrum.content.MetrumPower.steamEngine;
-        check(block.techNode != null && block.techNode.parent != null);
-        check(block.techNode.parent.content == metrum.content.MetrumProduction.steamFurnace);
-        check(block.techNode.parent.children.contains(block.techNode, true));
+        checkResearchParent(block, metrum.content.MetrumProduction.steamFurnace);
         block.init();
         SteamEngine.SteamEngineBuild single = engine(block, Team.sharded);
         single.liquids = new mindustry.world.modules.LiquidModule();
@@ -100,6 +100,12 @@ public class SteamEngineGroupTest {
         }
         check(near(previousPower, 600f) && near(previousHeat, 12f));
         System.out.println("Recovered steam engine output: " + previousPower + " power/s, " + previousHeat + " heat");
+    }
+
+    static void checkResearchParent(mindustry.ctype.UnlockableContent content,
+                                    mindustry.ctype.UnlockableContent parent) {
+        check(content.techNode != null && parent.techNode != null && content.techNode.parent == parent.techNode);
+        check(parent.techNode.children.contains(content.techNode, true));
     }
 
     public static void main(String[] args) {
