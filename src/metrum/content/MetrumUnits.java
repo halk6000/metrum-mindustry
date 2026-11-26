@@ -163,8 +163,8 @@ public class MetrumUnits {
         // 1C: light suppressive fire instead of the duplicated extra gun
         monoMetT1c.weapons.remove(monoMetT1c.weapons.size - 1);
         Weapon barrage = new Weapon(P + "c1-mass-weapon");
-        barrage.x = monoMetT1c.hitSize * 0.4f; barrage.y = 1f; barrage.mirror = true; barrage.alternate = true;
-        barrage.reload = 6f; barrage.inaccuracy = 8f; barrage.shootSound = Sounds.shoot;
+        barrage.x = 0f; barrage.y = 1f; barrage.mirror = false;
+        barrage.reload = 12f; barrage.inaccuracy = 8f; barrage.shootSound = Sounds.shoot;
         barrage.bullet = new mindustry.entities.bullet.BasicBulletType(5f, 7f) {{
             lifetime = 30f; width = 4f; height = 7f;
             frontColor = Color.valueOf("fff4c8"); backColor = Color.valueOf("d9a441");
