@@ -225,6 +225,24 @@ public class BuilderQueueTest {
         check(build.progress > 0f);
         check(build.items.get(hullItem) == 1 && build.items.get(module) == 2);
         int existingUnits = mindustry.gen.Groups.unit.size();
+        for (int tick = 0; tick < 600; tick++) {
+            build.updateConsumption();
+            build.updateTile();
+        }
+        float progressBeforeOutage = build.progress;
+        check(progressBeforeOutage > 0.1f && progressBeforeOutage < 1f);
+        build.power.status = 0f;
+        for (int tick = 0; tick < 120; tick++) {
+            build.updateConsumption();
+            build.updateTile();
+        }
+        check(build.progress == progressBeforeOutage);
+        check(build.items.get(hullItem) == 1 && build.items.get(module) == 2);
+        check(mindustry.gen.Groups.unit.size() == existingUnits);
+        build.power.status = 1f;
+        build.updateConsumption();
+        build.updateTile();
+        check(build.progress > progressBeforeOutage);
         for (int tick = 0; tick <= assembler.buildTime && build.items.get(hullItem) > 0; tick++) {
             build.updateConsumption();
             build.updateTile();
