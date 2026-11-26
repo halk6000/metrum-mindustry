@@ -479,9 +479,15 @@ public class BuilderQueueTest {
             mindustry.type.ItemStack materialDemand = BasePlanner.miningDemand.get(core);
             check(materialDemand != null && materialDemand.item == pipeCost.item);
             check(materialDemand.amount >= pipeCost.amount);
-            core.items.set(pipeCost.item, stock);
+            core.items.set(pipeCost.item, materialDemand.amount - 1);
+            check(!BasePlanner.pipeWater(core) && builder.plans.isEmpty());
+            core.items.set(pipeCost.item, materialDemand.amount);
             BasePlanner.miningDemand.remove(core);
+            int reserved = BasePlanner.constructionReserve(core).getOrDefault(pipeCost.item, 0);
             check(BasePlanner.pipeWater(core));
+            int perPipe = Math.round(pipeCost.amount * Vars.state.rules.buildCostMultiplier);
+            check(materialDemand.amount == reserved + builder.plans.size * perPipe);
+            core.items.set(pipeCost.item, stock);
             BuildPlan inlet = builder.plans.first(), outlet = builder.plans.last();
             check(Vars.world.tile(inlet.x, inlet.y).nearby((inlet.rotation + 2) % 4).build == extra);
             check(Vars.world.tile(outlet.x, outlet.y).nearby(outlet.rotation).build == receiver);
