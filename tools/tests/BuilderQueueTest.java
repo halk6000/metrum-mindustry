@@ -277,6 +277,20 @@ public class BuilderQueueTest {
             BuildPlan alternative = builder.plans.first();
             check(!alternative.breaking && (alternative.x != firstWall.x || alternative.y != firstWall.y));
             check(!BasePlanner.blocksMiningDockExit(core.team, alternative.block, alternative.x, alternative.y));
+            builder.plans.clear();
+            other.plans.clear();
+            mindustry.gen.Building installedDock = placeLiquidBlock(dock, firstWall.x - 1, firstWall.y, 0);
+            mindustry.gen.Groups.build.add(installedDock);
+            try {
+                check(BasePlanner.blocksMiningDockExit(core.team, firstWall.block, firstWall.x, firstWall.y));
+                check(BasePlanner.buildWalls(core, AiLevel.DUMB));
+                BuildPlan plannedWall = builder.plans.first();
+                check(!plannedWall.breaking && !BasePlanner.blocksMiningDockExit(core.team, plannedWall.block,
+                    plannedWall.x, plannedWall.y));
+            } finally {
+                mindustry.gen.Groups.build.remove(installedDock);
+                installedDock.tile.build = null;
+            }
         } finally {
             builder.plans.clear();
             mindustry.gen.Groups.unit.remove(other);
