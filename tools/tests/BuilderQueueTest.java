@@ -231,6 +231,22 @@ public class BuilderQueueTest {
                 check(builder.plans.first().x == north.x && builder.plans.first().y == north.y);
                 builder.plans.clear();
             }
+            north.setBlock(mindustry.content.Blocks.air);
+            core.items = new mindustry.world.modules.ItemModule();
+            for (mindustry.type.ItemStack cost : wall.requirements) core.items.add(cost.item, 1000);
+            float gap = BasePlanner.wallGapAngle(core);
+            int wallsPlaced = 0;
+            while (wallsPlaced < 100 && BasePlanner.buildWalls(core, AiLevel.values()[0])) {
+                check(builder.plans.size == 1);
+                BuildPlan plan = builder.plans.first();
+                check(!plan.breaking && plan.block == wall);
+                mindustry.world.Tile site = Vars.world.tile(plan.x, plan.y);
+                check(arc.math.Angles.angleDist(core.angleTo(site), gap) >= 12f);
+                site.setBlock(plan.block, core.team);
+                builder.plans.clear();
+                wallsPlaced++;
+            }
+            check(wallsPlaced > 0 && wallsPlaced < 100 && north.block() == mindustry.content.Blocks.air);
         } finally {
             BasePlanner.fireByCore.remove(core);
             mindustry.gen.Groups.unit.remove(builder);
