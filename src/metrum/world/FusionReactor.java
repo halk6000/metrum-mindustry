@@ -93,8 +93,7 @@ public class FusionReactor extends PowerGenerator {
             return null;
         }
 
-        void updateTransmute() {
-            ReactionControl.ReactionControlBuild panel = panel();
+        void updateTransmute(ReactionControl.ReactionControlBuild panel) {
             Item target = panel == null ? null : panel.target;
             // the panel intercepts finished target atoms
             if (target != null && items.get(target) > 0 && panel.acceptItem(this, target)) {
@@ -151,8 +150,13 @@ public class FusionReactor extends PowerGenerator {
             if (liquids.get(steam) > 0.01f) dumpLiquid(steam);
 
             productionEfficiency = warmup;
-            updateTransmute();
-            for (Item out : transmute.values()) if (items.get(out) > 0 && !transmute.containsKey(out)) dump(out);
+            ReactionControl.ReactionControlBuild control = panel();
+            updateTransmute(control);
+            for (Item out : transmute.values()) {
+                if ((control == null || out != control.target) && items.get(out) > 0 && !transmute.containsKey(out)) {
+                    dump(out);
+                }
+            }
             if (dryTime > heatupDelay && Mathf.chance(0.08 * Time.delta)) Fx.smoke.at(x + Mathf.range(size * 4f), y + Mathf.range(size * 4f));
             if (dryTime >= heatupDelay + meltdownTime) meltdown();
         }

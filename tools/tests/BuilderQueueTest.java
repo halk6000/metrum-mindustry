@@ -197,7 +197,12 @@ public class BuilderQueueTest {
         reactor.fuel = mindustry.content.Items.coal;
         reactor.coolant = mindustry.content.Liquids.water;
         reactor.steam = mindustry.content.Liquids.ozone;
-        metrum.world.FusionReactor.FusionReactorBuild build = reactor.new FusionReactorBuild();
+        metrum.world.FusionReactor.FusionReactorBuild build = reactor.new FusionReactorBuild() {
+            @Override public boolean dump(mindustry.type.Item item) {
+                items.remove(item, 1);
+                return true;
+            }
+        };
         build.block = reactor;
         build.team = mindustry.game.Team.crux;
         build.items = new mindustry.world.modules.ItemModule();
@@ -219,6 +224,21 @@ public class BuilderQueueTest {
         build.updateTile();
         check(build.items.get(target) == 0 && configured.items.get(target) == 1);
         check(foreign.items.total() == 0 && unconfigured.items.total() == 0);
+        reactor.transmute.put(mindustry.content.Items.graphite, target);
+        configured.items.set(target, control.itemCapacity);
+        build.items.add(target, 1);
+        build.updateTile();
+        check(build.items.get(target) == 1 && configured.items.get(target) == control.itemCapacity);
+        mindustry.type.Item next = mindustry.content.Items.titanium;
+        reactor.transmute.put(target, next);
+        reactor.transmuteTime = 1f;
+        build.items.add(reactor.fuel, 1);
+        build.warmup = 1f;
+        build.updateTile();
+        check(build.items.get(target) == 1 && build.items.get(next) == 0 && build.transmuteProgress == 0f);
+        configured.items.remove(target, 1);
+        build.updateTile();
+        check(build.items.get(target) == 0 && configured.items.get(target) == control.itemCapacity);
     }
 
     static void checkBaseDefenses() {
