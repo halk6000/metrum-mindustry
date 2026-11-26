@@ -142,7 +142,7 @@ public class MetrumUnits {
             pod.mirror = false;
             pod.alternate = false;
             pod.x = 0f;
-            pod.y = -monoMetT1d.hitSize * 0.2f;
+            pod.y = 3f;
             pod.reload *= 2f;
             monoMetT1d.weapons.add(pod);
         }
