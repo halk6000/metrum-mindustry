@@ -257,8 +257,12 @@ public class BuilderQueueTest {
         float progressBeforeBlock = build.transmuteProgress;
         check(progressBeforeBlock > 0f && progressBeforeBlock < 1f);
         build.items.add(target, 1);
+        mindustry.type.Item otherInput = mindustry.content.Items.copper;
+        reactor.transmute.put(otherInput, input);
+        build.items.add(otherInput, 1);
         for (int tick = 0; tick < 4; tick++) build.updateTile();
         check(build.transmuteProgress == progressBeforeBlock && build.items.get(input) == 1);
+        check(build.items.get(otherInput) == 1);
         configured.items.remove(target, 1);
         build.updateTile();
         check(build.transmuteProgress > progressBeforeBlock);
@@ -266,6 +270,7 @@ public class BuilderQueueTest {
         check(build.items.get(input) == 1);
         build.updateTile();
         check(build.items.get(input) == 0 && build.items.get(target) == reactor.itemCapacity);
+        check(build.items.get(otherInput) == 1);
     }
 
     static void checkBaseDefenses() {

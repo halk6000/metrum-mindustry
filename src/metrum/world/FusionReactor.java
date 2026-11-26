@@ -74,6 +74,7 @@ public class FusionReactor extends PowerGenerator {
         public float warmup, fuelProgress, dryTime;
 
         public float transmuteProgress;
+        private Item transmuteInput;
 
         @Override
         public boolean acceptItem(mindustry.gen.Building source, Item item) {
@@ -101,12 +102,19 @@ public class FusionReactor extends PowerGenerator {
                 panel.handleItem(this, target);
             }
             if (warmup < 0.99f) return;
+            if (transmuteInput != null && (transmuteInput == target || items.get(transmuteInput) == 0)) {
+                transmuteInput = null;
+                transmuteProgress = 0f;
+            }
             for (arc.struct.ObjectMap.Entry<Item, Item> e : transmute) {
+                if (transmuteInput != null && transmuteInput != e.key) continue;
                 if (items.get(e.key) <= 0) continue;
                 if (e.key == target) continue; // reached the reaction target: stop fusing it
                 if (items.get(e.value) >= itemCapacity) continue;
+                transmuteInput = e.key;
                 transmuteProgress += Time.delta / transmuteTime;
                 if (transmuteProgress >= 1f) {
+                    transmuteInput = null;
                     transmuteProgress = 0f;
                     items.remove(e.key, 1);
                     items.add(e.value, 1);
