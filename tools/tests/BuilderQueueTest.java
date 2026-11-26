@@ -266,6 +266,10 @@ public class BuilderQueueTest {
         check(restored.progress == build.progress && restored.hull == hull);
         check(restored.items.get(hullItem) == 1 && restored.items.get(module) == 2);
         restored.power.status = 1f;
+        restored.tile = build.tile;
+        restored.tile.build = restored;
+        restored.set(build.x, build.y);
+        duct.onProximityUpdate();
         build = restored;
         int remainingTicks = (int)Math.ceil((1f - build.progress) * assembler.buildTime);
         for (int tick = 0; tick <= remainingTicks && build.items.get(hullItem) > 0; tick++) {
@@ -280,6 +284,9 @@ public class BuilderQueueTest {
         build.updateConsumption();
         build.updateTile();
         check(build.progress == 0f && mindustry.gen.Groups.unit.size() == existingUnits + 1);
+        check(duct.items.get(module) == 1);
+        for (int tick = 0; tick < 60 && duct.items.get(module) > 0; tick++) duct.updateTile();
+        check(duct.items.get(module) == 0 && build.items.get(module) == 1);
         assembled.remove();
     }
 
