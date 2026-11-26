@@ -58,6 +58,34 @@ public class SteamEngineGroupTest {
         float powerPerSecond = single.getPowerProduction() * 60f;
         check(near(powerPerSecond, 600f));
         System.out.println("Single steam engine power per second: " + powerPerSecond);
+
+        mindustry.world.blocks.production.HeatCrafter receiverBlock =
+            new mindustry.world.blocks.production.HeatCrafter("test-engine-cooldown-receiver");
+        receiverBlock.size = 3;
+        receiverBlock.heatRequirement = 6f;
+        mindustry.world.blocks.production.HeatCrafter.HeatCrafterBuild receiver = receiverBlock.new HeatCrafterBuild();
+        receiver.block = receiverBlock;
+        receiver.team = single.team;
+        receiver.tile = single.tile = new mindustry.world.Tile(0, 0);
+        single.x = 20f;
+        receiver.proximity.add(single);
+        single.proximity.add(receiver);
+        float[] sides = new float[4];
+        float previousPower = powerPerSecond;
+        float previousHeat = receiver.calculateHeat(sides);
+        check(near(previousHeat, 12f));
+        single.liquids.clear();
+        for (int tick = 0; tick < 600; tick++) {
+            Vars.state.updateId++;
+            single.updateConsumption();
+            single.updateTile();
+            float power = single.getPowerProduction() * 60f;
+            float heat = receiver.calculateHeat(sides);
+            check(power <= previousPower && heat <= previousHeat);
+            previousPower = power;
+            previousHeat = heat;
+        }
+        check(near(previousPower, 0f) && near(previousHeat, 0f));
     }
 
     public static void main(String[] args) {
