@@ -347,6 +347,7 @@ public class BuilderQueueTest {
         try {
             checkDrillLineStartsWithExtractor(core, builder);
             checkTurretMagazinesByDifficulty(core, builder);
+            checkSandBridgeLogistics(core, builder);
             core.items.clear();
             for (AiLevel level : AiLevel.values()) {
                 fire[0] = 100f;
@@ -412,6 +413,108 @@ public class BuilderQueueTest {
             mindustry.gen.Groups.unit.remove(builder);
             metrum.content.MetrumUnits.monoMetT1 = previous;
         }
+    }
+
+    static void checkSandBridgeLogistics(mindustry.world.blocks.storage.CoreBlock.CoreBuild core, Unit builder) {
+        Block bridge = mindustry.content.Blocks.ductBridge;
+        Block duct = mindustry.content.Blocks.duct;
+        Block unloader = mindustry.content.Blocks.ductUnloader;
+        Block furnaceBlock = mindustry.content.Blocks.siliconArcFurnace;
+        Block container = mindustry.content.Blocks.container;
+        metrum.world.FilteredDuctBridgeBuild.installOnDuctBridge();
+        for (Block block : new Block[]{bridge, duct, unloader, furnaceBlock, container}) {
+            block.init();
+            for (mindustry.type.ItemStack cost : block.requirements) core.items.add(cost.item, cost.amount * 10);
+        }
+        mindustry.gen.Building source = placeTransportBlock(bridge, 10, 12, 0);
+        mindustry.gen.Building terminal = placeTransportBlock(bridge, 13, 12, 0);
+        mindustry.gen.Building forward = placeTransportBlock(container, 14, 12, 0);
+        mindustry.gen.Building furnace = placeTransportBlock(furnaceBlock, 10, 16, 0);
+        mindustry.type.Item sand = mindustry.content.Items.sand;
+        mindustry.type.Item beryllium = mindustry.content.Items.beryllium;
+        mindustry.type.Item silicon = mindustry.content.Items.silicon;
+        for (mindustry.world.Tile tile : Vars.world.tiles) {
+            if (BasePlanner.insideFootprint(tile, furnace.tile, furnaceBlock)) tile.build = furnace;
+        }
+        source.items.add(sand, 1);
+        furnace.power = new mindustry.world.modules.PowerModule();
+        furnace.power.status = 1f;
+        furnace.items.add(mindustry.content.Items.graphite, 5);
+        mindustry.ai.BlockIndexer original = Vars.indexer;
+        try {
+            Vars.indexer = new mindustry.ai.BlockIndexer() {
+                @Override public boolean eachBlock(mindustry.game.Team team, float x, float y, float range,
+                        arc.func.Boolf<mindustry.gen.Building> filter, arc.func.Cons<mindustry.gen.Building> action) {
+                    if (!filter.get(source)) return false;
+                    action.get(source);
+                    return true;
+                }
+            };
+            check(BasePlanner.queueSandBridgeBranch(core, furnace));
+            check(builder.plans.last().block == unloader && builder.plans.last().config == sand);
+            arc.struct.Seq<mindustry.gen.Building> branch = new arc.struct.Seq<>();
+            for (BuildPlan plan : builder.plans) {
+                mindustry.gen.Building segment = placeTransportBlock(plan.block, plan.x, plan.y, plan.rotation);
+                if (plan.config != null) segment.configured(null, plan.config);
+                branch.add(segment);
+            }
+            for (mindustry.gen.Building segment : branch) segment.onProximityUpdate();
+            builder.plans.clear();
+            check(!BasePlanner.queueSandBridgeBranch(core, furnace));
+            for (int tick = 0; tick < 360; tick++) {
+                if (tick < 100 && tick % 5 == 0 && source.items.total() < bridge.itemCapacity) {
+                    source.items.add(tick % 20 == 0 ? beryllium : sand, 1);
+                }
+                source.updateTile();
+                terminal.updateTile();
+                for (mindustry.gen.Building segment : branch) segment.updateTile();
+                furnace.updateConsumption();
+                furnace.updateTile();
+            }
+            check(furnace.items.get(silicon) > 0 && furnace.items.get(beryllium) == 0);
+            check(forward.items.get(beryllium) > 0);
+        } finally {
+            Vars.indexer = original;
+            builder.plans.clear();
+        }
+
+        mindustry.world.blocks.distribution.Duct.DuctBuild inlet = (mindustry.world.blocks.distribution.Duct.DuctBuild)
+            placeTransportBlock(duct, 28, 10, 0);
+        mindustry.world.blocks.production.Drill.DrillBuild upstream = (mindustry.world.blocks.production.Drill.DrillBuild)
+            placeTransportBlock(mindustry.content.Blocks.mechanicalDrill, 26, 10, 0);
+        upstream.dominantItem = sand;
+        inlet.proximity.add(upstream);
+        Vars.world.tile(28, 12).setBlock(mindustry.content.Blocks.berylliumWall, core.team);
+        Vars.world.tile(28, 13).setBlock(mindustry.content.Blocks.berylliumWall, core.team);
+        mindustry.gen.Building destination = placeTransportBlock(furnaceBlock, 28, 16, 0);
+        for (mindustry.world.Tile tile : Vars.world.tiles) {
+            if (BasePlanner.insideFootprint(tile, destination.tile, furnaceBlock)) tile.build = destination;
+        }
+        arc.struct.Seq<BuildPlan> jump = BasePlanner.sandBridgeJump(inlet, destination);
+        check(jump != null && jump.size == 2);
+        check(jump.first().block == bridge && jump.peek().block == bridge);
+        BuildPlan exitPlan = jump.first(), intakePlan = jump.peek();
+        mindustry.gen.Building exit = placeTransportBlock(exitPlan.block, exitPlan.x, exitPlan.y, exitPlan.rotation);
+        mindustry.gen.Building bridgeInlet = placeTransportBlock(intakePlan.block, intakePlan.x, intakePlan.y, intakePlan.rotation);
+        inlet.proximity.add(bridgeInlet);
+        check(BasePlanner.sandOutletReady(bridgeInlet.tile, destination, inlet));
+        check(BasePlanner.isDedicatedSandLine(inlet));
+        inlet.rotation = inlet.tile.relativeTo(bridgeInlet.tile);
+        inlet.onProximityUpdate();
+        inlet.handleItem(upstream, sand);
+        for (int tick = 0; tick < 90 && destination.items.get(sand) == 0; tick++) {
+            inlet.updateTile();
+            bridgeInlet.updateTile();
+            exit.updateTile();
+        }
+        check(destination.items.get(sand) == 1);
+    }
+
+    static mindustry.gen.Building placeTransportBlock(Block block, int x, int y, int rotation) {
+        mindustry.gen.Building build = placeLiquidBlock(block, x, y, rotation);
+        build.items = new mindustry.world.modules.ItemModule();
+        build.efficiency = 1f;
+        return build;
     }
 
     static void checkDrillLineStartsWithExtractor(mindustry.world.blocks.storage.CoreBlock.CoreBuild core, Unit builder) {

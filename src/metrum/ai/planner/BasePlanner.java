@@ -607,9 +607,11 @@ public class BasePlanner {
             if (buildSteamForRecovery(core, demand.item)) return true;
             if (demand.item == metrum.content.MetrumItems.pieceRock
                 && buildWallExtractor(core, metrum.content.MetrumBlocks.rockScraper)) return true;
-            if (drills >= 2 || hasRecoveryGoal(core, demand.item)) {
+            boolean sandForSilicon = isSandForSilicon(core, demand);
+            if (drills >= 2 || hasRecoveryGoal(core, demand.item) || sandForSilicon) {
                 if (!minedResources(core).contains(demand.item) && buildDrillLine(core, level, true)) return true;
-                if (demand.item == mindustry.content.Items.sand && hasRecoveryGoal(core, demand.item)
+                if (demand.item == mindustry.content.Items.sand
+                    && (sandForSilicon || hasRecoveryGoal(core, demand.item))
                     && buildWallExtractor(core, Blocks.cliffCrusher)) return true;
                 if (buildDemandProducer(core, demand.item)) return true;
                 boolean explore = demand.item == mindustry.content.Items.tungsten
@@ -645,6 +647,7 @@ public class BasePlanner {
         Building furnace = findSandArcFurnace(core);
         mindustry.gen.Unit builder = assignedBuilder(core);
         if (furnace == null || builder == null || !builder.plans.isEmpty()) return false;
+        if (queueSandBridgeBranch(core, furnace)) return true;
         Seq<Building> inputs = new Seq<>();
         inputs.addAll(core.proximity);
         for (Building storage : core.proximity) {
@@ -677,16 +680,117 @@ public class BasePlanner {
                 if (repair != null && queueConstructionBatch(core, repair)) return true;
             }
             Seq<Tile> route = sandRoute(duct.tile, furnace, available);
-            if (route == null) continue;
-            int deliverySteps = stepsToEntrance(route, furnace);
-            if (deliverySteps < 2 || deliverySteps > 7) continue;
-            int direction = duct.tile.relativeTo(route.first());
-            if (!Build.validPlace(duct.block, core.team, duct.tileX(), duct.tileY(), direction, false)) continue;
-            if (!queueConstructionBatch(core, planConnector(route, deliverySteps, duct.block))) continue;
-            // Rotate the live input on a later pass once the installed ducts lead to the furnace.
-            return true;
+            if (route != null) {
+                int steps = stepsToEntrance(route, furnace);
+                if (steps >= 2 && steps <= 7
+                    && Build.validPlace(duct.block, core.team, duct.tileX(), duct.tileY(), duct.tile.relativeTo(route.first()), false)
+                    && queueConstructionBatch(core, planConnector(route, steps, duct.block))) return true;
+            }
+            Seq<BuildPlan> jump = sandBridgeJump(duct, furnace);
+            if (jump != null && queueConstructionBatch(core, jump)) return true;
+            // Rotate the live input only after the new route has been installed.
         }
         return false;
+    }
+
+    static boolean queueSandBridgeBranch(CoreBuild core, Building furnace) {
+        if (furnace.items.get(mindustry.content.Items.sand) >= requiredPerBatch(furnace, mindustry.content.Items.sand)) {
+            return false;
+        }
+        if (hasQueuedBlock(core, Blocks.ductUnloader)) return false;
+        Seq<Building> bridges = new Seq<>();
+        Item sand = mindustry.content.Items.sand;
+        Vars.indexer.eachBlock(core.team, furnace.x, furnace.y, 8f * Vars.tilesize,
+            b -> b.enabled && b instanceof metrum.world.FilteredDuctBridgeBuild, bridges::add);
+        for (Building bridge : bridges) {
+            if (bridgeFeedsSandFurnace(bridge, furnace)) return false;
+        }
+        for (Building bridge : bridges) {
+            if (!bridge.items.has(sand)) continue;
+            Seq<BuildPlan> plans = sandBridgeBranch(bridge, furnace);
+            if (plans != null && queueConstructionBatch(core, plans)) return true;
+        }
+        return false;
+    }
+
+    private static boolean bridgeFeedsSandFurnace(Building bridge, Building furnace) {
+        for (int side : new int[]{(bridge.rotation + 1) % 4, (bridge.rotation + 3) % 4}) {
+            Tile site = bridge.tile.nearby(side);
+            if (site == null || !(site.build instanceof mindustry.world.blocks.distribution.DirectionalUnloader.DirectionalUnloaderBuild)) continue;
+            mindustry.world.blocks.distribution.DirectionalUnloader.DirectionalUnloaderBuild unloader =
+                (mindustry.world.blocks.distribution.DirectionalUnloader.DirectionalUnloaderBuild) site.build;
+            if (unloader.team == bridge.team && unloader.enabled && unloader.rotation == side
+                && unloader.unloadItem == mindustry.content.Items.sand
+                && sandOutletReady(site.nearby(side), furnace, unloader, 7, Blocks.duct)) return true;
+        }
+        return false;
+    }
+
+    static Seq<BuildPlan> sandBridgeBranch(Building bridge, Building furnace) {
+        Block unloader = Blocks.ductUnloader, duct = Blocks.duct;
+        Team team = bridge.team;
+        for (int side : new int[]{(bridge.rotation + 1) % 4, (bridge.rotation + 3) % 4}) {
+            Tile site = bridge.tile.nearby(side);
+            if (site == null || site.block() != Blocks.air || !transportSiteClear(team, unloader, site)
+                || !Build.validPlace(unloader, team, site.x, site.y, side, false)) continue;
+            Tile outlet = site.nearby(side);
+            if (outlet == null) continue;
+            Seq<BuildPlan> plans = new Seq<>();
+            if (!sandOutletReady(outlet, furnace, bridge, 7, duct)) {
+                if (outlet.block() != Blocks.air || !transportSiteClear(team, duct, outlet)
+                    || !Build.validPlace(duct, team, outlet.x, outlet.y, 0, false)) continue;
+                Seq<Tile> route = sandRoute(outlet, furnace, tile -> tile != site
+                    && transportSiteClear(team, duct, tile) && Build.validPlace(duct, team, tile.x, tile.y, 0, false));
+                if (route == null || route.isEmpty()) continue;
+                int steps = stepsToEntrance(route, furnace);
+                if (steps == 0 || steps > 6) continue;
+                plans.addAll(planConnector(route, steps, duct));
+                plans.add(new BuildPlan(outlet.x, outlet.y, outlet.relativeTo(route.first()), duct));
+            }
+            plans.add(new BuildPlan(site.x, site.y, side, unloader, mindustry.content.Items.sand));
+            return plans;
+        }
+        return null;
+    }
+
+    static Seq<BuildPlan> sandBridgeJump(Building input, Building furnace) {
+        mindustry.world.blocks.distribution.DuctBridge bridge =
+            (mindustry.world.blocks.distribution.DuctBridge) Blocks.ductBridge;
+        for (int intake = 0; intake < 4; intake++) {
+            Tile start = input.tile.nearby(intake);
+            if (!freeBridgeSite(start, bridge, input.team, intake)
+                || !Build.validPlace(input.block, input.team, input.tileX(), input.tileY(), intake, false)) continue;
+            for (int direction = 0; direction < 4; direction++) {
+                if (direction == (intake + 2) % 4) continue;
+                int dx = arc.math.geom.Geometry.d4x(direction), dy = arc.math.geom.Geometry.d4y(direction);
+                boolean overObstacle = false;
+                for (int distance = 1; distance <= bridge.range; distance++) {
+                    Tile end = start.nearby(dx * distance, dy * distance);
+                    if (end == null || matchingBridge(end, bridge, input.team)) break;
+                    if (end.build != null || end.block() != Blocks.air) overObstacle = true;
+                    if (!overObstacle || !freeBridgeSite(end, bridge, input.team, direction)
+                        || !Build.validPlace(bridge, input.team, start.x, start.y, direction, false)) continue;
+                    if (!sandOutletReady(end.nearby(direction), furnace, input, 7 - distance, input.block)) continue;
+                    boolean linksElsewhere = false;
+                    for (int forward = 1; forward <= bridge.range; forward++) {
+                        Tile ahead = end.nearby(dx * forward, dy * forward);
+                        if (ahead != null && matchingBridge(ahead, bridge, input.team)) linksElsewhere = true;
+                    }
+                    if (!linksElsewhere) return Seq.with(new BuildPlan(end.x, end.y, direction, bridge),
+                        new BuildPlan(start.x, start.y, direction, bridge));
+                }
+            }
+        }
+        return null;
+    }
+
+    private static boolean freeBridgeSite(Tile site, Block bridge, Team team, int direction) {
+        return site != null && site.block() == Blocks.air && site.build == null
+            && transportSiteClear(team, bridge, site) && Build.validPlace(bridge, team, site.x, site.y, direction, false);
+    }
+
+    private static boolean matchingBridge(Tile tile, Block bridge, Team team) {
+        return tile.build != null && tile.build.block == bridge && tile.build.team == team;
     }
 
     static boolean transportSiteClear(Team team, Block duct, Tile site) {
@@ -732,11 +836,20 @@ public class BasePlanner {
     }
 
     private static boolean sandOutletReady(Tile output, Building furnace, Building input, int limit) {
+        return sandOutletReady(output, furnace, input, limit, input.block);
+    }
+
+    private static boolean sandOutletReady(Tile output, Building furnace, Building input, int limit, Block duct) {
         for (int steps = 0; output != null && steps < limit; steps++) {
             Building next = output.build;
             if (next == furnace) return true;
-            if (next == null || next == input || next.team != input.team || next.block != input.block) return false;
-            output = next.tile.nearby(next.rotation);
+            if (next == null || next == input || next.team != input.team) return false;
+            if (next instanceof mindustry.world.blocks.distribution.DuctBridge.DuctBridgeBuild) {
+                Building link = ((mindustry.world.blocks.distribution.DuctBridge.DuctBridgeBuild) next).findLink();
+                output = link == null ? next.tile.nearby(next.rotation) : link.tile;
+            } else if (next.block == duct) {
+                output = next.tile.nearby(next.rotation);
+            } else return false;
         }
         return false;
     }
@@ -757,7 +870,7 @@ public class BasePlanner {
         return plans;
     }
 
-    private static boolean isDedicatedSandLine(mindustry.world.blocks.distribution.Duct.DuctBuild duct) {
+    static boolean isDedicatedSandLine(mindustry.world.blocks.distribution.Duct.DuctBuild duct) {
         java.util.Set<Building> visited = new java.util.HashSet<>();
         Item sand = mindustry.content.Items.sand;
         while (visited.add(duct)) {
@@ -767,6 +880,12 @@ public class BasePlanner {
                 if (adjacent.team != duct.team || adjacent == duct.next || !adjacent.block.outputsItems()) continue;
                 if (adjacent instanceof mindustry.world.blocks.distribution.Duct.DuctBuild
                     && ((mindustry.world.blocks.distribution.Duct.DuctBuild) adjacent).next != duct) continue;
+                if (adjacent instanceof mindustry.world.blocks.distribution.DuctBridge.DuctBridgeBuild) {
+                    mindustry.world.blocks.distribution.DuctBridge.DuctBridgeBuild bridge =
+                        (mindustry.world.blocks.distribution.DuctBridge.DuctBridgeBuild) adjacent;
+                    Tile outlet = bridge.tile.nearby(bridge.rotation);
+                    if (bridge.findLink() != null || outlet == null || outlet.build != duct) continue;
+                }
                 if (source != null) return false;
                 source = adjacent;
             }
