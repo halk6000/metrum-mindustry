@@ -203,11 +203,18 @@ public class FusionReactor extends PowerGenerator {
         }
 
         @Override
+        public byte version() {
+            return 2;
+        }
+
+        @Override
         public void write(Writes write) {
             super.write(write);
             write.f(warmup);
             write.f(fuelProgress);
             write.f(dryTime);
+            write.s(transmuteInput == null ? -1 : transmuteInput.id);
+            write.f(transmuteProgress);
         }
 
         @Override
@@ -216,6 +223,18 @@ public class FusionReactor extends PowerGenerator {
             warmup = read.f();
             fuelProgress = read.f();
             dryTime = read.f();
+            transmuteInput = null;
+            transmuteProgress = 0f;
+            if (revision >= 2) {
+                short inputId = read.s();
+                float progress = read.f();
+                Item input = inputId < 0 ? null : mindustry.Vars.content.item(inputId);
+                if (input != null && transmute.containsKey(input) && items.get(input) > 0
+                    && progress > 0f && progress < 1f) {
+                    transmuteInput = input;
+                    transmuteProgress = progress;
+                }
+            }
         }
     }
 }
