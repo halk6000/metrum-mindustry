@@ -186,14 +186,15 @@ public class BuilderQueueTest {
         checkWaterBypassFlow();
         checkCondenserFeedsImpactDrill();
         checkIncineratedCargo();
-        checkDroneAssemblerStartsWithCompleteRecipe();
+        checkDroneAssemblerCompletesRecipe();
         System.out.println("OK: saved plan order, rotations, demolition, controller restoration, queue continuation, reserved materials, released materials, invalid batch cancellation, constructor replacement queue, saved abandoned queue, truncated save");
     }
 
-    static void checkDroneAssemblerStartsWithCompleteRecipe() {
+    static void checkDroneAssemblerCompletesRecipe() {
         mindustry.type.Item hullItem = mindustry.content.Items.beryllium;
         mindustry.type.Item module = mindustry.content.Items.silicon;
         metrum.modular.ModularUnitType hull = new metrum.modular.ModularUnitType("assembler-test-hull", hullItem, 2);
+        hull.constructor = UnitEntity::create;
         metrum.modular.DroneAssembler assembler = new metrum.modular.DroneAssembler("assembler-test-block");
         assembler.hulls.add(hull);
         assembler.modules.add(module);
@@ -223,6 +224,20 @@ public class BuilderQueueTest {
         build.updateTile();
         check(build.progress > 0f);
         check(build.items.get(hullItem) == 1 && build.items.get(module) == 2);
+        int existingUnits = mindustry.gen.Groups.unit.size();
+        for (int tick = 0; tick <= assembler.buildTime && build.items.get(hullItem) > 0; tick++) {
+            build.updateConsumption();
+            build.updateTile();
+        }
+        Unit assembled = mindustry.gen.Groups.unit.find(unit -> unit.type == hull);
+        check(assembled != null && assembled.team == build.team);
+        check(mindustry.gen.Groups.unit.size() == existingUnits + 1);
+        check(metrum.modular.Loadouts.count(assembled, module) == 2);
+        check(build.progress == 0f && build.items.get(hullItem) == 0 && build.items.get(module) == 0);
+        build.updateConsumption();
+        build.updateTile();
+        check(build.progress == 0f && mindustry.gen.Groups.unit.size() == existingUnits + 1);
+        assembled.remove();
     }
 
     static void checkWaterBypassFlow() {
