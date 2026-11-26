@@ -323,6 +323,7 @@ public class BuilderQueueTest {
     }
 
     static void checkCondenserFeedsImpactDrill() {
+        Vars.world.tiles = new mindustry.world.Tiles(14, 8);
         Vars.world.tiles.fill();
         Block condenser = mindustry.content.Blocks.turbineCondenser;
         Block drill = mindustry.content.Blocks.impactDrill;
@@ -381,6 +382,56 @@ public class BuilderQueueTest {
             + ", delivered " + consumed * 60f / ticks);
         check(supply > 0f && consumed >= ticks * Math.min(supply, demand) * 0.95f);
 
+        mindustry.gen.Building extra = placeLiquidBlock(condenser, 11, 3, 0);
+        for (mindustry.world.Tile tile : Vars.world.tiles) {
+            if (BasePlanner.insideFootprint(tile, extra.tile, condenser)) tile.build = extra;
+        }
+        mindustry.world.blocks.power.ThermalGenerator.ThermalGeneratorBuild extraGeothermal =
+            (mindustry.world.blocks.power.ThermalGenerator.ThermalGeneratorBuild) extra;
+        extraGeothermal.sum = geothermal.sum;
+        extraGeothermal.updateTile();
+        extra.liquids.add(water, 2f);
+        mindustry.world.blocks.storage.CoreBlock coreBlock =
+            (mindustry.world.blocks.storage.CoreBlock) mindustry.content.Blocks.coreBastion;
+        mindustry.world.blocks.storage.CoreBlock.CoreBuild core = coreBlock.new CoreBuild();
+        core.team = receiver.team;
+        core.tile = Vars.world.tile(1, 1);
+        core.items = new mindustry.world.modules.ItemModule();
+        for (mindustry.type.ItemStack cost : pipe.requirements) core.items.add(cost.item, 100);
+        Unit builder = UnitEntity.create();
+        builder.type = new UnitType("water-line-builder");
+        builder.type.buildSpeed = 1f;
+        builder.team = core.team;
+        builder.flag = BasePlanner.builderHomeFlag(core);
+        builder.controller(new MetrumBuilderAI());
+        UnitType previous = metrum.content.MetrumUnits.monoMetT1;
+        mindustry.ai.BlockIndexer previousIndexer = Vars.indexer;
+        metrum.content.MetrumUnits.monoMetT1 = builder.type;
+        mindustry.gen.Groups.unit.add(builder);
+        try {
+            Vars.indexer = new mindustry.ai.BlockIndexer() {
+                @Override public boolean eachBlock(mindustry.game.Team team, float x, float y, float range,
+                        arc.func.Boolf<mindustry.gen.Building> filter, arc.func.Cons<mindustry.gen.Building> action) {
+                    boolean found = false;
+                    for (mindustry.gen.Building building : new mindustry.gen.Building[]{source, extra, receiver}) {
+                        if (!filter.get(building)) continue;
+                        action.get(building);
+                        found = true;
+                    }
+                    return found;
+                }
+            };
+            check(BasePlanner.waterLineConnected(source, receiver));
+            check(!BasePlanner.waterLineConnected(extra, receiver));
+            check(BasePlanner.pipeWater(core));
+            BuildPlan inlet = builder.plans.first(), outlet = builder.plans.last();
+            check(Vars.world.tile(inlet.x, inlet.y).nearby((inlet.rotation + 2) % 4).build == extra);
+            check(Vars.world.tile(outlet.x, outlet.y).nearby(outlet.rotation).build == receiver);
+        } finally {
+            mindustry.gen.Groups.unit.remove(builder);
+            metrum.content.MetrumUnits.monoMetT1 = previous;
+            Vars.indexer = previousIndexer;
+        }
     }
 
     static mindustry.gen.Building placeLiquidBlock(Block block, int x, int y, int rotation) {
