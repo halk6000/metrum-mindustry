@@ -427,6 +427,26 @@ public class BuilderQueueTest {
             BuildPlan inlet = builder.plans.first(), outlet = builder.plans.last();
             check(Vars.world.tile(inlet.x, inlet.y).nearby((inlet.rotation + 2) % 4).build == extra);
             check(Vars.world.tile(outlet.x, outlet.y).nearby(outlet.rotation).build == receiver);
+            arc.struct.Seq<mindustry.gen.Building> extraPipes = new arc.struct.Seq<>();
+            for (BuildPlan plan : builder.plans) {
+                extraPipes.add(placeLiquidBlock(plan.block, plan.x, plan.y, plan.rotation));
+            }
+            extra.proximity.add(extraPipes.first());
+            extraPipes.first().proximity.add(extra);
+            check(BasePlanner.waterLineConnected(extra, receiver));
+            receiver.liquids.clear();
+            float combined = 0f;
+            for (int tick = 0; tick < ticks; tick++) {
+                geothermal.updateTile();
+                extraGeothermal.updateTile();
+                for (mindustry.gen.Building segment : pipes) segment.moveLiquidForward(false, water);
+                for (mindustry.gen.Building segment : extraPipes) segment.moveLiquidForward(false, water);
+                float used = Math.min(demand, receiver.liquids.get(water));
+                receiver.liquids.remove(water, used);
+                combined += used;
+            }
+            System.out.println("Water delivered per second with two condensers: " + combined * 60f / ticks);
+            check(combined >= ticks * demand * 0.99f);
         } finally {
             mindustry.gen.Groups.unit.remove(builder);
             metrum.content.MetrumUnits.monoMetT1 = previous;
