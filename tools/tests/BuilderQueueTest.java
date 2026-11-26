@@ -203,18 +203,29 @@ public class BuilderQueueTest {
         metrum.modular.DroneAssembler.DroneAssemblerBuild build = assembler.new DroneAssemblerBuild();
         build.block = assembler;
         build.team = Vars.state.rules.waveTeam;
+        build.tile = Vars.world.tile(4, 0);
+        build.tile.build = build;
+        build.set(build.tile.worldx(), build.tile.worldy());
         build.items = new mindustry.world.modules.ItemModule();
         build.power = new mindustry.world.modules.PowerModule();
         build.configured(null, hull.id + ";" + module.id + "," + module.id);
-        build.handleItem(build, hullItem);
-        build.handleItem(build, module);
+        Block ductBlock = mindustry.content.Blocks.duct;
+        ductBlock.init();
+        mindustry.gen.Building input = placeLiquidBlock(ductBlock, 2, 0, 0);
+        mindustry.gen.Building duct = placeLiquidBlock(ductBlock, 3, 0, 0);
+        input.team = duct.team = build.team;
+        duct.items = new mindustry.world.modules.ItemModule();
+        duct.updateConsumption();
+        duct.onProximityUpdate();
+        check(deliverThroughDuct(input, duct, hullItem));
+        check(deliverThroughDuct(input, duct, module));
         build.power.status = 1f;
         build.updateConsumption();
         build.updateTile();
         check(build.progress == 0f);
-        check(build.acceptItem(build, module));
-        build.handleItem(build, module);
-        check(!build.acceptItem(build, module) && build.shouldConsume());
+        check(deliverThroughDuct(input, duct, module) && build.shouldConsume());
+        check(!deliverThroughDuct(input, duct, module));
+        check(duct.items.get(module) == 1 && build.items.get(module) == 2);
         build.power.status = 0f;
         build.updateConsumption();
         build.updateTile();
@@ -270,6 +281,13 @@ public class BuilderQueueTest {
         build.updateTile();
         check(build.progress == 0f && mindustry.gen.Groups.unit.size() == existingUnits + 1);
         assembled.remove();
+    }
+
+    static boolean deliverThroughDuct(mindustry.gen.Building input, mindustry.gen.Building duct, mindustry.type.Item item) {
+        check(duct.acceptItem(input, item));
+        duct.handleItem(input, item);
+        for (int tick = 0; tick < 60 && duct.items.get(item) > 0; tick++) duct.updateTile();
+        return duct.items.get(item) == 0;
     }
 
     static void checkDroneAssemblerResumesAfterUnitCap(metrum.modular.DroneAssembler.DroneAssemblerBuild build,
