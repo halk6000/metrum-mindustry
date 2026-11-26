@@ -193,6 +193,18 @@ public class MetrumMod extends Mod {
         sb.append("drill tiers:");
         for (mindustry.world.Block b : mindustry.Vars.content.blocks()) if (b instanceof mindustry.world.blocks.production.BeamDrill) sb.append(' ').append(b.name).append('=').append(((mindustry.world.blocks.production.BeamDrill) b).tier);
         sb.append(System.lineSeparator());
+        sb.append("MonoMet T1 body sprites:");
+        for (mindustry.type.UnitType unit : new mindustry.type.UnitType[]{
+            MetrumUnits.monoMetT1, MetrumUnits.monoMetT1b, MetrumUnits.monoMetT1c, MetrumUnits.monoMetT1d
+        }) {
+            sb.append(' ').append(unit.name).append('=');
+            if (unit.region != null && arc.Core.atlas.isFound(unit.region)) {
+                sb.append(unit.region.width).append('x').append(unit.region.height);
+            } else {
+                sb.append("missing");
+            }
+        }
+        sb.append(System.lineSeparator());
         sb.append("content=").append(count).append(" missingSprites=").append(missing).append(" errors=").append(errors).append("\n");
         mindustry.Vars.dataDirectory.child("metrum-load.txt").writeString(sb.toString());
         Log.info("[Metrum] " + sb.toString().trim().replace("\n", " | "));
