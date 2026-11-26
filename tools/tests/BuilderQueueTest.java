@@ -300,6 +300,21 @@ public class BuilderQueueTest {
         check(configured.items.get(input) == 1 && build.items.get(input) == 0);
         check(build.items.get(target) == reactor.itemCapacity - 1);
         check(build.items.get(otherInput) == 1 && build.transmuteProgress == 0.25f);
+
+        arc.struct.Seq<mindustry.type.Item> availableTargets = control.targets.copy();
+        metrum.world.FusionReactor.FusionReactorBuild second = reactor.new FusionReactorBuild();
+        second.block = reactor;
+        second.team = build.team;
+        second.items = new mindustry.world.modules.ItemModule();
+        second.liquids = new mindustry.world.modules.LiquidModule();
+        second.proximity.add(configured);
+        second.items.add(input, 1);
+        build.items.add(input, 1);
+        second.updateTile();
+        build.updateTile();
+        check(build.items.get(input) == 0 && second.items.get(input) == 0);
+        check(configured.items.get(input) == 3 && configured.config() == input);
+        check(control.targets.equals(availableTargets));
     }
 
     static void checkBaseDefenses() {
