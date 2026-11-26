@@ -444,6 +444,29 @@ public class BuilderQueueTest {
             check(generatorSite.floor() == mindustry.content.Blocks.rhyoliteVent);
             check(((mindustry.world.blocks.environment.SteamVent) generatorSite.floor()).isCenterVent(generatorSite));
             builder.plans.clear();
+            Unit busyBuilder = UnitEntity.create();
+            busyBuilder.type = builder.type;
+            busyBuilder.team = core.team;
+            busyBuilder.flag = builder.flag;
+            busyBuilder.controller(new MetrumBuilderAI());
+            busyBuilder.addBuild(generatorPlan);
+            mindustry.gen.Groups.unit.add(busyBuilder);
+            mindustry.world.Tile otherVent = Vars.world.tile(10, 8);
+            for (arc.math.geom.Point2 offset : mindustry.world.blocks.environment.SteamVent.offsets) {
+                vent.nearby(offset.x, offset.y).setFloor(mindustry.content.Blocks.rhyolite.asFloor());
+                otherVent.nearby(offset.x, offset.y).setFloor(mindustry.content.Blocks.rhyoliteVent.asFloor());
+            }
+            try {
+                check(BasePlanner.assignedBuilder(core) == builder);
+                check(!BasePlanner.buildGeothermalForWater(core));
+                check(builder.plans.isEmpty() && busyBuilder.plans.size == 1);
+                busyBuilder.plans.clear();
+                check(BasePlanner.buildGeothermalForWater(core));
+                check(builder.plans.size == 1 && builder.plans.first().block == condenser);
+                builder.plans.clear();
+            } finally {
+                mindustry.gen.Groups.unit.remove(busyBuilder);
+            }
             indexed.addAll(extra, spare);
             check(BasePlanner.waterLineConnected(source, receiver));
             check(!BasePlanner.waterLineConnected(extra, receiver));
