@@ -42,10 +42,11 @@ public class SteamEngineGroupTest {
     static void checkSingleEngineRatedPower() {
         Vars.headless = true;
         Vars.content.createBaseContent();
-        metrum.content.MetrumItems.load();
-        metrum.content.MetrumLiquids.load();
-        metrum.content.MetrumPower.loadReactors();
+        new metrum.MetrumMod().loadContent();
         SteamEngine block = metrum.content.MetrumPower.steamEngine;
+        check(block.techNode != null && block.techNode.parent != null);
+        check(block.techNode.parent.content == metrum.content.MetrumProduction.steamFurnace);
+        check(block.techNode.parent.children.contains(block.techNode, true));
         block.init();
         SteamEngine.SteamEngineBuild single = engine(block, Team.sharded);
         single.liquids = new mindustry.world.modules.LiquidModule();
