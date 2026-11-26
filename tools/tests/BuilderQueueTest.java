@@ -219,6 +219,7 @@ public class BuilderQueueTest {
         BasePlanner.fireByCore.put(core, fire);
         try {
             checkTurretMagazinesByDifficulty(core, builder);
+            core.items.clear();
             for (AiLevel level : AiLevel.values()) {
                 fire[0] = 100f;
                 fire[3] = 0f;
@@ -232,6 +233,7 @@ public class BuilderQueueTest {
                 check(builder.plans.first().x == north.x && builder.plans.first().y == north.y);
                 builder.plans.clear();
             }
+            check(core.items.total() == 0 && !BasePlanner.miningDemand.containsKey(core));
             north.setBlock(mindustry.content.Blocks.air);
             core.items = new mindustry.world.modules.ItemModule();
             check(!BasePlanner.buildWalls(core, AiLevel.DUMB) && builder.plans.isEmpty());
