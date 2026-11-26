@@ -260,6 +260,16 @@ public class BuilderQueueTest {
         Block magazine = mindustry.content.Blocks.reinforcedContainer;
         turret.init();
         magazine.init();
+        mindustry.world.Tile turretSite = Vars.world.tile(12, 24);
+        mindustry.world.Tile back = BasePlanner.turretMagazineSite(turretSite, turret, magazine, core.team, 0f);
+        check(back != null && back.x < turretSite.x && back.y == turretSite.y);
+        back.setBlock(mindustry.content.Blocks.berylliumWall, core.team);
+        try {
+            mindustry.world.Tile side = BasePlanner.turretMagazineSite(turretSite, turret, magazine, core.team, 0f);
+            check(side != null && side.x == turretSite.x && side.y != turretSite.y);
+        } finally {
+            back.setBlock(mindustry.content.Blocks.air);
+        }
         core.items = new mindustry.world.modules.ItemModule();
         BasePlanner.economicReserve(core).forEach((item, amount) -> core.items.add(item, amount));
         for (Block block : new Block[]{turret, magazine}) {

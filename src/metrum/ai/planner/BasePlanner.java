@@ -1692,19 +1692,8 @@ public class BasePlanner {
             if (t == null || !Build.validPlace(turret, core.team, t.x, t.y, 0, false)) continue;
             Seq<BuildPlan> plans = Seq.with(new BuildPlan(t.x, t.y, 0, turret));
             if (level.turretMagazines) {
-                int back = Math.floorMod(Math.round((a + 180f) / 90f), 4);
-                for (int turn : new int[]{0, 1, 3, 2}) {
-                    int dir = (back + turn) % 4;
-                    int turretMin = -(turret.size - 1) / 2, turretMax = turret.size / 2;
-                    int magazineMin = -(magazine.size - 1) / 2, magazineMax = magazine.size / 2;
-                    int distance = (dir == 0 || dir == 1)
-                        ? turretMax - magazineMin + 1 : magazineMax - turretMin + 1;
-                    Tile m = Vars.world.tile(t.x + arc.math.geom.Geometry.d4x(dir) * distance,
-                        t.y + arc.math.geom.Geometry.d4y(dir) * distance);
-                    if (m == null || !Build.validPlace(magazine, core.team, m.x, m.y, 0, false)) continue;
-                    plans.add(new BuildPlan(m.x, m.y, 0, magazine));
-                    break;
-                }
+                Tile site = turretMagazineSite(t, turret, magazine, core.team, a);
+                if (site != null) plans.add(new BuildPlan(site.x, site.y, 0, magazine));
             }
             if (plans.size > 1) {
                 if (queueConstructionBatch(core, plans, true, false)) return true;
@@ -1713,6 +1702,21 @@ public class BasePlanner {
             return queueConstructionBatch(core, plans, true);
         }
         return false;
+    }
+
+    static Tile turretMagazineSite(Tile turretSite, Block turret, Block magazine, Team team, float facing) {
+        int back = Math.floorMod(Math.round((facing + 180f) / 90f), 4);
+        int turretMin = -(turret.size - 1) / 2, turretMax = turret.size / 2;
+        int magazineMin = -(magazine.size - 1) / 2, magazineMax = magazine.size / 2;
+        for (int turn : new int[]{0, 1, 3, 2}) {
+            int direction = (back + turn) % 4;
+            int distance = (direction == 0 || direction == 1)
+                ? turretMax - magazineMin + 1 : magazineMax - turretMin + 1;
+            Tile site = Vars.world.tile(turretSite.x + arc.math.geom.Geometry.d4x(direction) * distance,
+                turretSite.y + arc.math.geom.Geometry.d4y(direction) * distance);
+            if (site != null && Build.validPlace(magazine, team, site.x, site.y, 0, false)) return site;
+        }
+        return null;
     }
 
     // ---------- step 6: wall ring; leaves a gap where the fire is heaviest (all AI levels) ----------
