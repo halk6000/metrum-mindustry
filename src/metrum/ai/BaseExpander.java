@@ -81,7 +81,7 @@ public class BaseExpander {
         supplyTimer += Time.delta;
         if (supplyTimer >= 60f * 5f) {
             supplyTimer = 0f;
-            supply();
+            // turrets are supplied physically by BasePlanner.supplyTurretAmmo, like the player's
         }
         // Local ammo reserves remain usable; new construction still requires a core.
         if (!active() || Vars.state.rules.waveTeam.cores().isEmpty()) return;

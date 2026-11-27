@@ -564,6 +564,24 @@ public class BasePlanner {
         builder.addBuild(new BuildPlan(site.tileX(), site.tileY(), site.rotation, site.current, site.lastConfig));
         return true;
     }
+    /**
+     * Turrets get ammo only through real logistics, like the player's: a branch from a line that carries
+     * an ammo item. Cutting the line stops the supply.
+     */
+    static boolean supplyTurretAmmo(CoreBuild core) {
+        Seq<Building> turrets = new Seq<>();
+        Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
+            b -> b instanceof mindustry.world.blocks.defense.turrets.ItemTurret.ItemTurretBuild && b.closestCore() == core, turrets::add);
+        turrets.sort(b -> ((mindustry.world.blocks.defense.turrets.ItemTurret.ItemTurretBuild) b).totalAmmo);
+        for (Building turret : turrets) {
+            mindustry.world.blocks.defense.turrets.ItemTurret type = (mindustry.world.blocks.defense.turrets.ItemTurret) turret.block;
+            for (Item ammo : type.ammoTypes.keys()) {
+                if (LogisticsPlanner.connect(core, turret, ammo)) return true;
+            }
+        }
+        return false;
+    }
+
     static boolean buildStep(CoreBuild core, AiLevel level) {
         ItemStack currentDemand = miningDemand.get(core);
         if (currentDemand != null) {
@@ -575,6 +593,7 @@ public class BasePlanner {
                     && LogisticsPlanner.connect(core, furnace, mindustry.content.Items.sand)) return true;
             }
         }
+        if (supplyTurretAmmo(core)) return true;
         boolean waitingForSand = currentDemand != null && isSandForSilicon(core, currentDemand)
             && Time.time - lastSandForFurnace.getOrDefault(core, Float.NEGATIVE_INFINITY) < 6f * 60f;
         int drills = count(core, b -> b.block instanceof mindustry.world.blocks.production.BeamDrill
