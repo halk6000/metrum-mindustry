@@ -137,6 +137,14 @@
 - [x] Prymitywny stapiacz skał 2x2: 1 skała + 1 węgiel -> 12 żużlu, cykl 1 s, 300 prądu/s. Koszt: 60 odłamków skały, 40 żelaza, 30 krzemu. Badanie po kruszarce. (zatwierdzone przez użytkownika)
 - [ ] W kolejnych etapach okresowo sprawdzać origin/main:ROADMAP.md przez git fetch; nie nadpisywać zmian użytkownika ani lokalnej pracy AI.
 
+## Wzorzec układu bazy AI — na podstawie bazy użytkownika (27.11)
+- [ ] Zwartość: maszyny jednego łańcucha stoją obok siebie, wyjście jednej wpada prosto do następnej; bez taśm tam, gdzie wystarczy sąsiedztwo.
+- [ ] Jedna główna pętla taśm wokół rdzenia, do której dochodzą krótkie odgałęzienia z wiertnic; bez równoległych tras dla tego samego surowca.
+- [ ] Prąd: nieliczne węzły na pełnym zasięgu promienia (wdrożone 27.11), bez ciągnięcia „kabla” po każdej kratce.
+- [ ] Płyny: krótkie rury; maszyny pijące wodę stawiać blisko źródła wody, jedna linia na odbiorcę (wdrożone 27.11), bez urwanych końcówek (wdrożone 27.11).
+- [ ] Rozmieszczenie od środka: produkcja przy rdzeniu, wiertnice na złożach z krótką taśmą, obrona na obrzeżu w stronę wroga.
+- [ ] Kryterium gotowości: proces produkcyjny działa (towar dociera), a nie tylko budynek stoi.
+
 ## Następny krok AI — planer celów i graf zależności (25.11)
 - [ ] Zastąpić indywidualne reguły dla surowców uniwersalnym grafem zależności opartym na danych bloków, recepturach, kosztach budowy, paliwach, amunicji, energii, płynach i produkcji jednostek. Niestandardowe mechaniki obsługiwać adapterami.
 - [ ] Kolejka celów strategicznych generuje zadania podrzędne według brakujących zależności, dostępnych zapasów i przepustowości dostaw. Wybiera efektywne źródła oraz transport dronami, taśmociągami lub rurami; wykrywa cykle i niedostępne technologie. Weryfikuje faktyczne działanie budynków, a nie tylko ich postawienie.
