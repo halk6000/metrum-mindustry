@@ -29,6 +29,8 @@ public class BaseExpander {
     private static float timer, supplyTimer, boostTimer;
     /** from this wave on, the enemy's own "booster craft" empower a share of its army */
     public static int boostFromWave = 15;
+    /** below this share of its ammo a turret is refilled even from the construction reserve */
+    public static float emergencyAmmo = 0.25f;
     /** buildings placed by the expander, restocked from the nearest core */
     public static final Seq<Building> placed = new Seq<>();
 
@@ -157,10 +159,12 @@ public class BaseExpander {
             for (int i = 0; i < 10 && t.totalAmmo < turret.maxAmmo / 2; i++) {
                 mindustry.type.Item pick = null;
                 Building source = core;
+                // defence first: a nearly empty turret may dip into the construction reserve
+                boolean emergency = t.totalAmmo < turret.maxAmmo * emergencyAmmo;
                 for (mindustry.type.Item it : turret.ammoTypes.keys()) {
                     if (!t.acceptItem(magazine != null ? magazine : core, it)) continue;
                     if (magazine != null && magazine.items.has(it)) { pick = it; source = magazine; break; }
-                    if (core != null && core.items.get(it) > reserve.getOrDefault(it, 0)) { pick = it; break; }
+                    if (core != null && core.items.get(it) > (emergency ? 0 : reserve.getOrDefault(it, 0))) { pick = it; break; }
                 }
                 if (pick == null) break;
                 source.items.remove(pick, 1);
