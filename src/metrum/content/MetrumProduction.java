@@ -58,7 +58,7 @@ public class MetrumProduction {
         }};
         // earned, not built: a large furnace that runs 80 s on ozone without exploding turns into this
         metrum.world.OxidizingFurnace safeSteamFurnace = new metrum.world.OxidizingFurnace("safe-steam-furnace") {{
-            buildVisibility = mindustry.world.meta.BuildVisibility.sandboxOnly;
+            buildVisibility = mindustry.world.meta.BuildVisibility.hidden; // earned only, never on the build list
             health = 540; // +50%
             ozoneOnly = true;
             ozoneSpeed = 2f;
