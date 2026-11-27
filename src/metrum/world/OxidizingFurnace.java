@@ -151,7 +151,10 @@ public class OxidizingFurnace extends GenericCrafter {
                                     Fx.massiveExplosion.at(x,y);
                                     mindustry.gen.Sounds.explosion.at(x,y,arc.math.Mathf.random(0.9f,1.1f));
                                     Effect.shake(3f,20f,x,y);
+                                    // the splash is for the neighbours; the furnace itself loses only its own share below
+                                    float before=health;
                                     mindustry.entities.Damage.damage(null,x,y,size*Vars.tilesize*1.5f,explosionSplashDamage);
+                                    health=Math.max(health,before);
                                     metrum.entities.MetrumFires.create(tile);
                                     damage(maxHealth*explosionDamageFraction);
                                 }
