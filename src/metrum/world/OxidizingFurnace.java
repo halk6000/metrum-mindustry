@@ -142,7 +142,7 @@ public class OxidizingFurnace extends GenericCrafter {
                             while(riskClock>=interval && health>0f){
                                 riskClock-=interval;
                                 boolean ozone=gas==Liquids.ozone;
-                                if(Mathf.chance(ozone?0.20:0.10))Fires.create(tile);
+                                if(Mathf.chance(ozone?0.20:0.10))metrum.entities.MetrumFires.create(tile);
                                 if(ozone && Mathf.chance(radarPowered()?0.02:0.05)){
                                     Fx.blastExplosion.at(x,y);
                                     damage(maxHealth*explosionDamageFraction);

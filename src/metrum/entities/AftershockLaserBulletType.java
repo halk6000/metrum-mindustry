@@ -44,7 +44,7 @@ public class AftershockLaserBulletType extends LaserBulletType {
                 Fx.blastExplosion.at(px, py);
                 mindustry.gen.Sounds.explosionPlasmaSmall.at(px, py, arc.math.Mathf.random(0.9f, 1.1f), 0.45f);
                 Tile tile = mindustry.Vars.world.tileWorld(px, py);
-                if (tile != null) Fires.create(tile);
+                if (tile != null) metrum.entities.MetrumFires.create(tile);
             });
         }
     }
