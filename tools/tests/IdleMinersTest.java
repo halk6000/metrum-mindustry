@@ -94,6 +94,13 @@ public class IdleMinersTest {
         check(BasePlanner.rebuildPriority(new mindustry.world.blocks.production.Drill("test-drill"), chain) == 1, "drill next");
         check(BasePlanner.rebuildPriority(new mindustry.world.blocks.defense.Wall("test-wall"), chain) == 5, "walls last");
         check(BasePlanner.rebuildPriority(furnace, new java.util.HashSet<>()) == 4, "unrelated crafter after defences");
+        // power line: one beam node per straight stretch, not one per tile
+        arc.struct.Seq<Tile> route = new arc.struct.Seq<>();
+        for (int x = 3; x <= 14; x++) route.add(Vars.world.tile(x, 10));
+        for (int y = 11; y <= 14; y++) route.add(Vars.world.tile(14, y));
+        Tile start = Vars.world.tile(2, 10);
+        check(BasePlanner.beamNodeStep(route, start, 10) == Vars.world.tile(12, 10), "node at the end of the beam reach");
+        check(BasePlanner.beamNodeStep(route, start, 20) == Vars.world.tile(14, 10), "node at the corner when in reach");
         System.out.println("OK: all idle AI miners mine; ordered, combat and full-core cases left alone");
     }
 

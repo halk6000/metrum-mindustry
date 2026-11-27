@@ -1616,10 +1616,8 @@ public class BasePlanner {
                     || (t.block() == Blocks.air && Build.validPlace(node, core.team, t.x, t.y, 0, false)));
             // An unreachable pair must not prevent another disconnected branch from getting power.
             if (route == null || route.isEmpty()) continue;
-            for (Tile t : route) {
-                if (t.build != null) continue;
-                return queuePowerNode(core, node, t, priority != null);
-            }
+            Tile next = beamNodeStep(route, pair[0].tile, ((mindustry.world.blocks.power.BeamNode) node).range);
+            if (next != null) return queuePowerNode(core, node, next, priority != null);
         }
         if (priority != null) return false;
         int step = 8, placed = 0;
@@ -1632,6 +1630,37 @@ public class BasePlanner {
             }
         }
         return placed > 0 || stalled("sieć prądu: brak dostępnego miejsca na dalsze węzły");
+    }
+
+    /**
+     * Next node along a route: as far as a straight, unobstructed beam reaches from the last node,
+     * instead of one node on every tile like a cable.
+     */
+    static Tile beamNodeStep(Seq<Tile> route, Tile start, int range) {
+        Tile anchor = start, best = null, firstFree = null;
+        for (Tile t : route) {
+            if (t.build != null) {
+                if (best != null) break; // the next existing node: stop before it
+                anchor = t;
+                continue;
+            }
+            if (firstFree == null) firstFree = t;
+            boolean straight = (t.x == anchor.x || t.y == anchor.y)
+                && Math.abs(t.x - anchor.x) + Math.abs(t.y - anchor.y) <= range && beamClear(anchor, t);
+            if (straight) best = t;
+            else if (best != null) break;
+        }
+        return best != null ? best : firstFree;
+    }
+
+    /** a beam only links to the first building in its way */
+    static boolean beamClear(Tile from, Tile to) {
+        int dx = Integer.signum(to.x - from.x), dy = Integer.signum(to.y - from.y);
+        for (int x = from.x + dx, y = from.y + dy; x != to.x || y != to.y; x += dx, y += dy) {
+            Tile t = Vars.world.tile(x, y);
+            if (t == null || t.build != null) return false;
+        }
+        return true;
     }
 
     private static boolean queuePowerNode(CoreBuild core, Block node, Tile site, boolean priority) {
