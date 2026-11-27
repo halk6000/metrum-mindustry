@@ -1,6 +1,12 @@
 package metrum.ai.planner;
 
 import arc.Events;
+import metrum.ai.planner.goal.StrategicPlanner;
+import metrum.ai.planner.task.EconomyTask;
+import metrum.ai.planner.task.PowerTask;
+import metrum.ai.planner.task.UnitProductionTask;
+import metrum.ai.planner.task.CoreUpgradeTask;
+import metrum.ai.planner.task.CoreCapacityTask;
 import arc.struct.Seq;
 import arc.util.Time;
 import mindustry.Vars;
@@ -43,12 +49,75 @@ public class BasePlanner {
     private static final java.util.Map<Building, Integer> observedFurnaceSand = new java.util.HashMap<>();
     static final java.util.Map<CoreBuild, java.util.Deque<ItemStack>> deferredDemand = new java.util.HashMap<>();
     static String plannerAction = "oczekiwanie na pierwszą próbę";
+    // Runtime diagnostics; economic objective and its dependency stack remain save-backed.
+    static final java.util.Map<CoreBuild, Block> goalConstruction = new java.util.HashMap<>();
+    static final java.util.Map<CoreBuild, String> rateStatus = new java.util.HashMap<>();
+    // Track a partially built site only while its progress is unchanged.
+    private static final java.util.Map<CoreBuild, Building> watchedConstruction = new java.util.HashMap<>();
+    private static final java.util.Map<CoreBuild, Float> watchedProgress = new java.util.HashMap<>();
+    private static final java.util.Map<CoreBuild, Float> watchedSince = new java.util.HashMap<>();
+
+    private static String goalLabel(String pl, String en) {
+        return "pl".equals(arc.Core.bundle.getLocale().getLanguage()) ? pl : en;
+    }
+
+    private static String goalStatus(CoreBuild core) {
+        ItemStack current = miningDemand.get(core);
+        java.util.Deque<ItemStack> parents = deferredDemand.get(core);
+        ItemStack root = parents == null || parents.isEmpty() ? current : parents.peekLast();
+        Block construction = goalConstruction.get(core);
+        mindustry.gen.Unit builder = assignedBuilder(core);
+        String materialGoal = construction != null ? construction.localizedName : root != null
+            ? root.item.localizedName + " " + core.items.get(root.item) + "/" + root.amount
+            : builder != null && !builder.plans.isEmpty() && builder.plans.first().block != null
+                ? builder.plans.first().block.localizedName : goalLabel("Rozbudowa bazy", "Base development");
+        StringBuilder branch = new StringBuilder();
+        if (root != null) {
+            if (parents != null) {
+                java.util.Iterator<ItemStack> it = parents.descendingIterator();
+                while (it.hasNext()) {
+                    if (branch.length() > 0) branch.append(" -> ");
+                    branch.append(it.next().item.localizedName);
+                }
+            }
+            if (current != null) {
+                if (branch.length() > 0) branch.append(" -> ");
+                branch.append(current.item.localizedName);
+            }
+        } else if (builder != null && !builder.plans.isEmpty()) {
+            branch.append(goalLabel("Budowa", "Construction"));
+        } else branch.append(goalLabel("Wybór zadania", "Selecting task"));
+        return "\n" + goalLabel("Cel główny: ", "Main goal: ") + StrategicPlanner.status(core)
+            + "\n" + goalLabel("Cel gałęzi: ", "Branch goal: ") + materialGoal + " / " + branch
+            + PowerTask.status(core) + "\n" + goalLabel("Pojemność rdzenia: ","Core capacity: ") + core.storageCapacity + rateStatus.getOrDefault(core, "");
+    }
+
+    // Called at planner cadence, not every HUD frame.
+    private static void refreshRateStatus(CoreBuild core) {
+        ItemStack demand = miningDemand.get(core);
+        if (demand == null) { rateStatus.remove(core); return; }
+        Item item = demand.item;
+        Building furnace = needsArcFurnaceSand(core, demand) ? findSandArcFurnace(core) : null;
+        if (furnace != null && furnace.items.get(mindustry.content.Items.sand)
+                < requiredPerBatch(furnace, mindustry.content.Items.sand)) item = mindustry.content.Items.sand;
+        ProductionPlanner.Rates r = ProductionPlanner.inspect(core, item);
+        if (r.demand <= 0f) { rateStatus.remove(core); return; }
+        rateStatus.put(core, "\n" + item.localizedName + " /s: "
+            + goalLabel("potrzeba ", "need ") + arc.util.Strings.fixed(r.demand, 1)
+            + " | " + goalLabel("moc prod. ", "capacity ") + arc.util.Strings.fixed(r.installed, 1)
+            + " | " + goalLabel("praca ", "active ") + arc.util.Strings.fixed(r.active, 1)
+            + (r.disconnected ? goalLabel(" | brak trasy", " | route missing") : "")
+            + (r.unknown ? goalLabel(" | niepełne dane", " | incomplete data") : ""));
+    }
 
     /** fire map: damage taken by the AI team's buildings, per 30-degree sector around each core */
     static final java.util.Map<CoreBuild, float[]> fireByCore = new java.util.HashMap<>();
 
     public static void init() {
         EconomyGoals.init();
+        CoreCapacityTask.install();
+        UnitProductionTask.init();
+        PowerTask.init();
         AbandonedBuilds.init();
         Events.run(Trigger.update, BasePlanner::update);
         Events.on(mindustry.game.EventType.UnitDestroyEvent.class, e -> {
@@ -65,6 +134,12 @@ public class BasePlanner {
         });
         Events.on(mindustry.game.EventType.WorldLoadEvent.class, e -> {
             fireByCore.clear();
+            goalConstruction.clear();
+            watchedConstruction.clear();
+            watchedProgress.clear();
+            watchedSince.clear();
+            rateStatus.clear();
+            demandFlow.clear();
             lastPlannerTick = -1000f;
             completedSteps = 0;
             timer = 0f;
@@ -91,7 +166,8 @@ public class BasePlanner {
             }
         });
         Events.on(mindustry.game.EventType.BuildDamageEvent.class, e -> {
-            if (e.build == null || e.source == null || e.build.team != Vars.state.rules.waveTeam) return;
+            if (Vars.net.client() || e.build == null || e.source == null || e.build.team != Vars.state.rules.waveTeam) return;
+            if (e.build instanceof CoreBuild && e.source.team != e.build.team && active()) StrategicPlanner.coreAttacked((CoreBuild)e.build);
             CoreBuild core = e.build.closestCore();
             if (core == null) return;
             int sector = (int) (arc.math.Angles.angle(core.x, core.y, e.source.x, e.source.y) / 30f) % 12;
@@ -106,12 +182,15 @@ public class BasePlanner {
         String base = heartbeat ? "[green]Metrum[] — " + plannerAction + " (kroki: " + completedSteps + ")"
             : rules.buildAi ? "[orange]Mindustry[]" : "[lightgray]brak aktywnego planera[]";
         return "AI bazy: " + base + (heartbeat ? resourceStatus() : "")
-            + (rules.rtsAi ? "\n[orange]Oddziały: RTS Mindustry[]" : "");
+            + (heartbeat ? "\n" + goalLabel("Oddziały: Metrum (4)", "Squads: Metrum (4)") : rules.rtsAi ? "\n[orange]Oddziały: RTS Mindustry[]" : "");
     }
 
     private static String resourceStatus() {
         CoreBuild core = Vars.state.rules.waveTeam.cores().find(c -> miningDemand.containsKey(c));
-        if (core == null) return "";
+        if (core == null) {
+            CoreBuild first = Vars.state.rules.waveTeam.core();
+            return first == null ? "" : goalStatus(first);
+        }
         ItemStack demand = miningDemand.get(core);
         java.util.Deque<ItemStack> pending = deferredDemand.get(core);
         ItemStack original = pending == null ? null : pending.peekLast();
@@ -146,7 +225,7 @@ public class BasePlanner {
         mindustry.gen.Unit drone = assignedMiningDrone(core);
         String droneStatus = drone == null ? arc.Core.bundle.get("metrum.ai.mining-drone-unassigned")
             : arc.Core.bundle.format("metrum.ai.mining-drone-assigned", drone.type.localizedName);
-        return "\n" + status + "\n" + droneStatus;
+        return goalStatus(core) + "\n" + status + "\n" + droneStatus;
     }
 
     /** setting: run the Metrum AI in custom games / editor playtests too (not only the Ferrox campaign) */
@@ -253,6 +332,7 @@ public class BasePlanner {
         if (!Vars.state.isPlaying() || Vars.net.client() || !active()) return;
         lastPlannerTick = Time.time;
         EconomyGoals.restore();
+        CoreCapacityTask.apply(Vars.state.rules.waveTeam);
         AbandonedBuilds.restore();
         miningDemand.entrySet().removeIf(e -> !e.getKey().isValid()
             || e.getKey().items.get(e.getValue().item) >= e.getValue().amount);
@@ -272,7 +352,10 @@ public class BasePlanner {
             miningBonusTimer = 0f;
             for (CoreBuild core : Vars.state.rules.waveTeam.cores()) {
                 supplyCoreProducers(core);
-                supplyMiningDock(core);
+                // The strategic unit task is the sole owner of factory configuration.
+                UnitProductionTask.observe(core);
+                EconomyTask.observe(core);
+                PowerTask.refresh(core);
             }
             mindustry.gen.Groups.build.each(b -> {
                 if (b.team == Vars.state.rules.waveTeam
@@ -292,6 +375,8 @@ public class BasePlanner {
         Team aiTeam = Vars.state.rules.waveTeam;
         // the Metrum planner replaces the vanilla base builder (otherwise both would build)
         Vars.state.rules.teams.get(aiTeam).buildAi = false;
+        // Factory combat squads are ordered by UnitProductionTask, not competing vanilla RTS.
+        Vars.state.rules.teams.get(aiTeam).rtsAi = false;
         Vars.state.rules.teams.get(aiTeam).infiniteResources = false;
         keepBuilder(aiTeam);
         AiLevel level = AiLevel.current();
@@ -302,7 +387,12 @@ public class BasePlanner {
         blockedSiliconSites.clear();
         int before = completedSteps;
         Team team = Vars.state.rules.waveTeam;
+        goalConstruction.keySet().removeIf(c -> !c.isValid() || c.team != team
+            || (!miningDemand.containsKey(c) && (deferredDemand.get(c) == null || deferredDemand.get(c).isEmpty())));
+        rateStatus.keySet().removeIf(c -> !c.isValid() || c.team != team);
         for (CoreBuild core : team.cores()) {
+            refreshRateStatus(core);
+            UnitProductionTask.orderSquads(core);
             if (!hasBuilder(core)) {
                 stalled("oczekiwanie na konstruktora przy rdzeniu");
                 continue;
@@ -387,7 +477,16 @@ public class BasePlanner {
         return null;
     }
 
-    private static int requiredPerBatch(Building furnace, Item item) {
+    public static int requiredPerBatch(Building furnace, Item item) {
+        if (furnace instanceof mindustry.world.blocks.units.UnitFactory.UnitFactoryBuild) {
+            mindustry.world.blocks.units.UnitFactory.UnitFactoryBuild f = (mindustry.world.blocks.units.UnitFactory.UnitFactoryBuild) furnace;
+            mindustry.world.blocks.units.UnitFactory type = (mindustry.world.blocks.units.UnitFactory) f.block;
+            if (f.currentPlan < 0 || f.currentPlan >= type.plans.size) return 0;
+            int n=0;
+            for(ItemStack req:type.plans.get(f.currentPlan).requirements) if(req.item==item)
+                n+=Math.round(req.amount * Vars.state.rules.unitCost(f.team));
+            return n;
+        }
         int batch = 0;
         for (mindustry.world.consumers.Consume consumer : furnace.block.nonOptionalConsumers) {
             if (!(consumer instanceof mindustry.world.consumers.ConsumeItems)) continue;
@@ -614,10 +713,61 @@ public class BasePlanner {
     /** picks the next build step in the planned order */
     static boolean step(CoreBuild core, AiLevel level) {
         mindustry.gen.Unit builder = assignedBuilder(core);
-        if (builder != null && !builder.plans.isEmpty()) return stalled("konstruktor realizuje plan budowy");
+        if (builder != null && !builder.plans.isEmpty()) {
+            BuildPlan plan = builder.plans.first();
+            if (!pauseUnaffordableConstruction(core, builder, plan))
+                return stalled("konstruktor realizuje plan budowy");
+        }
         if (builder != null && resumeConstruction(core, builder)) return true;
         // Early exits in the construction plan must still allow safe space reclamation.
-        return buildStep(core, level) || clearUnusedWaterPipes(core) || removeLeakingPipeEnds(core);
+        return StrategicPlanner.step(core, level) || clearUnusedWaterPipes(core) || removeLeakingPipeEnds(core);
+    }
+
+    /** Never let a material-starved construction monopolize the only constructor. */
+    private static ItemStack missingConstructionMaterial(CoreBuild core, Block block, boolean started) {
+        if (block == null || Vars.state.rules.isInfiniteResources(core.team)) return null;
+        for (ItemStack cost : block.requirements) {
+            int needed = Math.round(cost.amount * Vars.state.rules.buildCostMultiplier);
+            if (started) needed = Math.min(needed, 1);
+            if (core.items.get(cost.item) < needed) return new ItemStack(cost.item, needed);
+        }
+        return null;
+    }
+
+    private static void requestConstructionShortage(CoreBuild core, Block block, ItemStack missing) {
+        if (!hasDemand(core)) {
+            goalConstruction.put(core, block);
+            requestMaterial(core, missing.item, missing.amount);
+        }
+    }
+
+    private static boolean pauseUnaffordableConstruction(CoreBuild core, mindustry.gen.Unit builder, BuildPlan plan) {
+        if (plan.breaking || plan.block == null) return false;
+        Tile tile = Vars.world.tile(plan.x, plan.y);
+        Building b = tile == null ? null : tile.build;
+        if (b != null && b.team == core.team && b.block == plan.block) return false;
+        mindustry.world.blocks.ConstructBlock.ConstructBuild site = b instanceof mindustry.world.blocks.ConstructBlock.ConstructBuild
+            ? (mindustry.world.blocks.ConstructBlock.ConstructBuild)b : null;
+        boolean started = site != null && site.team == core.team && site.current == plan.block;
+        ItemStack missing = missingConstructionMaterial(core, plan.block, started);
+        if (missing == null) {
+            watchedConstruction.remove(core); watchedProgress.remove(core); watchedSince.remove(core);
+            return false;
+        }
+        if (started) {
+            if (watchedConstruction.get(core) != site || watchedProgress.getOrDefault(core, -1f) != site.progress) {
+                watchedConstruction.put(core, site); watchedProgress.put(core, site.progress); watchedSince.put(core, Time.time);
+                return false;
+            }
+            if (Time.time - watchedSince.getOrDefault(core, Time.time) < 120f) return false;
+        }
+        // Keep the physical site; replan its route after materials are available.
+        builder.plans.clear();
+        builder.updateBuilding = false;
+        watchedConstruction.remove(core); watchedProgress.remove(core); watchedSince.remove(core);
+        requestConstructionShortage(core, plan.block, missing);
+        stalled(goalLabel("wstrzymana budowa: brak ", "construction paused: missing ") + missing.item.localizedName);
+        return true;
     }
 
     static boolean canResumeConstruction(mindustry.world.blocks.ConstructBlock.ConstructBuild site, mindustry.gen.Unit builder) {
@@ -629,7 +779,8 @@ public class BasePlanner {
         Building[] nearest = {null};
         Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
             b -> b instanceof mindustry.world.blocks.ConstructBlock.ConstructBuild && b.closestCore() == core
-                && canResumeConstruction((mindustry.world.blocks.ConstructBlock.ConstructBuild) b, builder),
+                && canResumeConstruction((mindustry.world.blocks.ConstructBlock.ConstructBuild) b, builder)
+                && missingConstructionMaterial(core, ((mindustry.world.blocks.ConstructBlock.ConstructBuild)b).current, true) == null,
             b -> { if (nearest[0] == null || builder.dst2(b) < builder.dst2(nearest[0])) nearest[0] = b; });
         if (nearest[0] == null) return false;
         mindustry.world.blocks.ConstructBlock.ConstructBuild site =
@@ -641,13 +792,14 @@ public class BasePlanner {
      * Turrets get ammo only through real logistics, like the player's: a branch from a line that carries
      * an ammo item. Cutting the line stops the supply.
      */
-    static boolean supplyTurretAmmo(CoreBuild core) {
+    public static boolean supplyTurretAmmo(CoreBuild core) {
         Seq<Building> turrets = new Seq<>();
         Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
             b -> b instanceof mindustry.world.blocks.defense.turrets.ItemTurret.ItemTurretBuild && b.closestCore() == core, turrets::add);
         turrets.sort(b -> ((mindustry.world.blocks.defense.turrets.ItemTurret.ItemTurretBuild) b).totalAmmo);
         for (Building turret : turrets) {
             mindustry.world.blocks.defense.turrets.ItemTurret type = (mindustry.world.blocks.defense.turrets.ItemTurret) turret.block;
+            if (hasAmmoLine(turret,type)) continue;
             for (Item ammo : type.ammoTypes.keys()) {
                 if (LogisticsPlanner.connect(core, turret, ammo)) return true;
             }
@@ -658,13 +810,8 @@ public class BasePlanner {
         return false;
     }
 
-    static boolean hasAmmoLine(Building turret, mindustry.world.blocks.defense.turrets.ItemTurret type) {
-        for (Building b : turret.proximity) {
-            if (b.team != turret.team) continue;
-            if (b instanceof mindustry.world.blocks.distribution.Duct.DuctBuild && ((mindustry.world.blocks.distribution.Duct.DuctBuild) b).next == turret) return true;
-            if (b instanceof mindustry.world.blocks.production.Drill.DrillBuild
-                && type.ammoTypes.containsKey(((mindustry.world.blocks.production.Drill.DrillBuild) b).dominantItem)) return true;
-        }
+    public static boolean hasAmmoLine(Building turret, mindustry.world.blocks.defense.turrets.ItemTurret type) {
+        for (Item item : type.ammoTypes.keys()) if (LogisticsPlanner.hasRoute(turret,item)) return true;
         return false;
     }
 
@@ -693,6 +840,10 @@ public class BasePlanner {
     }
 
     static boolean buildStep(CoreBuild core, AiLevel level) {
+        return StrategicPlanner.step(core, level);
+    }
+
+    public static boolean recoverEconomy(CoreBuild core, AiLevel level) {
         ItemStack currentDemand = miningDemand.get(core);
         if (currentDemand != null) {
             Building receiver = materialReceiver(core, currentDemand.item, true);
@@ -703,14 +854,13 @@ public class BasePlanner {
                     && LogisticsPlanner.connect(core, furnace, mindustry.content.Items.sand)) return true;
             }
         }
-        if (supplyTurretAmmo(core)) return true;
+        if (currentDemand == null) return false;
         boolean waitingForSand = currentDemand != null && isSandForSilicon(core, currentDemand)
             && Time.time - lastSandForFurnace.getOrDefault(core, Float.NEGATIVE_INFINITY) < 6f * 60f;
         int drills = count(core, b -> b.block instanceof mindustry.world.blocks.production.BeamDrill
             || b.block instanceof mindustry.world.blocks.production.Drill);
-        int wantDrills = 2 + level.ordinal();
         // Try mining first, but let its power/water prerequisites resolve a failed attempt.
-        if (drills < 2 && !waitingForSand && buildDrillLine(core, level)) return true;
+        if (drills < 2 && currentDemand == null && buildDrillLine(core, level)) return true;
         boolean hasPowerSource = hasGenerator(core);
         if (hasPowerSource && prioritizeArcFurnacePower(core)) return true;
         if ((!hasPowerSource || (hasPowerDeficit(core) && !hasIdleGenerator(core))) && buildPower(core)) return true;
@@ -722,6 +872,7 @@ public class BasePlanner {
             && hasWaterDeficit(core) && buildPower(core, true)) return true;
         if (pipeSteam(core)) return true;
         demand = miningDemand.get(core);
+        if (demand != null && ensureWallInput(core, demand)) return true;
         if (demand != null && coreBurnsSand(core) && isSandForSilicon(core, demand)
             && buildDemandProducer(core, mindustry.content.Items.silicon)) return true;
         if (demand != null && metrum.ai.SmartMining.burnsItem(core, demand.item)
@@ -730,41 +881,137 @@ public class BasePlanner {
             ItemStack parent = pending == null ? null : pending.peekFirst();
             if (parent != null && buildDemandProducer(core, parent.item)) return true;
         }
-        if (demand != null && !waitingForSand && buildMiningDock(core, demand.item)) return true;
+        // No independently configured mining dock: the strategic task controls production.
         boolean waitingForTungsten = demand != null && demand.item == mindustry.content.Items.tungsten
             && hasLocalTungstenDrone(core, demand.item);
         if (demand != null && !waitingForTungsten && !waitingForSand) {
+            boolean enoughCapacity = ProductionPlanner.inspect(core, demand.item).sufficient();
             if (buildSteamForRecovery(core, demand.item)) return true;
             if (demand.item == metrum.content.MetrumItems.pieceRock
                 && buildWallExtractor(core, metrum.content.MetrumBlocks.rockScraper)) return true;
             boolean sandForSilicon = isSandForSilicon(core, demand);
-            if (drills >= 2 || hasRecoveryGoal(core, demand.item) || sandForSilicon || metrum.ai.SmartMining.burnsItem(core, demand.item)) {
-                if ((!minedResources(core).contains(demand.item) || metrum.ai.SmartMining.burnsItem(core, demand.item)) && buildDrillLine(core, level, true)) return true;
+            // Bootstrap must be able to acquire the material for its first or second drill.
+            if (drills >= 2 || hasRecoveryGoal(core, demand.item) || sandForSilicon || metrum.ai.SmartMining.burnsItem(core, demand.item)
+                || Vars.indexer.hasOre(demand.item) || Vars.indexer.hasWallOre(demand.item)) {
+                if (!enoughCapacity
+                    && (!minedResources(core).contains(demand.item) || metrum.ai.SmartMining.burnsItem(core, demand.item)) && buildDrillLine(core, level, true)) return true;
                 if (demand.item == mindustry.content.Items.sand
+                    && !enoughCapacity
                     && (sandForSilicon || hasRecoveryGoal(core, demand.item))
                     && buildWallExtractor(core, Blocks.cliffCrusher)) return true;
                 if (buildDemandProducer(core, demand.item)) return true;
                 boolean explore = demand.item == mindustry.content.Items.tungsten
                     || ((demand.item == mindustry.content.Items.coal || demand.item == mindustry.content.Items.sand)
                         && hasRecoveryGoal(core, demand.item));
-                if (explore && miningDemand.get(core) == demand
+                if (explore && !enoughCapacity && miningDemand.get(core) == demand
                     && (!minedResources(core).contains(demand.item) || metrum.ai.SmartMining.burnsItem(core, demand.item)) && buildDrillLine(core, level, true, 60)) return true;
                 if (miningDemand.get(core) == demand && demand.item == mindustry.content.Items.coal
                     && hasRecoveryGoal(core, demand.item) && stoneCrusherNeedsRock(core)
                     && buildWallExtractor(core, metrum.content.MetrumBlocks.rockScraper, false)) return true;
             }
         }
-        if (drills < 2) return false; // Keep routine expansion behind mining and recovery prerequisites.
-        int factories = count(core, b -> b.block == metrum.content.MetrumPhysics.atomizer);
-        if (factories < 1 + level.ordinal() / 2 && buildFactory(core)) return true;
-        if (drills < wantDrills && !waitingForSand) {
-            if (buildDrillLine(core, level)) return true;
-            if (!waitingForTungsten) return false;
+        if (hasDemand(core) && failureReason == null) stalled(goalLabel("oczekiwanie na dostawy celu", "waiting for goal supplies"));
+        return false;
+    }
+
+    public static boolean hasDemand(CoreBuild core) { return miningDemand.containsKey(core) || (deferredDemand.get(core)!=null && !deferredDemand.get(core).isEmpty()); }
+    public static Item currentDemand(CoreBuild core) {
+        ItemStack d = miningDemand.get(core); return d == null ? null : d.item;
+    }
+    public static boolean requestMaterial(CoreBuild core, Item item, int amount) {
+        if (item == null || amount <= 0 || hasDemand(core)) return false;
+        if (!metrum.ai.SmartMining.burnsItem(core,item) && core.items.get(item) >= amount) return false;
+        miningDemand.put(core,new ItemStack(item,amount));
+        return true;
+    }
+    /** Establish the actual source and route before requesting another production building. */
+    public static boolean ensureProductionInput(CoreBuild core, Building target, Item item) {
+        if (target == null || item == null) return false;
+        if (LogisticsPlanner.connect(core,target,item)) return true;
+        if (LogisticsPlanner.hasRoute(target,item)) return false;
+        Block wall = wallSource(core,item);
+        if (wall != null && canSupportDrill(core,wall)) {
+            if (buildInputExtractor(core,target,item,wall)) return true;
         }
-        int turrets = count(core, b -> b.block instanceof mindustry.world.blocks.defense.turrets.Turret);
-        if (turrets < 2 + level.ordinal() * 2 && buildTurret(core, level)) return true;
-        if (buildWalls(core, level)) return true;
-        return false; // no construction progress; step() may reclaim unused pipe space
+        for (Block block : Vars.content.blocks()) {
+            if (!(block instanceof mindustry.world.blocks.production.Drill || block instanceof mindustry.world.blocks.production.BeamDrill)
+                || !block.environmentBuildable() || block.isBanned() || !canSupportDrill(core,block)) continue;
+            if (buildInputExtractor(core,target,item,block)) return true;
+        }
+        int batch = Math.max(1,requiredPerBatch(target,item));
+        if (metrum.ai.SmartMining.burnsItem(core,item) || core.items.get(item)<batch) {
+            requestMaterial(core,item,batch);
+        } else if (buildDemandProducer(core,item)) return true;
+        stalled(goalLabel("brak fizycznej dostawy: ","no physical supply: ")+item.localizedName);
+        return false;
+    }
+    private static boolean buildInputExtractor(CoreBuild core, Building target, Item item, Block block) {
+        // Search all valid orientations near the destination, not only the scarcest ore in the core.
+        Seq<BuildPlan> sites = new Seq<>();
+        boolean beam = block instanceof mindustry.world.blocks.production.BeamDrill;
+        boolean wall = block instanceof mindustry.world.blocks.production.WallCrafter;
+        for (int dx=-20; dx<=20; dx++) for (int dy=-20; dy<=20; dy++) {
+            Tile site = Vars.world.tile(target.tileX()+dx,target.tileY()+dy);
+            if (site == null || site.build != null || site.block()!=Blocks.air) continue;
+            for (int rot=0;rot<(beam||wall?4:1);rot++) {
+                if (!Build.validPlace(block,core.team,site.x,site.y,rot,false)) continue;
+                Item output = beam ? wallOreInDirection(site,(mindustry.world.blocks.production.BeamDrill)block,rot)
+                    : wall ? ((mindustry.world.blocks.production.WallCrafter)block).output
+                    : ((mindustry.world.blocks.production.Drill)block).getDrop(site);
+                if (output == item) sites.add(new BuildPlan(site.x,site.y,rot,block));
+            }
+        }
+        sites.sort((a,b)->Float.compare(target.dst2(a),target.dst2(b)));
+        for (int i=0;i<Math.min(16,sites.size);i++) {
+            BuildPlan site=sites.get(i);
+            Seq<BuildPlan> route=extractorPlansTo(core,block,Vars.world.tile(site.x,site.y),site.rotation,target);
+            if (route!=null && missingPlanMaterials(core,route)==0 && queueConstructionBatch(core,route,true,false)) return true;
+        }
+        return false;
+    }
+
+    // Resolve actual recipe inputs of existing workshops, including wall-extracted materials.
+    private static boolean ensureWallInput(CoreBuild core, ItemStack demand) {
+        Item output = isSandForSilicon(core, demand) ? mindustry.content.Items.sand : demand.item;
+        Seq<Building> workshops = new Seq<>();
+        Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
+            b -> b.enabled && b.items != null && b.closestCore() == core && producesItem(b.block, output),
+            workshops::add);
+        for (Building workshop : workshops) {
+            for (mindustry.world.consumers.Consume consume : workshop.block.nonOptionalConsumers) {
+                if (!(consume instanceof mindustry.world.consumers.ConsumeItems)) continue;
+                for (ItemStack input : ((mindustry.world.consumers.ConsumeItems) consume).items) {
+                    Item item = input.item;
+                    if (workshop.items.get(item) >= requiredPerBatch(workshop, item)) continue;
+                    if (!metrum.ai.SmartMining.burnsItem(core, item)
+                        && core.items.get(item) - economicReserve(core).getOrDefault(item, 0) >= input.amount) continue;
+                    Block extractor = wallSource(core, item);
+                    if (extractor == null) continue;
+                    if (LogisticsPlanner.connect(core, workshop, item)) return true;
+                    if ((count(core, b -> b.block == extractor && b.enabled && b.closestCore() == core) == 0
+                        || ProductionPlanner.inspect(core, item).shortage())
+                        && canSupportDrill(core, extractor)
+                        && buildWallExtractor(core, extractor, false)) return true;
+                    // Do not request silicon to build the extractor if this very chain is needed for silicon.
+                    // Other available sand sources can still be tried by the main planner.
+                    stalled("brak dostawy: " + item.localizedName + " -> " + workshop.block.localizedName);
+                }
+            }
+        }
+        return false;
+    }
+
+    private static Block wallSource(CoreBuild core, Item item) {
+        Block best = null;
+        long bestCost = Long.MAX_VALUE;
+        for (Block block : Vars.content.blocks()) {
+            if (!(block instanceof mindustry.world.blocks.production.WallCrafter)
+                || !block.environmentBuildable() || !producesItem(block, item)) continue;
+            long cost = 0;
+            for (ItemStack stack : block.requirements) cost += stack.amount;
+            if (cost < bestCost) { best = block; bestCost = cost; }
+        }
+        return best;
     }
 
     private static boolean stoneCrusherNeedsRock(CoreBuild core) {
@@ -1183,7 +1430,7 @@ public class BasePlanner {
         return false;
     }
 
-    static boolean miningDockExitClear(Team team, Tile exit) {
+    public static boolean miningDockExitClear(Team team, Tile exit) {
         return exit != null && exit.block() == Blocks.air
             && !overlapsQueuedBuild(team, Blocks.air, exit.x, exit.y);
     }
@@ -1308,7 +1555,7 @@ public class BasePlanner {
     public static int availableForAmmo(CoreBuild core, Item item) {
         return Math.max(0, core.items.get(item) - economicReserve(core).getOrDefault(item, 0));
     }
-    static int count(CoreBuild core, arc.func.Boolf<Building> pred) {
+    public static int count(CoreBuild core, arc.func.Boolf<Building> pred) {
         int[] n = {0};
         mindustry.Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize, pred, b -> n[0]++);
         return n[0];
@@ -1352,18 +1599,18 @@ public class BasePlanner {
         }
     }
 
-    static boolean hasGenerator(CoreBuild core) {
+    public static boolean hasGenerator(CoreBuild core) {
         return count(core, b -> b.block instanceof mindustry.world.blocks.power.PowerGenerator) > 0;
     }
 
     /** Connect available generation before paying for another isolated generator. */
-    static boolean hasIdleGenerator(CoreBuild core) {
+    public static boolean hasIdleGenerator(CoreBuild core) {
         return count(core, b -> b.block instanceof mindustry.world.blocks.power.PowerGenerator
             && b.power != null && b.power.graph.getLastPowerNeeded() <= 0.001f) > 0;
     }
 
     /** A working grid with exhausted storage needs more generation, not just more nodes. */
-    static boolean hasPowerDeficit(CoreBuild core) {
+    public static boolean hasPowerDeficit(CoreBuild core) {
         return count(core, b -> {
             if (b.power == null || b.block.consPower == null) return false;
             mindustry.world.blocks.power.PowerGraph graph = b.power.graph;
@@ -1373,7 +1620,7 @@ public class BasePlanner {
         }) > 0;
     }
 
-    static boolean hasQueuedBlock(CoreBuild core, Block block) {
+    public static boolean hasQueuedBlock(CoreBuild core, Block block) {
         return mindustry.gen.Groups.unit.contains(unit -> {
             if (unit.team != core.team || unit.dead() || unit.flag != builderHomeFlag(core)
                 || !(unit.controller() instanceof MetrumBuilderAI)) return false;
@@ -1384,7 +1631,7 @@ public class BasePlanner {
         });
     }
 
-    static boolean overlapsQueuedBuild(Team team, Block block, int x, int y) {
+    public static boolean overlapsQueuedBuild(Team team, Block block, int x, int y) {
         int minX = x - (block.size - 1) / 2, minY = y - (block.size - 1) / 2;
         return mindustry.gen.Groups.unit.contains(unit -> {
             if (unit.team != team || unit.dead()) return false;
@@ -1399,7 +1646,7 @@ public class BasePlanner {
         });
     }
 
-    static boolean blocksMiningDockExit(Team team, Block block, int x, int y) {
+    public static boolean blocksMiningDockExit(Team team, Block block, int x, int y) {
         if (block.acceptsPayload) return false;
         Tile anchor = Vars.world.tile(x, y);
         if (anchor == null) return false;
@@ -1436,6 +1683,7 @@ public class BasePlanner {
             if (totalNeeded > Integer.MAX_VALUE) return false;
             int needed = (int) totalNeeded;
             if (core.items.get(cost.item) < needed) {
+                if (!miningDemand.containsKey(core)) goalConstruction.put(core, block);
                 miningDemand.putIfAbsent(core, new ItemStack(cost.item, needed));
                 return stalled("brak: " + cost.item.localizedName + " (" + core.items.get(cost.item) + "/" + needed + ")");
             }
@@ -1443,7 +1691,7 @@ public class BasePlanner {
         builder.addBuild(new mindustry.entities.units.BuildPlan(site.x, site.y, rotation, block));
         return true;
     }
-    static boolean queueConstructionBatch(CoreBuild core, Seq<BuildPlan> plans) {
+    public static boolean queueConstructionBatch(CoreBuild core, Seq<BuildPlan> plans) {
         return queueConstructionBatch(core, plans, false);
     }
 
@@ -1463,11 +1711,11 @@ public class BasePlanner {
         return false;
     }
 
-    static boolean queueConstructionBatch(CoreBuild core, Seq<BuildPlan> plans, boolean protectReserve) {
+    public static boolean queueConstructionBatch(CoreBuild core, Seq<BuildPlan> plans, boolean protectReserve) {
         return queueConstructionBatch(core, plans, protectReserve, true);
     }
 
-    private static boolean queueConstructionBatch(CoreBuild core, Seq<BuildPlan> plans, boolean protectReserve,
+    public static boolean queueConstructionBatch(CoreBuild core, Seq<BuildPlan> plans, boolean protectReserve,
                                                   boolean requestMaterials) {
         mindustry.gen.Unit builder = assignedBuilder(core);
         if (builder == null || !builder.plans.isEmpty() || plans.isEmpty()) return false;
@@ -1487,22 +1735,25 @@ public class BasePlanner {
             if ((long) core.items.get(cost.getKey()) - reserve.getOrDefault(cost.getKey(), 0) < cost.getValue()) {
                 if (!requestMaterials) return false;
                 long needed = cost.getValue() + reserve.getOrDefault(cost.getKey(), 0);
-                if (needed <= Integer.MAX_VALUE) miningDemand.putIfAbsent(core, new ItemStack(cost.getKey(), (int) needed));
+                if (needed <= Integer.MAX_VALUE) {
+                    if (!miningDemand.containsKey(core)) goalConstruction.put(core, plans.first().block);
+                    miningDemand.putIfAbsent(core, new ItemStack(cost.getKey(), (int) needed));
+                }
                 return stalled("brak materiałów na cały plan: " + cost.getKey().localizedName);
             }
         }
         for (BuildPlan plan : plans) builder.addBuild(plan);
         return true;
     }
-    static boolean buildPower(CoreBuild core) {
+    public static boolean buildPower(CoreBuild core) {
         return buildPower(core, false);
     }
 
-    private static boolean buildPower(CoreBuild core, boolean allowWaterPump) {
+    public static boolean buildPower(CoreBuild core, boolean allowWaterPump) {
         return buildPower(core, allowWaterPump, core);
     }
 
-    private static boolean buildPower(CoreBuild core, boolean allowWaterPump, Building nearestTo) {
+    public static boolean buildPower(CoreBuild core, boolean allowWaterPump, Building nearestTo) {
         Block gen = Blocks.turbineCondenser;
         // Reassess the deficit after the pending source is built, before ordering another.
         if (hasQueuedBlock(core, gen)) return false;
@@ -1544,7 +1795,7 @@ public class BasePlanner {
     }
 
     /** beam nodes on a lattice (every 8 tiles) between generators and consumers; nodes auto-link in straight lines */
-    static boolean powerGridDone(CoreBuild core) {
+    public static boolean powerGridDone(CoreBuild core) {
         int[] unpowered = {0};
         mindustry.Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
             b -> b.enabled && b.shouldConsume() && b.block.consPower != null
@@ -1570,11 +1821,11 @@ public class BasePlanner {
         return false;
     }
 
-    static boolean extendPowerGrid(CoreBuild core) {
+    public static boolean extendPowerGrid(CoreBuild core) {
         return extendPowerGrid(core, null);
     }
 
-    private static boolean extendPowerGrid(CoreBuild core, Building priority) {
+    public static boolean extendPowerGrid(CoreBuild core, Building priority) {
         Block node = Blocks.beamNode;
         // Give off-lattice buildings an adjacent connection point before filling the regular grid.
         Seq<Building> endpoints = new Seq<>();
@@ -1912,7 +2163,7 @@ public class BasePlanner {
         }
         return false;
     }
-    static boolean pipeWater(CoreBuild core) {
+    public static boolean pipeWater(CoreBuild core) {
         WaterConnections connections = new WaterConnections();
         mindustry.type.Liquid water = mindustry.content.Liquids.water;
         Seq<Building> sources = new Seq<>(), destinations = new Seq<>();
@@ -1967,7 +2218,7 @@ public class BasePlanner {
         return queueLiquidLine(core, sources, destinations, mindustry.content.Liquids.water);
     }
 
-    static boolean pipeSteam(CoreBuild core) {
+    public static boolean pipeSteam(CoreBuild core) {
         mindustry.type.Liquid steam = metrum.content.MetrumLiquids.steam;
         if (steam == null) return false;
         Seq<Building> sources = new Seq<>(), destinations = new Seq<>();
@@ -2085,7 +2336,11 @@ public class BasePlanner {
 
     // ---------- step 5: turrets facing the attacker; HARD and up add an ammo magazine ----------
 
-    static boolean buildTurret(CoreBuild core, AiLevel level) {
+    public static boolean buildTurret(CoreBuild core, AiLevel level) {
+        return buildTurret(core,level,true);
+    }
+    public static boolean buildEmergencyTurret(CoreBuild core,AiLevel level) { return buildTurret(core,level,false); }
+    private static boolean buildTurret(CoreBuild core,AiLevel level,boolean requestMaterials) {
         Block turret = Blocks.breach;
         Block magazine = Blocks.reinforcedContainer;
         // aim the defensive ring at the player's nearest core (or towards the map centre)
@@ -2104,7 +2359,7 @@ public class BasePlanner {
                 if (queueConstructionBatch(core, plans, true, false)) return true;
                 plans.pop(); // optional magazine must not prevent an affordable turret
             }
-            return queueConstructionBatch(core, plans, true);
+            return queueConstructionBatch(core, plans, true, requestMaterials);
         }
         return false;
     }
@@ -2124,7 +2379,7 @@ public class BasePlanner {
         return null;
     }
 
-    static boolean defenseSiteAvailable(Tile site, Block block, Team team) {
+    public static boolean defenseSiteAvailable(Tile site, Block block, Team team) {
         return site != null && Build.validPlace(block, team, site.x, site.y, 0, false)
             && !overlapsQueuedBuild(team, block, site.x, site.y)
             && !blocksMiningDockExit(team, block, site.x, site.y);
@@ -2132,7 +2387,7 @@ public class BasePlanner {
 
     // ---------- step 6: wall ring; leaves a gap where the fire is heaviest (all AI levels) ----------
 
-    static float wallGapAngle(CoreBuild core) {
+    public static float wallGapAngle(CoreBuild core) {
         int best = -1;
         float max = 0f;
         float[] fire = fireByCore.computeIfAbsent(core, ignored -> new float[12]);
@@ -2196,15 +2451,15 @@ public class BasePlanner {
     // ---------- step 1: drill + path to core ----------
 
     /** places one drill on the nearest free ore of the scarcest mineable item, then a duct path to the core */
-    static boolean buildDrillLine(CoreBuild core, AiLevel level) {
+    public static boolean buildDrillLine(CoreBuild core, AiLevel level) {
         return buildDrillLine(core, level, false);
     }
 
-    static boolean buildDrillLine(CoreBuild core, AiLevel level, boolean demandOnly) {
+    public static boolean buildDrillLine(CoreBuild core, AiLevel level, boolean demandOnly) {
         return buildDrillLine(core, level, demandOnly, 30);
     }
 
-    private static boolean buildDrillLine(CoreBuild core, AiLevel level, boolean demandOnly, int searchRadius) {
+    public static boolean buildDrillLine(CoreBuild core, AiLevel level, boolean demandOnly, int searchRadius) {
         Seq<BuildPlan> fallback = new Seq<>();
         if (buildDrillLine(core, demandOnly, searchRadius, new arc.struct.IntSet(), fallback)) return true;
         if (fallback.isEmpty()) return false;
@@ -2227,15 +2482,20 @@ public class BasePlanner {
         return queueConstructionBatch(core, fallback);
     }
 
-    private static boolean buildDrillLine(CoreBuild core, boolean demandOnly, int searchRadius,
+    public static boolean buildDrillLine(CoreBuild core, boolean demandOnly, int searchRadius,
                                           arc.struct.IntSet rejected, Seq<BuildPlan> fallback) {
         Block chosen = Blocks.plasmaBore;
-        Tile ore = findOreSpot(core, chosen, searchRadius, rejected);
+        Tile ore = chosen.environmentBuildable() ? findOreSpot(core, chosen, searchRadius, rejected) : null;
         ItemStack demand = miningDemand.get(core);
+        boolean bootstrap = StrategicPlanner.goal(core) == metrum.ai.planner.goal.DevelopmentGoal.ECONOMY;
+        // In the startup stage prefer the plasma bore. Only consider alternatives if
+        // it cannot extract the requested ore or has no viable placement.
+        boolean plasmaMatches = ore != null && (!demandOnly || (demand != null && wallOreInDirection(ore,
+            (mindustry.world.blocks.production.BeamDrill)chosen, faceWall(ore, chosen, core, minedResources(core))) == demand.item));
         // Consider modded wall drills as well as the vanilla plasma bore.
         for (Block candidate : Vars.content.blocks()) {
             if (!(candidate instanceof mindustry.world.blocks.production.BeamDrill) || candidate == chosen
-                || !candidate.environmentBuildable() || !canSupportDrill(core, candidate)) continue;
+                || !candidate.environmentBuildable() || !canSupportDrill(core, candidate) || (bootstrap && plasmaMatches)) continue;
             Tile alternative = findOreSpot(core, candidate, searchRadius, rejected);
             if (alternative == null) continue;
             int direction = faceWall(alternative, candidate, core, minedResources(core));
@@ -2250,7 +2510,7 @@ public class BasePlanner {
                 ore = alternative;
             }
         }
-        if (ore == null || demand != null) {
+        if (ore == null || (demand != null && !(bootstrap && plasmaMatches))) {
             for (Block candidate : Vars.content.blocks()) {
                 if (!(candidate instanceof mindustry.world.blocks.production.Drill) || !candidate.environmentBuildable()) continue;
                 if (!canSupportDrill(core, candidate)) continue;
@@ -2300,13 +2560,16 @@ public class BasePlanner {
         return missing;
     }
 
-    static boolean buildWallExtractor(CoreBuild core, Block scraper) {
+    public static boolean buildWallExtractor(CoreBuild core, Block scraper) {
         return buildWallExtractor(core, scraper, true);
     }
 
-    private static boolean buildWallExtractor(CoreBuild core, Block scraper, boolean requestMaterials) {
-        if (scraper == null || !scraper.environmentBuildable() || hasQueuedBlock(core, scraper)
-            || count(core, b -> b.block == scraper) > 0) return false;
+    public static boolean buildWallExtractor(CoreBuild core, Block scraper, boolean requestMaterials) {
+        if (!(scraper instanceof mindustry.world.blocks.production.WallCrafter) || !scraper.environmentBuildable()
+            || hasQueuedBlock(core, scraper)) return false;
+        ProductionPlanner.Rates rates = ProductionPlanner.inspect(core,
+            ((mindustry.world.blocks.production.WallCrafter)scraper).output);
+        if (rates.sufficient() || (count(core, b -> b.block == scraper) > 0 && !rates.shortage())) return false;
         if (requestMaterials && prioritizeWorkshopMaterials(core, scraper)) return false;
         if (!requestMaterials && !canSupportDrill(core, scraper)) return false;
         Seq<BuildPlan> sites = new Seq<>();
@@ -2316,7 +2579,6 @@ public class BasePlanner {
             for (int direction = 0; direction < 4; direction++) {
                 if (!Build.validPlace(scraper, core.team, tile.x, tile.y, direction, false)) continue;
                 sites.add(new BuildPlan(tile.x, tile.y, direction, scraper));
-                break;
             }
         }
         sites.sort((a, b) -> Float.compare(core.dst2(a), core.dst2(b)));
@@ -2353,6 +2615,13 @@ public class BasePlanner {
             Building target = materialReceiver(core, output, true);
             return target == null ? null : extractorPlansTo(core, drill, site, rotation, target);
         }
+        if (drill instanceof mindustry.world.blocks.production.WallCrafter) {
+            Building target = materialReceiver(core, output, true);
+            if (target != null) {
+                Seq<BuildPlan> direct = extractorPlansTo(core, drill, site, rotation, target);
+                if (direct != null) return direct;
+            }
+        }
         return extractorPlansTo(core, drill, site, rotation, core);
     }
 
@@ -2384,7 +2653,7 @@ public class BasePlanner {
         return tile.x >= anchor.x + min && tile.x <= anchor.x + max
             && tile.y >= anchor.y + min && tile.y <= anchor.y + max;
     }
-    static boolean stalled(String reason) {
+    public static boolean stalled(String reason) {
         // Preserve the first blocker in build-order priority for this planning cycle.
         if (failureReason == null) failureReason = reason;
         return false;
@@ -2441,6 +2710,7 @@ public class BasePlanner {
                 if (missing == 0) continue;
                 if (input.getValue() > factory.getMaximumAccepted(item)) continue workshops;
                 if (core.items.get(item) - reserve.getOrDefault(item, 0) < missing) {
+                    if (wallSource(core, item) != null && LogisticsPlanner.hasRoute(factory, item)) continue workshops;
                     // Feed spare rock while waiting for coal without replacing the coal priority.
                     if (recoveryCrusher) continue workshops;
                     int uncovered = missing;
@@ -2538,7 +2808,9 @@ public class BasePlanner {
         core.items.remove(graphite, missing);
         furnace.items.add(graphite, missing);
     }
-    static boolean buildDemandProducer(CoreBuild core, Item item) {
+    public static boolean buildDemandProducer(CoreBuild core, Item item) {
+        ProductionPlanner.Rates rates = ProductionPlanner.inspect(core, item);
+        if (rates.sufficient()) return false;
         if (item == mindustry.content.Items.silicon && coreWorkshops(core, item).contains(factory -> factory.team == core.team
             && factory.enabled && factory.items != null && factory.closestCore() == core
             && (factory.block == Blocks.siliconArcFurnace
@@ -2558,11 +2830,9 @@ public class BasePlanner {
             return false;
         }
         if (hasQueuedBlock(core, selected)) return false;
-        if (selected == metrum.content.MetrumProduction.stoneCrusher && hasRecoveryGoal(core, item)) {
-            Block scraper = metrum.content.MetrumBlocks.rockScraper;
-            if (count(core, b -> b.block == scraper && b.enabled && b.closestCore() == core) == 0) {
-                return buildWallExtractor(core, scraper);
-            }
+        // A wall extractor is not a core-adjacent workshop; use its terrain-aware placement.
+        if (selected instanceof mindustry.world.blocks.production.WallCrafter) {
+            return buildWallExtractor(core, selected, false);
         }
         Tile site = findCoreWorkshopSite(core, selected);
         if (site == null && selected == metrum.content.MetrumProduction.arcFurnaceOverclocked
@@ -2583,7 +2853,7 @@ public class BasePlanner {
             site = findCoreWorkshopSite(core, selected);
         }
         final Block producer = selected;
-        if (hasQueuedBlock(core, producer) || count(core, b -> b.block == producer) > 0) return false;
+        if (hasQueuedBlock(core, producer) || (count(core, b -> b.block == producer) > 0 && !rates.shortage())) return false;
         java.util.Map<Item, Integer> inputs = new java.util.HashMap<>();
         for (mindustry.world.consumers.Consume consume : producer.nonOptionalConsumers) {
             if (consume instanceof mindustry.world.consumers.ConsumeItems) {
@@ -2600,6 +2870,16 @@ public class BasePlanner {
         }
         java.util.Map<Item, Integer> reserve = economicReserve(core);
         for (ItemStack input : batch) {
+            Block extractor = wallSource(core, input.item);
+            if (extractor != null && core.items.get(input.item) - reserve.getOrDefault(input.item, 0) < input.amount
+                && count(core, b -> b.block == extractor && b.enabled && b.closestCore() == core) == 0) {
+                // For a storable input, establish the source before building its consumer.
+                // A non-storable input needs its consumer first as the destination of the route.
+                if (!metrum.ai.SmartMining.burnsItem(core, input.item)) {
+                    if (canSupportDrill(core, extractor) && buildWallExtractor(core, extractor, false)) return true;
+                    return stalled("brak źródła: " + input.item.localizedName + " (" + extractor.localizedName + ")");
+                }
+            }
             if (metrum.ai.SmartMining.burnsItem(core, input.item)) continue;
             int needed = input.amount + reserve.getOrDefault(input.item, 0);
             for (ItemStack cost : producer.requirements) if (cost.item == input.item) {
@@ -2645,57 +2925,106 @@ public class BasePlanner {
         return queueCoreWorkshop(core, boiler);
     }
 
-    static boolean queueCoreWorkshop(CoreBuild core, Block producer) {
+    public static boolean queueUnitFactory(CoreBuild core, mindustry.world.blocks.units.UnitFactory factory, int plan) {
+        if (factory == null || hasQueuedBlock(core,factory)) return false;
+        // Prefer compact placement without occupying another building or the output strip.
+        for (int radius=core.block.size/2+factory.size/2+1;radius<=16;radius++) {
+            for(int dx=-radius;dx<=radius;dx++) for(int dy=-radius;dy<=radius;dy++) {
+                if(Math.max(Math.abs(dx),Math.abs(dy))!=radius) continue;
+                Tile site=Vars.world.tile(core.tileX()+dx,core.tileY()+dy);
+                if(site==null || !emptyFootprint(site,factory)) continue;
+                int dir = Math.abs(dx)>=Math.abs(dy) ? (dx>=0?0:2) : (dy>=0?1:3);
+                for(int turn=0;turn<4;turn++) {
+                    int rot=(dir+turn)%4;
+                    if(!Build.validPlace(factory,core.team,site.x,site.y,rot,false)) continue;
+                    Tile exit=miningDockExit(site,factory,rot);
+                    if(!miningDockExitClear(core.team,exit)) continue;
+                    if(overlapsQueuedBuild(core.team,factory,site.x,site.y)) continue;
+                    return queueConstructionBatch(core,Seq.with(new BuildPlan(site.x,site.y,rot,factory,plan)),true);
+                }
+            }
+        }
+        return stalled(goalLabel("brak miejsca na fabrykę jednostek", "no unit factory site"));
+    }
+    public static boolean emptyFootprint(Tile site,Block block) {
+        int min=-(block.size-1)/2,max=block.size/2;
+        for(int x=min;x<=max;x++) for(int y=min;y<=max;y++) {
+            Tile t=Vars.world.tile(site.x+x,site.y+y);
+            if(t==null || t.build!=null || t.block()!=Blocks.air) return false;
+        }
+        return true;
+    }
+
+    public static boolean queueCoreWorkshop(CoreBuild core, Block producer) {
         Tile site = findCoreWorkshopSite(core, producer);
         return site != null && queueConstructionBatch(core, Seq.with(new BuildPlan(site.x, site.y, 0, producer)), true);
+    }
+
+    /** Count useful, distinct item links that can be made without another transport tile. */
+    private static int workshopNeighborScore(CoreBuild core, Block producer, Tile site) {
+        Seq<Building> seen = new Seq<>();
+        int score = 0;
+        for (arc.math.geom.Point2 edge : mindustry.world.Edges.getEdges(producer.size)) {
+            Tile adjacent = Vars.world.tile(site.x + edge.x, site.y + edge.y);
+            Building other = adjacent == null ? null : adjacent.build;
+            if (other == null || other == core || other.team != core.team || !other.enabled
+                || other.items == null || other.closestCore() != core || seen.contains(other)) continue;
+            seen.add(other);
+            // Count recipe connections, not incidental inventory or transport stock.
+            for (Item item : Vars.content.items()) {
+                if (producer.consumesItem(item) && producesItem(other.block, item)) score++;
+                if (requiredPerBatch(other, item) > 0 && producesItem(producer, item)) score++;
+            }
+        }
+        return score;
     }
 
     private static Tile findCoreWorkshopSite(CoreBuild core, Block producer) {
         mindustry.type.Liquid steam = metrum.content.MetrumLiquids.steam;
         boolean needsSteam = steam != null && producer.consumesLiquid(steam);
-        // water drinkers go to the core side nearest a water source, so the pipe stays short
         boolean needsWater = !needsSteam && producer.consumesLiquid(mindustry.content.Liquids.water);
         Seq<Building> water = new Seq<>();
         if (needsWater) Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
             b -> b.enabled && b.liquids != null && b.block.outputsLiquid && b.liquids.get(mindustry.content.Liquids.water) > 0.01f,
             water::add);
-        Tile nearestWater = null;
-        float bestWater = Float.MAX_VALUE;
-        boolean scanCoreEdge = needsSteam || needsWater || isSiliconArcFurnace(producer);
         int coreMin = -(core.block.size - 1) / 2, coreMax = core.block.size / 2;
         int factoryMin = -(producer.size - 1) / 2, factoryMax = producer.size / 2;
-        int offsetMin = scanCoreEdge ? coreMin - factoryMax : 0;
-        int offsetMax = scanCoreEdge ? coreMax - factoryMin : 0;
-        Tile fallback = null;
+        Tile best = null;
+        boolean bestSteam = false;
+        float bestWater = Float.MAX_VALUE;
+        int bestLinks = -1, bestOffset = Integer.MAX_VALUE;
         for (int dir = 0; dir < 4; dir++) {
-            int distance = (dir == 0 || dir == 1) ? coreMax - factoryMin + 1 : factoryMax - coreMin + 1;
+            int distance = dir < 2 ? coreMax - factoryMin + 1 : factoryMax - coreMin + 1;
             int dx = arc.math.geom.Geometry.d4x(dir), dy = arc.math.geom.Geometry.d4y(dir);
-            for (int offset = offsetMin; offset <= offsetMax; offset++) {
-                Tile site = Vars.world.tile(core.tileX() + dx * distance - dy * offset,
-                    core.tileY() + dy * distance + dx * offset);
-                if (site == null || !Build.validPlace(producer, core.team, site.x, site.y, 0, false)) continue;
-                if (fallback == null) fallback = site;
-                if (needsWater && !water.isEmpty()) {
-                    Tile at = site;
-                    float d = water.min(b -> b.dst2(at.worldx(), at.worldy())).dst2(at.worldx(), at.worldy());
-                    if (d < bestWater) { bestWater = d; nearestWater = site; }
-                    continue;
-                }
-                if (!needsSteam) {
-                    if (offset == 0) return site;
-                    continue;
-                }
-                for (arc.math.geom.Point2 edge : mindustry.world.Edges.getEdges(producer.size)) {
+            for (int offset = coreMin - factoryMax; offset <= coreMax - factoryMin; offset++) {
+                Tile site = Vars.world.tile(core.tileX() + dx * distance + (dx == 0 ? offset : 0),
+                    core.tileY() + dy * distance + (dy == 0 ? offset : 0));
+                if (site == null || !Build.validPlace(producer, core.team, site.x, site.y, 0, false)
+                    || overlapsQueuedBuild(core.team, producer, site.x, site.y)
+                    || blocksMiningDockExit(core.team, producer, site.x, site.y)) continue;
+                boolean directSteam = false;
+                if (needsSteam) for (arc.math.geom.Point2 edge : mindustry.world.Edges.getEdges(producer.size)) {
                     Tile adjacent = Vars.world.tile(site.x + edge.x, site.y + edge.y);
                     if (adjacent != null && adjacent.build != null && adjacent.build.team == core.team
-                        && isSteamSource(adjacent.build)) {
-                        return site;
-                    }
+                        && isSteamSource(adjacent.build)) { directSteam = true; break; }
+                }
+                float waterDistance = Float.MAX_VALUE;
+                for (Building source : water) waterDistance = Math.min(waterDistance, source.dst2(site.worldx(), site.worldy()));
+                int links = workshopNeighborScore(core, producer, site);
+                int centerOffset = Math.abs(offset);
+                if (best == null || (directSteam && !bestSteam)
+                    || (directSteam == bestSteam && (waterDistance < bestWater
+                        || (waterDistance == bestWater && (links > bestLinks
+                            || (links == bestLinks && centerOffset < bestOffset)))))) {
+                    best = site;
+                    bestSteam = directSteam;
+                    bestWater = waterDistance;
+                    bestLinks = links;
+                    bestOffset = centerOffset;
                 }
             }
         }
-        if (nearestWater != null) return nearestWater;
-        return fallback == null && isSiliconArcFurnace(producer) ? findLinkedWorkshopSite(core, producer) : fallback;
+        return best == null && isSiliconArcFurnace(producer) ? findLinkedWorkshopSite(core, producer) : best;
     }
 
     private static Tile findLinkedWorkshopSite(CoreBuild core, Block producer) {
@@ -2748,7 +3077,9 @@ public class BasePlanner {
         return findProducer(core, item, false);
     }
 
-    static boolean producesItem(Block block, Item item) {
+    public static boolean producesItem(Block block, Item item) {
+        if (block instanceof mindustry.world.blocks.production.WallCrafter)
+            return ((mindustry.world.blocks.production.WallCrafter) block).output == item;
         ItemStack[] outputs;
         if (block instanceof mindustry.world.blocks.production.Separator) {
             outputs = ((mindustry.world.blocks.production.Separator) block).results;
@@ -2830,7 +3161,7 @@ public class BasePlanner {
         return result;
     }
 
-    static boolean buildGeothermalForWater(CoreBuild core) {
+    public static boolean buildGeothermalForWater(CoreBuild core) {
         return hasWaterDeficit(core) && buildPower(core);
     }
 
@@ -2879,7 +3210,7 @@ public class BasePlanner {
         }
         return stocked && !source.block.consumesLiquid(water);
     }
-    static boolean canSupportDrill(CoreBuild core, Block drill) {
+    public static boolean canSupportDrill(CoreBuild core, Block drill) {
         float multiplier = Vars.state.rules.buildCostMultiplier;
         for (ItemStack cost : drill.requirements) {
             if (core.items.get(cost.item) < Math.round(cost.amount * multiplier)) return false;

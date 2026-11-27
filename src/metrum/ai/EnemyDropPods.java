@@ -31,6 +31,16 @@ public class EnemyDropPods {
     static final double reinforcementFlag = 7346282d;
 
     static float timer, snapshotTimer, underAttackTimer;
+    static final double starterSupportFlag = 7346283d;
+    static final float starterInterval = 10f * 60f * 60f, alarmDelay = 4f * 60f * 60f;
+    static final int starterLimit = 12;
+    static float starterTimer, alarmTimer = -1f;
+
+    static boolean starterSector() {
+        return Vars.state.isCampaign() && Vars.state.rules.sector != null
+            && Vars.state.rules.sector.preset == metrum.content.MetrumPlanets.oldRavine
+            && Vars.state.rules.attackMode;
+    }
 
     public static void init() {
         Events.run(Trigger.update, EnemyDropPods::update);
@@ -38,11 +48,28 @@ public class EnemyDropPods {
             timer = 0f;
             snapshotTimer = 0f;
             underAttackTimer = 0f;
+            starterTimer = 0f;
+            alarmTimer = -1f;
+            if (starterSector() && !Vars.net.client()) {
+                starterTimer = savedTimer("metrum-starter-period", 0f);
+                alarmTimer = savedTimer("metrum-starter-alarm", -1f);
+                Groups.unit.each(u -> {
+                    if (u.team == Vars.state.rules.waveTeam && u.flag == starterSupportFlag)
+                        u.controller(new mindustry.ai.types.BuilderAI(true, 400f));
+                });
+            }
         });
         // Wykrywanie ataku na bazę wroga (uszkodzenie budynku lub zniszczenie jednostki AI)
         Events.on(BuildDamageEvent.class, e -> {
             if (e.build != null && e.build.team == Vars.state.rules.waveTeam) {
                 underAttackTimer = 60f * 45f; // baza uznawana za atakowaną przez 45 s od ostatniego ciosu
+                if (!Vars.net.client() && starterSector()
+                    && e.build instanceof mindustry.world.blocks.storage.CoreBlock.CoreBuild
+                    && e.source != null && e.source.team != e.build.team
+                    && alarmTimer < 0f) {
+                    alarmTimer = alarmDelay;
+                    saveStarterTimers();
+                }
             }
         });
         Events.on(UnitDestroyEvent.class, e -> {
@@ -50,6 +77,56 @@ public class EnemyDropPods {
                 underAttackTimer = 60f * 45f;
             }
         });
+    }
+
+    static float savedTimer(String key, float fallback) {
+        try { return Float.parseFloat(Vars.state.rules.tags.get(key, Float.toString(fallback))); }
+        catch (NumberFormatException ignored) { return fallback; }
+    }
+
+    static void saveStarterTimers() {
+        Vars.state.rules.tags.put("metrum-starter-period", Float.toString(starterTimer));
+        Vars.state.rules.tags.put("metrum-starter-alarm", Float.toString(alarmTimer));
+    }
+
+    static void updateStarter(Team team) {
+        if (team.core() == null) return;
+        starterTimer += Time.delta;
+        boolean regular = starterTimer >= starterInterval;
+        if (regular) starterTimer %= starterInterval;
+        boolean alarm = false;
+        if (alarmTimer >= 0f) {
+            alarmTimer -= Time.delta;
+            if (alarmTimer <= 0f) { alarmTimer = -1f; alarm = true; }
+        }
+        if (regular) spawnStarter(team);
+        if (alarm) spawnStarter(team);
+        saveStarterTimers();
+    }
+
+    static int starterCount(int alive) {
+        return Math.min(3, Math.max(0, starterLimit - alive));
+    }
+
+    static void spawnStarter(Team team) {
+        Building core = team.core();
+        if (core == null) return;
+        int alive = Groups.unit.count(u -> u.team == team && !u.dead() && u.flag == starterSupportFlag);
+        int count = starterCount(alive);
+        UnitType type = MetrumUnits.monoMetT1;
+        if (count == 0 || !type.supportsEnv(Vars.state.rules.env)) return;
+        for (int i = 0; i < count; i++) {
+            float x = Mathf.clamp(core.x + Mathf.range(24f), 0f, Vars.world.unitWidth() - 1f);
+            float y = Mathf.clamp(core.y + Mathf.range(24f), 0f, Vars.world.unitHeight() - 1f);
+            Fx.launchPod.at(x, y);
+            Unit unit = type.spawn(team, x, y);
+            unit.flag = starterSupportFlag;
+            // Base T1 has no weapon: reinforce by rebuilding, not by pretending to be a combat drone.
+            unit.controller(new mindustry.ai.types.BuilderAI(true, 400f));
+            Fx.spawnShockwave.at(x, y);
+        }
+        metrum.ai.planner.task.CoreCapacityTask.drop(team);
+        if (!Vars.headless) Vars.ui.hudfrag.showToast(Core.bundle.format("metrum.pod.starter", count));
     }
 
     static String key(Sector s) {
@@ -129,6 +206,7 @@ public class EnemyDropPods {
             snapshot(here, team);
         }
 
+        if (starterSector()) { updateStarter(team); return; }
         if (here.id == here.planet.startSector) return;
 
         // Odliczamy czas ataku na bazę wroga
@@ -185,6 +263,7 @@ public class EnemyDropPods {
                 sent++;
             }
         }
+        if (sent > 0) metrum.ai.planner.task.CoreCapacityTask.drop(team);
         if (sent > 0 && !Vars.headless) {
             Vars.ui.hudfrag.showToast(Core.bundle.format("metrum.pod.enemy", sent));
         }

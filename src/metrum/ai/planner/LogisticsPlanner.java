@@ -208,12 +208,52 @@ public final class LogisticsPlanner {
         }
         return best;
     }
+    static boolean extracts(Building b, Item item) {
+        return b instanceof DrillBuild && ((DrillBuild)b).dominantItem == item
+            || b instanceof BeamDrillBuild && ((BeamDrillBuild)b).lastItem == item;
+    }
+
+    public static boolean producerFeeds(Building producer, Building target, Item item) {
+        for (Building next : producer.proximity)
+            if (sends(producer,next,item) && feeds(next,target,item,new HashSet<Building>())) return true;
+        return false;
+    }
+
+    public static boolean hasRoute(Building target, Item item) {
+        if (target == null) return false;
+        for (Building b : target.proximity)
+            if (sends(b, target, item) && source(b, item, new HashSet<Building>())) return true;
+        return false;
+    }
+
     public static boolean connect(CoreBuild core, Building target, Item item) {
-        if(target==null || item==null || !target.enabled || target.items==null || !Blocks.ductRouter.environmentBuildable()) return false;
+        if(target==null || item==null || !target.enabled || (target.items==null && !(target instanceof mindustry.world.blocks.defense.turrets.ItemTurret.ItemTurretBuild)) || !Blocks.ductRouter.environmentBuildable()) return false;
         for(Building b:target.proximity) if(sends(b,target,item) && source(b,item,new HashSet<Building>())) return false;
         Seq<Building> lines=new Seq<>();
         Vars.indexer.eachBlock(core.team,target.x,target.y,radius*Vars.tilesize,b->b.enabled && transport(b),lines::add);
         for(Building b:lines) if(source(b,item,new HashSet<Building>()) && feeds(b,target,item,new HashSet<Building>())) return false;
+        // An existing wall extractor can get a new physical outlet without rebuilding it.
+        Seq<Building> extractors = new Seq<>();
+        Vars.indexer.eachBlock(core.team, target.x, target.y, radius * Vars.tilesize,
+            b -> b.enabled && b != target && !transport(b) && source(b,item,new HashSet<Building>()),
+            extractors::add);
+        Seq<BuildPlan> direct = null;
+        for (Building extractor : extractors) {
+            int min = -(extractor.block.size - 1) / 2, max = extractor.block.size / 2;
+            for (int x = min; x <= max; x++) for (int y = min; y <= max; y++) {
+                if (x != min && x != max && y != min && y != max) continue;
+                Tile edge = extractor.tile.nearby(x,y);
+                if (edge == null) continue;
+                for (int d = 0; d < 4; d++) {
+                    Tile outlet = edge.nearby(d);
+                    if (outlet == null || outlet.build != null) continue;
+                    Seq<BuildPlan> candidate = route(core,outlet,target,(Tile)null);
+                    if (candidate != null && !candidate.isEmpty() && affordable(core,candidate)
+                        && (direct == null || candidate.size < direct.size)) direct = candidate;
+                }
+            }
+        }
+        if (direct != null && BasePlanner.queueConstructionBatch(core,direct)) return true;
         Seq<BuildPlan> best=bestBranch(core,target,item,lines);
         if(best!=null && BasePlanner.queueConstructionBatch(core,best)) return true;
         // Existing bridge provides a filtered side extraction when a router is unsafe.
