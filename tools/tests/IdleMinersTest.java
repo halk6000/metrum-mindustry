@@ -86,6 +86,14 @@ public class IdleMinersTest {
         Unit late = unit(miner);
         core.items.set(ore, 1000);
         check(!BasePlanner.idleMiner(late, core), "no mining into a full core");
+        // rebuild order: current chain, then mining/transport, power, turrets, walls
+        mindustry.world.blocks.production.GenericCrafter furnace = new mindustry.world.blocks.production.GenericCrafter("test-furnace");
+        furnace.outputItem = new mindustry.type.ItemStack(ore, 1);
+        java.util.Set<Item> chain = new java.util.HashSet<>(java.util.Collections.singleton(ore));
+        check(BasePlanner.rebuildPriority(furnace, chain) == 0, "chain producer first");
+        check(BasePlanner.rebuildPriority(new mindustry.world.blocks.production.Drill("test-drill"), chain) == 1, "drill next");
+        check(BasePlanner.rebuildPriority(new mindustry.world.blocks.defense.Wall("test-wall"), chain) == 5, "walls last");
+        check(BasePlanner.rebuildPriority(furnace, new java.util.HashSet<>()) == 4, "unrelated crafter after defences");
         System.out.println("OK: all idle AI miners mine; ordered, combat and full-core cases left alone");
     }
 

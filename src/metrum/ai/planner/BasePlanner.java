@@ -311,6 +311,7 @@ public class BasePlanner {
             assignCaretaker(core);
             assignIdleMiners(core);
             if (watchDemandFlow(core, Time.time)) continue;
+            orderRebuilds(core);
             for (int i = 0; i < level.stepsPerTick; i++) {
                 if (!step(core, level)) break;
                 completedSteps++;
@@ -532,6 +533,36 @@ public class BasePlanner {
     static CoreBuild retainedDeliveryTarget(mindustry.gen.Unit drone, CoreBuild target) {
         return drone.stack.amount > 0 && target != null && target.isValid() && target.team == drone.team
             && target.acceptStack(drone.stack.item, drone.stack.amount, drone) > 0 ? target : null;
+    }
+
+    /**
+     * Destroyed blocks are rebuilt in a useful order instead of the order they fell:
+     * the current production chain first, then mining and transport, power, and defences last.
+     */
+    static void orderRebuilds(CoreBuild core) {
+        arc.struct.Queue<mindustry.game.Teams.BlockPlan> plans = core.team.data().plans;
+        if (plans.size < 2) return;
+        java.util.Set<Item> chain = new java.util.HashSet<>();
+        ItemStack demand = miningDemand.get(core);
+        if (demand != null) chain.add(demand.item);
+        java.util.Deque<ItemStack> pending = deferredDemand.get(core);
+        if (pending != null) for (ItemStack goal : pending) chain.add(goal.item);
+        Seq<mindustry.game.Teams.BlockPlan> sorted = new Seq<>();
+        for (mindustry.game.Teams.BlockPlan plan : plans) sorted.add(plan);
+        sorted.sort(plan -> rebuildPriority(plan.block, chain));
+        plans.clear();
+        for (mindustry.game.Teams.BlockPlan plan : sorted) plans.addLast(plan);
+    }
+
+    static int rebuildPriority(Block block, java.util.Set<Item> chain) {
+        for (Item item : chain) {
+            if (producesItem(block, item) || (item.id < block.itemFilter.length && block.consumesItem(item))) return 0;
+        }
+        if (block instanceof mindustry.world.blocks.production.Drill || block instanceof mindustry.world.blocks.production.BeamDrill
+            || block instanceof mindustry.world.blocks.production.WallCrafter || block.group == mindustry.world.meta.BlockGroup.transportation) return 1;
+        if (block.outputsPower || block.consumesPower || block.group == mindustry.world.meta.BlockGroup.power) return 2;
+        if (block instanceof mindustry.world.blocks.defense.turrets.Turret) return 3;
+        return block instanceof mindustry.world.blocks.defense.Wall ? 5 : 4;
     }
 
     /** item, core stock and time of the last increase, per core */
