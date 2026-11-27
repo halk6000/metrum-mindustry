@@ -1915,26 +1915,7 @@ public class BasePlanner {
             }
         }
         if (queueWaterLine(core, sources, destinations, connections)) return true;
-        if (true) return false; // extra parallel lines for thirsty drills made pipe spaghetti; one line per consumer
-        Seq<Building> impactDrills = new Seq<>();
-        Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
-            b -> b.block == Blocks.impactDrill && b.enabled, impactDrills::add);
-        for (Building drill : impactDrills) {
-            Seq<Building> additionalSources = new Seq<>();
-            float connectedRate = 0f;
-            boolean connected = false;
-            for (Building source : sources) {
-                float rate = waterProductionRate(source);
-                if (connections.connected(source, drill)) {
-                    connected = true;
-                    connectedRate += rate;
-                } else if (rate > 0f) {
-                    additionalSources.add(source);
-                }
-            }
-            if (connected && connectedRate + 0.001f < requiredWaterRate(drill)
-                && queueLiquidLine(core, additionalSources, Seq.with(drill), water, true)) return true;
-        }
+        // No extra parallel lines for thirsty drills: they made pipe spaghetti; one line per consumer.
         return false;
     }
 
