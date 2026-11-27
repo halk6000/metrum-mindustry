@@ -34,6 +34,11 @@ public class CompoundDensifier extends Block {
     @Override public void setStats(){super.setStats();stats.add(Stat.productionTime,craftTime/60f,StatUnit.seconds);stats.add(Stat.input,t->{for(Recipe r:recipes){t.image(r.input.uiIcon).size(24);t.add(" ×"+r.amount+" → ");t.image(r.output.uiIcon).size(24);t.add(" ×"+r.yield).row();}});if(boostItem!=null)stats.add(Stat.booster,t->{t.image(boostItem.uiIcon).size(24);t.add(" ×"+boostMultiplier);});}
     @Override public void displayExtra(Table t){super.displayExtra(t);TechnicalInfoUI.header(t,this);for(Recipe r:recipes)TechnicalInfoUI.recipe(t,r.input,r.amount,new UnlockableContent[]{r.output},new int[]{r.yield},boostItem,boostMultiplier);}
     @Override public void setBars(){super.setBars();for(int k=0;k<2;k++){final int slot=k;addBar("densifier-"+k,(DensifierBuild b)->new Bar(()->Core.bundle.format(slot==0?"metrum.densifier.in":"metrum.densifier.out",b.material(slot)==null?"-":b.material(slot).localizedName),()->b.color(slot),()->b.fill(slot)));}}
+    /** the HD sprite is 256 px; draw the placement ghost at the real 2x2 footprint, not at sprite size */
+    @Override public void drawPlanRegion(mindustry.entities.units.BuildPlan plan, arc.struct.Eachable<mindustry.entities.units.BuildPlan> list){
+        float w=size*mindustry.Vars.tilesize;
+        Draw.rect(region,plan.drawx(),plan.drawy(),w,w);
+    }
     public class DensifierBuild extends Building {
         private int active=-1,last=-1; private float progress,phase; private float[] carry;
         private float[] carry(){if(carry==null)carry=new float[recipes.size];return carry;}
