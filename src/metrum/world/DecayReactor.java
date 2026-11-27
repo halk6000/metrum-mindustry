@@ -105,6 +105,17 @@ public class DecayReactor extends PowerGenerator {
             Drawf.light(x, y, size * 22f, Color.valueOf("7cff9a"), 0.5f * productionEfficiency);
         }
 
+        @Override public void display(arc.scene.ui.layout.Table table) {
+            MetrumBuildingUI.display(table,this,t -> {
+                MetrumBuildingUI.section(t,"reactor");
+                MetrumBuildingUI.chamber(t,"fuel",()->premiumFuel!=null&&items.get(premiumFuel)>0?premiumFuel:fuel,()->items.get(premiumFuel!=null&&items.get(premiumFuel)>0?premiumFuel:fuel)/(float)itemCapacity);
+                MetrumBuildingUI.value(t,"yield",()->Integer.toString(premiumFuel!=null&&items.get(premiumFuel)>0?rolls*premiumMultiplier:rolls));
+                MetrumBuildingUI.progress(t,()->progress);
+                MetrumBuildingUI.section(t,"diagnostics");
+                MetrumBuildingUI.status(t,this,()->MetrumBuildingUI.tr(items.get(fuel)>0||(premiumFuel!=null&&items.get(premiumFuel)>0)?"running":"no-input"));
+            });
+        }
+
         @Override
         public void write(Writes write) {
             super.write(write);

@@ -21,7 +21,7 @@ import mindustry.world.Tile;
  * nearest ore, the ore the core has least of, or one specific ore.
  */
 public class SmartMining {
-    public static final int nearest = -1, leastStored = -2;
+    public static final int nearest = -1, leastStored = -2, depositsOnly = -3;
     public static UnitCommand command;
 
     /** unit id -> mode (nearest / leastStored / item id) */
@@ -61,9 +61,10 @@ public class SmartMining {
         d.cont.defaults().size(320f, 54f).pad(4f);
         d.cont.button(Core.bundle.get("metrum.mine.nearest"), () -> { set(units, nearest); d.hide(); }).row();
         d.cont.button(Core.bundle.get("metrum.mine.least"), () -> { set(units, leastStored); d.hide(); }).row();
+        d.cont.button("Ze złoża / Deposits", () -> { set(units, depositsOnly); d.hide(); }).row();
         d.cont.add(Core.bundle.get("metrum.mine.specific")).height(30f).row();
         Seq<Item> items = new Seq<>();
-        for (Unit u : units) for (Item it : u.type.mineItems) if (!items.contains(it)) items.add(it);
+        for (Unit u : units) for (Item it : u.type.mineItems) if (u.canMine(it) && !items.contains(it)) items.add(it);
         d.cont.table(t -> {
             int i = 0;
             for (Item it : items) {
@@ -84,7 +85,34 @@ public class SmartMining {
 
     public static boolean canStoreMined(mindustry.gen.Building core, Item item) {
         return core != null && core.items != null && item != null
-            && core.items.get(item) < core.getMaximumAccepted(item);
+            && !burnsItem(core, item) && core.items.get(item) < core.getMaximumAccepted(item);
+    }
+
+    public static boolean burnsItem(mindustry.gen.Building building, Item item) {
+        return building != null && item != null && !item.buildable
+            && building.block instanceof mindustry.world.blocks.storage.CoreBlock
+            && ((mindustry.world.blocks.storage.CoreBlock) building.block).incinerateNonBuildable;
+    }
+
+    public static int consumerNeed(mindustry.gen.Building building, Item item) {
+        if (building == null || item == null || !building.isValid() || !building.enabled
+            || building.items == null || burnsItem(building, item) || !building.block.consumesItem(item)) return 0;
+        int batch = 0;
+        for (mindustry.world.consumers.Consume c : building.block.nonOptionalConsumers) {
+            if (c instanceof mindustry.world.consumers.ConsumeItems) {
+                for (mindustry.type.ItemStack input : ((mindustry.world.consumers.ConsumeItems)c).items) {
+                    if (input.item == item) batch += input.amount;
+                }
+            }
+        }
+        int target = batch > 0 ? Math.min(building.getMaximumAccepted(item), batch) : building.getMaximumAccepted(item);
+        return Math.max(0, target - building.items.get(item));
+    }
+
+    public static mindustry.gen.Building findConsumer(mindustry.gen.Building core, Item item) {
+        if (core == null || item == null) return null;
+        return Vars.indexer.findTile(core.team, core.x, core.y, 40f * Vars.tilesize,
+            b -> b.closestCore() == core && consumerNeed(b, item) > 0);
     }
 
     public static Tile findMineableOre(Unit unit, Item item) {
@@ -95,67 +123,143 @@ public class SmartMining {
     /** MinerAI whose ore choice follows the selected mode */
     public static class SmartMinerAI extends MinerAI {
         float retarget;
-        private mindustry.gen.Building cargoConsumer;
-        private float consumerRetry;
+        private mindustry.world.blocks.storage.CoreBlock.CoreBuild home;
+        private java.util.function.Supplier<mindustry.type.ItemStack> order;
+        private mindustry.entities.units.UnitController previousController;
+        private mindustry.gen.Building deliveryTarget;
+        private float tungstenStall;
+        private int lastTungstenCargo;
+
+        public void delegate(mindustry.world.blocks.storage.CoreBlock.CoreBuild core,
+                             java.util.function.Supplier<mindustry.type.ItemStack> demand,
+                             mindustry.entities.units.UnitController previous) {
+            home = core;
+            order = demand;
+            previousController = previous;
+        }
+
+        public boolean delegatedTo(mindustry.gen.Building core) { return order != null && home == core; }
+        public boolean delegated() { return order != null; }
+        public boolean makingTungstenProgress() { return tungstenStall < 1200f; }
+        public void releaseOrder() { if (order != null && unit.stack.amount == 0) {
+            unit.mineTile = null;
+            unit.controller(previousController);
+        } }
+        private mindustry.type.ItemStack demand() {
+            return order != null && home.isValid() && home.team == unit.team ? order.get() : null;
+        }
+        private mindustry.gen.Building destinationCore() {
+            return order != null && home.isValid() && home.team == unit.team ? home : unit.closestCore();
+        }
+        private boolean safeCore(mindustry.gen.Building core, Item cargo) {
+            return core != null && core.isValid() && core.team == unit.team && !burnsItem(core, cargo)
+                && core.acceptStack(cargo, unit.stack.amount, unit) > 0;
+        }
+
+        private void deliverCargo(mindustry.gen.Building core) {
+            mining = false;
+            unit.mineTile = null;
+            Item cargo = unit.stack.item;
+            if (safeCore(deliveryTarget, cargo)) core = deliveryTarget;
+            if (!safeCore(core, cargo)) {
+                core = null;
+                float nearest = Float.MAX_VALUE;
+                for (mindustry.gen.Building candidate : unit.team.cores()) {
+                    if (!safeCore(candidate, cargo)) continue;
+                    float distance = unit.dst2(candidate);
+                    if (distance < nearest) { core = candidate; nearest = distance; }
+                }
+            }
+            // Never hand a non-buildable item to an incinerating core, even as fallback.
+            if (core == null) return;
+            int accepted = core.acceptStack(cargo, unit.stack.amount, unit);
+            deliveryTarget = core;
+            if (unit.within(core, unit.type.range)) {
+                mindustry.gen.Call.transferItemTo(unit, cargo, accepted, unit.x, unit.y, core);
+                if (core == home && cargo == mindustry.content.Items.tungsten) tungstenStall = 0f;
+            } else moveTo(core, unit.type.range * 0.8f);
+        }
 
         protected boolean deliverBeforeIncineration(mindustry.gen.Building core) {
             Item cargo = unit.stack.item;
-            if (unit.stack.amount <= 0 || cargo == null || cargo.buildable || core == null
-                || !(core.block instanceof mindustry.world.blocks.storage.CoreBlock)
-                || !((mindustry.world.blocks.storage.CoreBlock) core.block).incinerateNonBuildable) return false;
-            unit.mineTile = null;
-            if (cargoConsumer != null && (!cargoConsumer.isValid() || !canReceiveCargo(unit, cargoConsumer))) {
-                cargoConsumer = null;
-                consumerRetry = 0f;
-            }
-            if (cargoConsumer == null && (consumerRetry -= arc.util.Time.delta) <= 0f) {
-                consumerRetry = 30f;
-                cargoConsumer = Vars.indexer.findTile(unit.team, core.x, core.y, 40f * Vars.tilesize,
-                    building -> canReceiveCargo(unit, building));
-            }
-            if (cargoConsumer != null) {
-                if (unit.within(cargoConsumer, unit.type.range)) {
-                    int amount = cargoConsumer.acceptStack(cargo, unit.stack.amount, unit);
-                    mindustry.gen.Call.transferItemTo(unit, cargo, amount, unit.x, unit.y, cargoConsumer);
-                } else moveTo(cargoConsumer, unit.type.range * 0.8f);
-            }
+            if (unit.stack.amount <= 0 || !burnsItem(core, cargo)) return false;
+            deliverCargo(core);
             return true;
         }
 
-        public int incomingCargo(mindustry.gen.Building destination, Item item) {
-            if (cargoConsumer != destination || unit.stack.item != item || unit.stack.amount <= 0
-                || !canReceiveCargo(unit, destination)) return 0;
-            return Math.min(unit.stack.amount, destination.acceptStack(item, unit.stack.amount, unit));
-        }
+        private int previousMode = Integer.MIN_VALUE;
 
-        private boolean canReceiveCargo(Unit drone, mindustry.gen.Building building) {
-            return building.team == drone.team && building.enabled && building.block.consumesItem(drone.stack.item)
-                && building.acceptStack(drone.stack.item, drone.stack.amount, drone) > 0;
+        private Tile selectedOre(Item item) {
+            if (item == null || !unit.canMine(item)) return null;
+            if (order != null || mode(unit) != depositsOnly) return findMineableOre(unit, item);
+            Tile best = null;
+            float distance = Float.MAX_VALUE;
+            for (arc.struct.IntMap.Entry<metrum.world.Deposits.Deposit> e : metrum.world.Deposits.all.entries()) {
+                if (e.value.item != item || e.value.amount <= 0) continue;
+                Tile t = Vars.world.tile(e.key);
+                if (t == null || t.drop() != item || t.block() != mindustry.content.Blocks.air) continue;
+                float d = unit.dst2(t);
+                if (d < distance) { best = t; distance = d; }
+            }
+            return best;
         }
 
         @Override
         public void updateMovement() {
-            if (deliverBeforeIncineration(unit.closestCore())) return;
-            super.updateMovement();
+            mindustry.gen.Building core = destinationCore();
+            if (unit.stack.amount == 0) deliveryTarget = null;
+            mindustry.type.ItemStack goal = demand();
+            if (order != null) {
+                int cargo = unit.stack.item == mindustry.content.Items.tungsten ? unit.stack.amount : 0;
+                if (cargo > lastTungstenCargo) tungstenStall = 0f;
+                else if (goal != null && goal.item == mindustry.content.Items.tungsten)
+                    tungstenStall = Math.min(1200f, tungstenStall + arc.util.Time.delta);
+                lastTungstenCargo = cargo;
+                if ((goal == null || burnsItem(core, goal.item)) && unit.stack.amount == 0) { releaseOrder(); return; }
+            }
+            if (core == null) { unit.mineTile = null; return; }
+            int m = order != null ? (goal == null ? Integer.MIN_VALUE : goal.item.id) : mode(unit);
+            if (m != previousMode) { previousMode = m; retarget = 0f; ore = null; targetItem = null; }
             Item want = desired();
-            if (want != null && targetItem != want) {
-                targetItem = want;
-                if (ore != null && ore.drop() != want && ore.wallDrop() != want) ore = null;
-                // The active mining tile is separate from the navigation target.
-                // Stop extracting the old resource as soon as the priority changes.
-                if (unit.mineTile != null && unit.mineTile.drop() != want && unit.mineTile.wallDrop() != want) {
-                    unit.mineTile = null;
+            if (unit.stack.amount > 0) {
+                Item cargo = unit.stack.item;
+                if (!mining || want != cargo || unit.stack.amount >= unit.type.itemCapacity
+                    || !safeCore(core, cargo)
+                    || core.acceptStack(cargo, unit.stack.amount, unit) < unit.stack.amount
+                    || (goal != null && goal.item == cargo && unit.stack.amount >= goal.amount - core.items.get(cargo))
+                    || ((ore == null || !unit.validMine(ore)) && findMineableOre(unit, cargo) == null)) {
+                    deliverCargo(core);
+                    return;
                 }
             }
+            mining = true;
+            if (want == null || !unit.canMine(want) || !canStoreMined(core, want)) { targetItem = null; ore = null; unit.mineTile = null; return; }
+            if (targetItem != want || ore == null || !unit.validMine(ore)
+                || (order == null && m == depositsOnly && !metrum.world.Deposits.all.containsKey(ore.pos()))) {
+                targetItem = want;
+                ore = selectedOre(want);
+            }
+            if (ore == null) { unit.mineTile = null; retarget = 0f; return; }
+            moveTo(ore, unit.type.mineRange * 0.5f);
+            unit.mineTile = unit.within(ore, unit.type.mineRange) && unit.validMine(ore) ? ore : null;
         }
 
         protected Item desired() {
+            if (order != null) {
+                mindustry.type.ItemStack goal = demand();
+                if (goal == null || !unit.canMine(goal.item)) return null;
+                if (unit.stack.amount > 0 && unit.stack.item != goal.item) return goal.item;
+                return canStoreMined(destinationCore(), goal.item) ? goal.item : null;
+            }
             int m = mode(unit);
-            if (m >= 0) return Vars.content.item(m);
+            if (m >= 0) {
+                Item item = Vars.content.item(m);
+                return item != null && unit.canMine(item) && canStoreMined(unit.closestCore(), item) ? item : null;
+            }
             // re-evaluated every 2 s
-            if ((retarget -= arc.util.Time.delta) > 0f && targetItem != null && canStoreMined(unit.closestCore(), targetItem)) return targetItem;
+            if ((retarget -= arc.util.Time.delta) > 0f && targetItem != null && canStoreMined(unit.closestCore(), targetItem) && ore != null && unit.validMine(ore)) return targetItem;
             retarget = 120f;
-            return m == leastStored ? leastStoredOre() : nearestOre();
+            return m == nearest ? nearestOre() : leastStoredOre();
         }
 
         /** mineable ore with a reachable deposit that the core has the least of; ties -> alphabetical */
@@ -165,7 +269,7 @@ public class SmartMining {
             int bestAmount = Integer.MAX_VALUE;
             boolean currentOreAvailable = false;
             for (Item it : unit.type.mineItems) {
-                if (!unit.canMine(it) || !canStoreMined(core, it) || findMineableOre(unit, it) == null) continue;
+                if (!unit.canMine(it) || !canStoreMined(core, it) || selectedOre(it) == null) continue;
                 if (it == targetItem) currentOreAvailable = true;
                 int amount = core == null ? 0 : core.items.get(it);
                 if (best == null || amount < bestAmount
@@ -176,7 +280,7 @@ public class SmartMining {
             }
             // hysteresis: keep the current ore unless another one is clearly scarcer,
             // so drones don't flip-flop every 2 s when stocks are close
-            if (currentOreAvailable && core.items.get(targetItem) <= bestAmount + 20) return targetItem;
+            if (currentOreAvailable && core.items.get(targetItem) <= bestAmount + 5) return targetItem;
             return best;
         }
 
@@ -185,7 +289,7 @@ public class SmartMining {
             float bestDst = Float.MAX_VALUE;
             for (Item it : unit.type.mineItems) {
                 if (!unit.canMine(it) || !canStoreMined(unit.closestCore(), it)) continue;
-                Tile t = findMineableOre(unit, it);
+                Tile t = selectedOre(it);
                 if (t != null && unit.dst(t) < bestDst) {
                     bestDst = unit.dst(t);
                     best = it;

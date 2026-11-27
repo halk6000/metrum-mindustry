@@ -308,6 +308,7 @@ public class BasePlanner {
                 continue;
             }
             assignMiningDrone(core);
+            assignCaretaker(core);
             for (int i = 0; i < level.stepsPerTick; i++) {
                 if (!step(core, level)) break;
                 completedSteps++;
@@ -370,14 +371,6 @@ public class BasePlanner {
         int stocked = furnace.items.get(sand);
         Integer previous = observedFurnaceSand.put(furnace, stocked);
         if (previous != null && stocked > previous) lastSandForFurnace.put(core, Time.time);
-        if (stocked < batch && input != null) {
-            int transferred = input.removeStack(sand, 1);
-            if (transferred > 0) {
-                furnace.items.add(sand, transferred);
-                observedFurnaceSand.put(furnace, stocked + transferred);
-                lastSandForFurnace.put(core, Time.time);
-            }
-        }
         return furnace.items.get(sand) >= batch;
     }
 
@@ -404,25 +397,98 @@ public class BasePlanner {
 
     static void assignMiningDrone(CoreBuild core) {
         ItemStack demand = miningDemand.get(core);
-        if (demand == null || !metrum.ai.SmartMining.canStoreMined(core, demand.item)) return;
         mindustry.gen.Unit current = assignedMiningDrone(core);
+        if (demand == null || !metrum.ai.SmartMining.canStoreMined(core, demand.item)) {
+            if (current != null) ((metrum.ai.SmartMining.SmartMinerAI) current.controller()).releaseOrder();
+            return;
+        }
         if (current != null && (current.stack.amount > 0 || canGather(current, demand.item))) return;
         mindustry.gen.Unit drone = mindustry.gen.Groups.unit.find(u -> u.team == core.team && !u.dead() && !u.isPlayer()
             && u.flag == 0d && u.plans.isEmpty() && u.closestCore() == core
             && metrum.ai.SmartMining.command != null && u.type.commands.contains(metrum.ai.SmartMining.command)
             && u.controller() instanceof mindustry.entities.units.AIController
-            && !(u.controller() instanceof ResourceDroneAI) && canGather(u, demand.item));
-        if (drone == null) return;
-        if (current != null) {
-            current.mineTile = null;
-            current.controller(((ResourceDroneAI) current.controller()).previousController);
+            && !(u.controller() instanceof metrum.ai.CaretakerAI)
+            && !(u.controller() instanceof metrum.ai.SmartMining.SmartMinerAI
+                && ((metrum.ai.SmartMining.SmartMinerAI) u.controller()).delegated()) && canGather(u, demand.item));
+        if (drone == null) {
+            // Mining demand can reclaim an idle caretaker, but never interrupt a construction queue.
+            mindustry.gen.Unit reserve = mindustry.gen.Groups.unit.find(u -> u.team == core.team && !u.dead()
+                && !u.isPlayer() && u.flag == 0d && u.stack.amount == 0 && u.plans.isEmpty()
+                && !u.activelyBuilding() && u.controller() instanceof metrum.ai.CaretakerAI
+                && ((metrum.ai.CaretakerAI) u.controller()).delegatedTo(core) && canGather(u, demand.item));
+            if (reserve != null) {
+                ((metrum.ai.CaretakerAI) reserve.controller()).releaseOrder();
+                if (!(reserve.controller() instanceof metrum.ai.CaretakerAI)) drone = reserve;
+            }
         }
-        drone.controller(new ResourceDroneAI(core, drone.controller()));
+        if (drone == null) return;
+        if (current != null) ((metrum.ai.SmartMining.SmartMinerAI) current.controller()).releaseOrder();
+        metrum.ai.SmartMining.SmartMinerAI miner = new metrum.ai.SmartMining.SmartMinerAI();
+        miner.delegate(core, () -> miningDemand.get(core), drone.controller());
+        drone.controller(miner);
+    }
+
+    // Non-storable ores must travel through extraction/production infrastructure.
+    private static Building materialReceiver(CoreBuild core, Item item, boolean needsStock) {
+        java.util.Deque<ItemStack> pending = deferredDemand.get(core);
+        ItemStack parent = pending == null ? null : pending.peekFirst();
+        arc.func.Boolf<Building> eligible = b -> b != core && b.enabled && b.items != null
+            && b.closestCore() == core && requiredPerBatch(b, item) > 0
+            && (!needsStock || metrum.ai.SmartMining.consumerNeed(b, item) > 0);
+        Building target = parent == null ? null : Vars.indexer.findTile(core.team, core.x, core.y, 40f * Vars.tilesize,
+            b -> eligible.get(b) && (producesItem(b.block, parent.item)
+                || ((parent.item == metrum.content.MetrumItems.steel || parent.item == mindustry.content.Items.tungsten)
+                    && b.block == metrum.content.MetrumProduction.steamFurnace)));
+        return target != null ? target : Vars.indexer.findTile(core.team, core.x, core.y, 40f * Vars.tilesize, eligible);
+    }
+
+    private static boolean infrastructureSupplies(CoreBuild core, Item item, Building target) {
+        if (target == null) return false;
+        if (target.items.get(item) >= requiredPerBatch(target, item)) return true;
+        // Existing producer output may feed the consumer; never use drone cargo here.
+        Seq<Building> sources = new Seq<>();
+        Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
+            b -> b != target && b.enabled && b.items != null && b.closestCore() == core && producesItem(b.block, item), sources::add);
+        for (Building source : sources) {
+            int missing = metrum.ai.SmartMining.consumerNeed(target, item);
+            int amount = source.removeStack(item, Math.min(missing, source.items.get(item)));
+            if (amount > 0) target.items.add(item, amount);
+            if (target.items.get(item) >= requiredPerBatch(target, item)) return true;
+        }
+        return false;
     }
 
     private static mindustry.gen.Unit assignedMiningDrone(CoreBuild core) {
         return mindustry.gen.Groups.unit.find(u -> !u.dead() && u.team == core.team
-            && u.controller() instanceof ResourceDroneAI && ((ResourceDroneAI) u.controller()).home == core);
+            && u.controller() instanceof metrum.ai.SmartMining.SmartMinerAI
+            && ((metrum.ai.SmartMining.SmartMinerAI) u.controller()).delegatedTo(core));
+    }
+
+    /** Keep one existing repair-capable drone on the standard caretaker command when the base needs it. */
+    private static void assignCaretaker(CoreBuild core) {
+        if (metrum.ai.CaretakerAI.command == null) return;
+        boolean work = !core.team.data().plans.isEmpty() || count(core, b -> b.health < b.maxHealth - 1f) > 0;
+        mindustry.gen.Unit current = mindustry.gen.Groups.unit.find(u -> u.team == core.team && !u.dead()
+            && u.controller() instanceof metrum.ai.CaretakerAI
+            && ((metrum.ai.CaretakerAI) u.controller()).delegatedTo(core));
+        if (current != null) {
+            if (!work) ((metrum.ai.CaretakerAI) current.controller()).releaseOrder();
+            return;
+        }
+        if (!work) return;
+        mindustry.gen.Unit drone = mindustry.gen.Groups.unit.find(u -> u.team == core.team && !u.dead() && !u.isPlayer()
+            && u.flag == 0d && u.stack.amount == 0 && u.plans.isEmpty() && u.closestCore() == core
+            && u.type.commands.contains(metrum.ai.CaretakerAI.command)
+            && u.controller() instanceof mindustry.entities.units.AIController
+            && !(u.controller() instanceof metrum.ai.CaretakerAI)
+            && !(u.controller() instanceof metrum.ai.SmartMining.SmartMinerAI
+                && ((metrum.ai.SmartMining.SmartMinerAI) u.controller()).delegated()));
+        if (drone != null) {
+            metrum.ai.CaretakerAI caretaker = new metrum.ai.CaretakerAI();
+            caretaker.delegate(core, drone.controller());
+            drone.mineTile = null;
+            drone.controller(caretaker);
+        }
     }
 
     private static boolean canGather(mindustry.gen.Unit drone, Item item) {
@@ -438,116 +504,6 @@ public class BasePlanner {
     static float advanceMiningStall(float elapsed, boolean active, boolean progressed, float delta, float limit) {
         if (progressed) return 0f;
         return active ? Math.min(limit, elapsed + delta) : elapsed;
-    }
-
-    private static class ResourceDroneAI extends metrum.ai.SmartMining.SmartMinerAI {
-        private static final float tungstenWait = 20f * 60f;
-        final CoreBuild home;
-        final mindustry.entities.units.UnitController previousController;
-        private ItemStack tungstenGoal;
-        private int lastTungstenCargo;
-        private float tungstenStalledTime;
-        private CoreBuild deliveryTarget;
-
-        ResourceDroneAI(CoreBuild home, mindustry.entities.units.UnitController previousController) {
-            this.home = home;
-            this.previousController = previousController;
-        }
-
-        @Override
-        public void updateMovement() {
-            if (deliverBeforeIncineration(home.isValid() && home.team == unit.team ? home : unit.closestCore())) return;
-            if (unit.stack.amount == 0) deliveryTarget = null;
-            if (!home.isValid() || home.team != unit.team) {
-                unit.mineTile = null;
-                if (unit.stack.amount == 0) {
-                    unit.controller(previousController);
-                } else {
-                    CoreBuild fallback = unit.closestCore();
-                    if (fallback != null) deliverCargo(fallback);
-                }
-                return;
-            }
-            ItemStack demand = miningDemand.get(home);
-            if (demand == null) {
-                unit.mineTile = null;
-                // Finish the delivery before returning the drone to its previous duties.
-                if (unit.stack.amount > 0) deliverCargo(home);
-                else unit.controller(previousController);
-                return;
-            }
-            ItemStack goal = demand != null && demand.item == mindustry.content.Items.tungsten ? demand : null;
-            int tungstenCargo = unit.stack.item == mindustry.content.Items.tungsten ? unit.stack.amount : 0;
-            // Other resource priorities pause the timeout without granting a fresh budget.
-            tungstenStalledTime = advanceMiningStall(tungstenStalledTime, goal != null,
-                tungstenCargo > lastTungstenCargo, Time.delta, tungstenWait);
-            tungstenGoal = goal;
-            lastTungstenCargo = tungstenCargo;
-            if (unit.stack.amount > 0) {
-                Item cargo = unit.stack.item;
-                int accepted = home.acceptStack(cargo, unit.stack.amount, unit);
-                CoreBuild nearest = unit.closestCore();
-                boolean vanillaWouldDiscardCargo = targetItem != null && nearest != null
-                    && nearest.acceptStack(targetItem, 1, unit) == 0;
-                boolean hasRequestedAmount = demand != null && cargo == demand.item
-                    && unit.stack.amount >= demand.amount - home.items.get(cargo);
-                if (!mining || hasRequestedAmount || unit.stack.amount >= unit.type.itemCapacity
-                    || accepted < unit.stack.amount || vanillaWouldDiscardCargo
-                    || (demand != null && cargo != demand.item)
-                    || (!unit.validMine(unit.mineTile) && !canGather(unit, cargo))) {
-                    deliverCargo(home);
-                    return;
-                }
-            }
-            super.updateMovement();
-        }
-
-        private void deliverCargo(CoreBuild core) {
-            mining = false;
-            unit.mineTile = null;
-            Item cargo = unit.stack.item;
-            deliveryTarget = retainedDeliveryTarget(unit, deliveryTarget);
-            if (deliveryTarget != null) {
-                core = deliveryTarget;
-            }
-            int accepted = core.acceptStack(cargo, unit.stack.amount, unit);
-            if (accepted <= 0) {
-                CoreBuild alternative = null;
-                float nearest = Float.MAX_VALUE;
-                for (CoreBuild candidate : unit.team.cores()) {
-                    if (candidate == core || !candidate.isValid()
-                        || candidate.acceptStack(cargo, unit.stack.amount, unit) <= 0) continue;
-                    float distance = unit.dst2(candidate);
-                    if (distance < nearest) {
-                        nearest = distance;
-                        alternative = candidate;
-                    }
-                }
-                if (alternative != null) {
-                    core = alternative;
-                    accepted = core.acceptStack(cargo, unit.stack.amount, unit);
-                }
-            }
-            if (accepted > 0) deliveryTarget = core;
-            if (accepted > 0 && unit.within(core, unit.type.range)) {
-                mindustry.gen.Call.transferItemTo(unit, cargo, accepted, unit.x, unit.y, core);
-                // An overflow delivery elsewhere does not advance this home's recovery goal.
-                if (core == home && cargo == mindustry.content.Items.tungsten) tungstenStalledTime = 0f;
-            }
-            moveTo(core, unit.type.range * 0.8f);
-        }
-
-        private boolean isMakingTungstenProgress() {
-            return tungstenGoal == null || tungstenStalledTime < tungstenWait;
-        }
-
-        @Override
-        protected Item desired() {
-            ItemStack demand = miningDemand.get(home);
-            if (demand != null && metrum.ai.SmartMining.canStoreMined(home, demand.item)
-                && canGather(unit, demand.item)) return demand.item;
-            return super.desired();
-        }
     }
 
     /** picks the next build step in the planned order */
@@ -578,8 +534,15 @@ public class BasePlanner {
     }
     static boolean buildStep(CoreBuild core, AiLevel level) {
         ItemStack currentDemand = miningDemand.get(core);
-        if (currentDemand != null && coreBurnsSand(core) && needsArcFurnaceSand(core, currentDemand)
-            && redirectSandLine(core)) return true;
+        if (currentDemand != null) {
+            Building receiver = materialReceiver(core, currentDemand.item, true);
+            if (receiver != null && LogisticsPlanner.connect(core, receiver, currentDemand.item)) return true;
+            if (needsArcFurnaceSand(core, currentDemand)) {
+                Building furnace = findSandArcFurnace(core);
+                if (furnace != null && furnace.items.get(mindustry.content.Items.sand) < requiredPerBatch(furnace, mindustry.content.Items.sand)
+                    && LogisticsPlanner.connect(core, furnace, mindustry.content.Items.sand)) return true;
+            }
+        }
         boolean waitingForSand = currentDemand != null && isSandForSilicon(core, currentDemand)
             && Time.time - lastSandForFurnace.getOrDefault(core, Float.NEGATIVE_INFINITY) < 6f * 60f;
         int drills = count(core, b -> b.block instanceof mindustry.world.blocks.production.BeamDrill
@@ -600,6 +563,12 @@ public class BasePlanner {
         demand = miningDemand.get(core);
         if (demand != null && coreBurnsSand(core) && isSandForSilicon(core, demand)
             && buildDemandProducer(core, mindustry.content.Items.silicon)) return true;
+        if (demand != null && metrum.ai.SmartMining.burnsItem(core, demand.item)
+            && materialReceiver(core, demand.item, false) == null) {
+            java.util.Deque<ItemStack> pending = deferredDemand.get(core);
+            ItemStack parent = pending == null ? null : pending.peekFirst();
+            if (parent != null && buildDemandProducer(core, parent.item)) return true;
+        }
         if (demand != null && !waitingForSand && buildMiningDock(core, demand.item)) return true;
         boolean waitingForTungsten = demand != null && demand.item == mindustry.content.Items.tungsten
             && hasLocalTungstenDrone(core, demand.item);
@@ -608,8 +577,8 @@ public class BasePlanner {
             if (demand.item == metrum.content.MetrumItems.pieceRock
                 && buildWallExtractor(core, metrum.content.MetrumBlocks.rockScraper)) return true;
             boolean sandForSilicon = isSandForSilicon(core, demand);
-            if (drills >= 2 || hasRecoveryGoal(core, demand.item) || sandForSilicon) {
-                if (!minedResources(core).contains(demand.item) && buildDrillLine(core, level, true)) return true;
+            if (drills >= 2 || hasRecoveryGoal(core, demand.item) || sandForSilicon || metrum.ai.SmartMining.burnsItem(core, demand.item)) {
+                if ((!minedResources(core).contains(demand.item) || metrum.ai.SmartMining.burnsItem(core, demand.item)) && buildDrillLine(core, level, true)) return true;
                 if (demand.item == mindustry.content.Items.sand
                     && (sandForSilicon || hasRecoveryGoal(core, demand.item))
                     && buildWallExtractor(core, Blocks.cliffCrusher)) return true;
@@ -618,7 +587,7 @@ public class BasePlanner {
                     || ((demand.item == mindustry.content.Items.coal || demand.item == mindustry.content.Items.sand)
                         && hasRecoveryGoal(core, demand.item));
                 if (explore && miningDemand.get(core) == demand
-                    && !minedResources(core).contains(demand.item) && buildDrillLine(core, level, true, 60)) return true;
+                    && (!minedResources(core).contains(demand.item) || metrum.ai.SmartMining.burnsItem(core, demand.item)) && buildDrillLine(core, level, true, 60)) return true;
                 if (miningDemand.get(core) == demand && demand.item == mindustry.content.Items.coal
                     && hasRecoveryGoal(core, demand.item) && stoneCrusherNeedsRock(core)
                     && buildWallExtractor(core, metrum.content.MetrumBlocks.rockScraper, false)) return true;
@@ -648,6 +617,7 @@ public class BasePlanner {
         mindustry.gen.Unit builder = assignedBuilder(core);
         if (furnace == null || builder == null || !builder.plans.isEmpty()) return false;
         if (queueSandBridgeBranch(core, furnace)) return true;
+        if (queueSandRouterBranch(core, furnace)) return true;
         Seq<Building> inputs = new Seq<>();
         inputs.addAll(core.proximity);
         for (Building storage : core.proximity) {
@@ -693,6 +663,109 @@ public class BasePlanner {
         return false;
     }
 
+    private static boolean lineCanSupply(Building b, Item item, java.util.Set<Building> visited) {
+        if (b == null || !b.enabled || visited.size() >= 128 || !visited.add(b)) return false;
+        if (b instanceof mindustry.world.blocks.production.Drill.DrillBuild)
+            return ((mindustry.world.blocks.production.Drill.DrillBuild)b).dominantItem == item;
+        if (b instanceof mindustry.world.blocks.production.BeamDrill.BeamDrillBuild)
+            return ((mindustry.world.blocks.production.BeamDrill.BeamDrillBuild)b).lastItem == item;
+        if (b.block instanceof mindustry.world.blocks.production.WallCrafter)
+            return ((mindustry.world.blocks.production.WallCrafter)b.block).output == item;
+        if (producesItem(b.block, item)) return true;
+        if (!(b instanceof mindustry.world.blocks.distribution.Duct.DuctBuild)
+            && !(b instanceof mindustry.world.blocks.distribution.DuctBridge.DuctBridgeBuild)
+            && !(b instanceof mindustry.world.blocks.distribution.DuctRouter.DuctRouterBuild)) return false;
+        if (b.items != null && b.items.has(item)) return true;
+        for (Building source : b.proximity) {
+            if (source.team != b.team) continue;
+            if (source instanceof mindustry.world.blocks.distribution.Duct.DuctBuild
+                && ((mindustry.world.blocks.distribution.Duct.DuctBuild)source).next != b) continue;
+            if (source instanceof mindustry.world.blocks.distribution.DuctBridge.DuctBridgeBuild) {
+                mindustry.world.blocks.distribution.DuctBridge.DuctBridgeBuild bridge =
+                    (mindustry.world.blocks.distribution.DuctBridge.DuctBridgeBuild)source;
+                Tile out = source.tile.nearby(source.rotation);
+                if (bridge.findLink() != b && (bridge.findLink() != null || out == null || out.build != b)) continue;
+            }
+            if (lineCanSupply(source, item, visited)) return true;
+        }
+        // A bridge can receive from another bridge across empty tiles.
+        if (b instanceof mindustry.world.blocks.distribution.DuctBridge.DuctBridgeBuild) {
+            int range = ((mindustry.world.blocks.distribution.DuctBridge)b.block).range;
+            for (int d = 0; d < 4; d++) for (int n = 1; n <= range; n++) {
+                Tile t = b.tile.nearby(arc.math.geom.Geometry.d4x(d)*n, arc.math.geom.Geometry.d4y(d)*n);
+                if (t != null && t.build instanceof mindustry.world.blocks.distribution.DuctBridge.DuctBridgeBuild
+                    && t.build.team == b.team
+                    && ((mindustry.world.blocks.distribution.DuctBridge.DuctBridgeBuild)t.build).findLink() == b
+                    && lineCanSupply(t.build, item, visited)) return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean queueSandRouterBranch(CoreBuild core, Building furnace) {
+        Item sand = mindustry.content.Items.sand;
+        if (furnace.items.get(sand) >= requiredPerBatch(furnace, sand)) return false;
+        Block router = Blocks.ductRouter, duct = Blocks.duct;
+        Seq<Building> existing = new Seq<>();
+        Vars.indexer.eachBlock(core.team, furnace.x, furnace.y, 24f * Vars.tilesize,
+            b -> b.enabled && b.block == router, existing::add);
+        for (Building b : existing) {
+            if (((mindustry.world.blocks.distribution.DuctRouter.DuctRouterBuild)b).sortItem == sand
+                && sandOutletReady(b.tile.nearby(b.rotation), furnace, b, 24, duct)) return false;
+        }
+        if (!router.environmentBuildable()) return false;
+        Seq<Building> candidates = new Seq<>();
+        Vars.indexer.eachBlock(core.team, furnace.x, furnace.y, 12f * Vars.tilesize,
+            b -> b.enabled && b.block == duct, candidates::add);
+        candidates.sort((a,b) -> Float.compare(a.dst2(furnace), b.dst2(furnace)));
+        for (Building b : candidates) {
+            mindustry.world.blocks.distribution.Duct.DuctBuild bend = (mindustry.world.blocks.distribution.Duct.DuctBuild)b;
+            if (bend.next == null || bend.next == furnace || !lineCanSupply(bend, sand, new java.util.HashSet<Building>())) continue;
+            // Exactly one incoming duct: preserve the old lateral output for all non-sand items.
+            Building incoming = null;
+            boolean multiple = false;
+            for (Building source : bend.proximity) {
+                if (source.team != core.team || source == bend.next || !source.block.outputsItems()) continue;
+                if (!(source instanceof mindustry.world.blocks.distribution.Duct.DuctBuild)) { multiple = true; break; }
+                if (((mindustry.world.blocks.distribution.Duct.DuctBuild)source).next != bend) continue;
+                if (incoming != null) { multiple = true; break; }
+                incoming = source;
+            }
+            if (multiple || incoming == null) continue;
+            int direction = incoming.rotation;
+            if (bend.rotation == direction || bend.rotation == (direction + 2)%4) continue;
+            Tile otherSide = bend.tile.nearby((bend.rotation + 2)%4);
+            if (otherSide != null && otherSide.build != null && otherSide.build.block.hasItems) continue;
+            if (!Build.validPlace(router, core.team, bend.tileX(), bend.tileY(), direction, false)) continue;
+            Tile outlet = bend.tile.nearby(direction);
+            if (outlet == null) continue;
+            // Filtered output is forward; do not allow sand to return to the core.
+            Seq<BuildPlan> plans = new Seq<>();
+            if (!sandOutletReady(outlet, furnace, bend, 12, duct)) {
+                if (outlet.block() != Blocks.air || !transportSiteClear(core.team, duct, outlet)) continue;
+                Seq<Tile> path = Astar.pathfind(outlet, furnace.tile, t -> 1f,
+                    t -> t.build == furnace || (t.block() == Blocks.air && t.build == null
+                        && outlet.within(t, 12f * Vars.tilesize) && transportSiteClear(core.team, duct, t)
+                        && Build.validPlace(duct, core.team, t.x, t.y, 0, false)));
+                if (path == null || path.isEmpty()) continue;
+                Tile previous = outlet;
+                boolean valid = true;
+                for (Tile next : path) {
+                    if (previous == next) continue;
+                    if (previous.build == furnace) break;
+                    int rot = previous.relativeTo(next);
+                    if (rot < 0 || !Build.validPlace(duct, core.team, previous.x, previous.y, rot, false)) { valid = false; break; }
+                    plans.add(new BuildPlan(previous.x, previous.y, rot, duct));
+                    previous = next;
+                }
+                if (!valid || previous.build != furnace) continue;
+            }
+            plans.add(new BuildPlan(bend.tileX(), bend.tileY(), direction, router, sand));
+            if (queueConstructionBatch(core, plans)) return true;
+        }
+        return false;
+    }
+
     static boolean queueSandBridgeBranch(CoreBuild core, Building furnace) {
         if (furnace.items.get(mindustry.content.Items.sand) >= requiredPerBatch(furnace, mindustry.content.Items.sand)) {
             return false;
@@ -706,7 +779,7 @@ public class BasePlanner {
             if (bridgeFeedsSandFurnace(bridge, furnace)) return false;
         }
         for (Building bridge : bridges) {
-            if (!bridge.items.has(sand)) continue;
+            if (!bridge.items.has(sand) && !lineCanSupply(bridge, sand, new java.util.HashSet<Building>())) continue;
             Seq<BuildPlan> plans = sandBridgeBranch(bridge, furnace);
             if (plans != null && queueConstructionBatch(core, plans)) return true;
         }
@@ -962,7 +1035,7 @@ public class BasePlanner {
 
     private static boolean canTrainMiningDrone(CoreBuild core, Item ore) {
         mindustry.type.UnitType drone = metrum.content.MetrumUnits.monoMetT1;
-        return drone.mineItems.contains(ore) && ore.hardness <= drone.mineTier && assignedMiningDrone(core) == null
+        return !metrum.ai.SmartMining.burnsItem(core, ore) && drone.mineItems.contains(ore) && ore.hardness <= drone.mineTier && assignedMiningDrone(core) == null
             && ((drone.mineFloor && Vars.indexer.findClosestOre(core.x, core.y, ore) != null)
                 || (drone.mineWalls && Vars.indexer.findClosestWallOre(core.x, core.y, ore) != null));
     }
@@ -1000,9 +1073,9 @@ public class BasePlanner {
 
     static boolean hasLocalTungstenDrone(CoreBuild core, Item ore) {
         return mindustry.gen.Groups.unit.contains(drone -> {
-            if (drone.dead() || drone.team != core.team || !(drone.controller() instanceof ResourceDroneAI)
-                || ((ResourceDroneAI) drone.controller()).home != core) return false;
-            if (!((ResourceDroneAI) drone.controller()).isMakingTungstenProgress()) return false;
+            if (drone.dead() || drone.team != core.team || !(drone.controller() instanceof metrum.ai.SmartMining.SmartMinerAI)
+                || !((metrum.ai.SmartMining.SmartMinerAI) drone.controller()).delegatedTo(core)) return false;
+            if (!((metrum.ai.SmartMining.SmartMinerAI) drone.controller()).makingTungstenProgress()) return false;
             if (drone.stack.amount > 0 && drone.stack.item == ore) return true;
             if (drone.stack.amount > 0 || !drone.canMine(ore) || !drone.type.mineItems.contains(ore)) return false;
             Tile deposit = metrum.ai.SmartMining.findMineableOre(drone, ore);
@@ -1976,7 +2049,7 @@ public class BasePlanner {
                 if (meetsDemand || demand == null) break;
             }
         }
-        if (ore == null) return stalled("brak dostępnej rudy dla wiertnicy");
+        if (ore == null) return stalled("brak dostępnej rudy dla wiertnicy" + (demand == null ? "" : ": " + demand.item.localizedName));
         final Block drill = chosen;
         int rotation = drill instanceof mindustry.world.blocks.production.BeamDrill
             ? faceWall(ore, drill, core, minedResources(core)) : 0;
@@ -2063,19 +2136,16 @@ public class BasePlanner {
     }
 
     private static Seq<BuildPlan> extractorPlans(CoreBuild core, Block drill, Tile site, int rotation, Item output) {
-        if (output == mindustry.content.Items.sand && !output.buildable
-            && ((mindustry.world.blocks.storage.CoreBlock) core.block).incinerateNonBuildable) {
-            for (Building furnace : coreWorkshops(core, mindustry.content.Items.silicon)) {
-                if (furnace.team != core.team || !furnace.enabled || furnace.closestCore() != core
-                    || !isSiliconArcFurnace(furnace.block)) continue;
-                Seq<BuildPlan> direct = extractorPlansTo(core, drill, site, rotation, furnace);
-                if (direct != null) return direct;
-            }
+        if (metrum.ai.SmartMining.burnsItem(core, output)) {
+            Building target = materialReceiver(core, output, true);
+            return target == null ? null : extractorPlansTo(core, drill, site, rotation, target);
         }
         return extractorPlansTo(core, drill, site, rotation, core);
     }
 
     private static Seq<BuildPlan> extractorPlansTo(CoreBuild core, Block drill, Tile site, int rotation, Building destination) {
+        Seq<BuildPlan> physical = LogisticsPlanner.extractor(core, drill, site, rotation, destination);
+        if (physical != null) return physical;
         Block duct = Blocks.duct;
         Seq<Tile> path = extractorRoute(site, drill, destination, core.team, duct,
             tile -> Build.validPlace(duct, core.team, tile.x, tile.y, 0, false));
@@ -2112,6 +2182,14 @@ public class BasePlanner {
     static void supplyCoreProducers(CoreBuild core) {
         ItemStack demand = miningDemand.get(core);
         if (demand == null || core.items.get(demand.item) >= demand.amount) return;
+        if (needsArcFurnaceSand(core, demand)) bufferArcFurnaceGraphite(core, economicReserve(core));
+        if (metrum.ai.SmartMining.burnsItem(core, demand.item)) {
+            Building target = materialReceiver(core, demand.item, false);
+            if (infrastructureSupplies(core, demand.item, target)) {
+                miningDemand.remove(core);
+                return;
+            }
+        }
         boolean recoveringTungsten = demand.item == mindustry.content.Items.tungsten;
         if (hasRecoveryGoal(core, demand.item) || needsArcFurnaceSand(core, demand)) {
             drainStoneCrusherSand(core);
@@ -2128,7 +2206,6 @@ public class BasePlanner {
         boolean recoveryNeedsSteam = demand.item == metrum.content.MetrumItems.steel
             || demand.item == mindustry.content.Items.tungsten;
         java.util.Map<Item, Integer> reserve = economicReserve(core);
-        if (isSandForSilicon(core, demand)) bufferArcFurnaceGraphite(core, reserve);
         workshops: for (Building factory : coreWorkshops(core, demand.item)) {
             if (factory.team != core.team || !factory.enabled || factory.items == null
                 || factory.closestCore() != core) continue;
@@ -2153,7 +2230,7 @@ public class BasePlanner {
                 if (core.items.get(item) - reserve.getOrDefault(item, 0) < missing) {
                     // Feed spare rock while waiting for coal without replacing the coal priority.
                     if (recoveryCrusher) continue workshops;
-                    int uncovered = missingAfterDeliveries(factory, item, missing);
+                    int uncovered = missing;
                     int reserved = reserve.getOrDefault(item, 0);
                     if (uncovered == 0 || core.items.get(item) - reserved >= uncovered) continue workshops;
                     if (prioritizeProducerDependency(core, item, uncovered + reserved)) {
@@ -2170,19 +2247,6 @@ public class BasePlanner {
                 factory.items.add(input.getKey(), missing);
             }
         }
-    }
-
-    static int missingAfterDeliveries(Building destination, Item item, int missing) {
-        for (mindustry.gen.Unit drone : mindustry.gen.Groups.unit) {
-            if (drone.team != destination.team || drone.dead() || drone.stack.item != item || drone.stack.amount <= 0) continue;
-            if (drone.controller() instanceof metrum.ai.SmartMining.SmartMinerAI) {
-                missing -= ((metrum.ai.SmartMining.SmartMinerAI) drone.controller()).incomingCargo(destination, item);
-            } else if (drone.controller() instanceof MetrumBuilderAI) {
-                missing -= ((MetrumBuilderAI) drone.controller()).incomingCargo(destination, item);
-            }
-            if (missing <= 0) return 0;
-        }
-        return missing;
     }
 
     private static void deliverBufferedOutput(CoreBuild core, ItemStack demand) {
@@ -2323,7 +2387,7 @@ public class BasePlanner {
         }
         java.util.Map<Item, Integer> reserve = economicReserve(core);
         for (ItemStack input : batch) {
-            if (input.item == mindustry.content.Items.sand && isSiliconArcFurnace(producer) && coreBurnsSand(core)) continue;
+            if (metrum.ai.SmartMining.burnsItem(core, input.item)) continue;
             int needed = input.amount + reserve.getOrDefault(input.item, 0);
             for (ItemStack cost : producer.requirements) if (cost.item == input.item) {
                 needed += Math.round(cost.amount * Vars.state.rules.buildCostMultiplier);
@@ -2613,7 +2677,8 @@ public class BasePlanner {
             if (t == null || t.block() != Blocks.air || rejected.contains(t.pos()) || !drill.canMine(t)
                 || !Build.validPlace(drill, core.team, t.x, t.y, 0, false)) continue;
             Item item = drill.getDrop(t);
-            if (item == null) continue;
+            if (item == null || (metrum.ai.SmartMining.burnsItem(core, item)
+                && (demand == null || demand.item != item || materialReceiver(core, item, true) == null))) continue;
             int amount = core.items.get(item);
             float distance = core.dst2(t);
             boolean meetsDemand = demand != null && demand.item == item;
@@ -2709,6 +2774,10 @@ public class BasePlanner {
             if (!Build.validPlace(drill, core.team, t.x, t.y, r, false)) continue;
             Item item = wallOreInDirection(t, beam, r);
             if (item == null) continue;
+            if (metrum.ai.SmartMining.burnsItem(core, item)) {
+                ItemStack demand = miningDemand.get(core);
+                if (demand == null || demand.item != item || materialReceiver(core, item, true) == null) continue;
+            }
             int priority = orePriority(core, item, mined);
             if (best < 0 || (priority < bestPriority)
                 || (priority == bestPriority && core.items.get(item) < least)) {

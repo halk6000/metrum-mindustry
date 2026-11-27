@@ -161,6 +161,20 @@ public class SteamEngine extends PowerGenerator {
             Draw.reset();
         }
 
+        @Override public void display(arc.scene.ui.layout.Table table) {
+            MetrumBuildingUI.display(table,this,t -> {
+                MetrumBuildingUI.section(t,"reactor");
+                MetrumBuildingUI.bar(t,()->MetrumBuildingUI.tr("steam-supply")+": "+Math.round(steamSupply*100f)+"%",()->arc.graphics.Color.lightGray,()->steamSupply);
+                MetrumBuildingUI.bar(t,()->MetrumBuildingUI.tr("warmup")+": "+Math.round(warmup*100f)+"%",()->arc.graphics.Color.orange,()->warmup);
+                MetrumBuildingUI.value(t,"heat",()->arc.util.Strings.autoFixed(ownHeat(),1));
+                MetrumBuildingUI.value(t,"group",()->grouped()?"ON":"OFF");
+                MetrumBuildingUI.value(t,"speed",()->Math.round(outputMultiplier()*100f)+"%");
+                MetrumBuildingUI.value(t,"steam-use",()->Math.round(steamMultiplier()*100f)+"%");
+                MetrumBuildingUI.section(t,"diagnostics");
+                MetrumBuildingUI.status(t,this,()->MetrumBuildingUI.tr(steamSupply<0.01f?"no-input":steamSupply<0.99f?"low-supply":"running"));
+            });
+        }
+
         @Override
         public void write(Writes write) {
             super.write(write);

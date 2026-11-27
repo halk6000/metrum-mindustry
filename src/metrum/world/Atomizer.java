@@ -97,6 +97,22 @@ public class Atomizer extends Block {
             return current() != null ? 1f : 0f;
         }
 
+        @Override public void display(arc.scene.ui.layout.Table table) {
+            MetrumBuildingUI.display(table,this,t -> {
+                MetrumBuildingUI.section(t,"chambers");
+                MetrumBuildingUI.chamber(t,"input",this::current,()->current()==null?0f:items.get(current())/(float)itemCapacity);
+                MetrumBuildingUI.chamber(t,"output",()->current()==null?null:conversions.get(current()),()->current()==null?0f:items.get(conversions.get(current()))/(float)itemCapacity);
+                MetrumBuildingUI.progress(t,()->progress);
+                MetrumBuildingUI.section(t,"diagnostics");
+                MetrumBuildingUI.status(t,this,()->{
+                    if(MetrumBuildingUI.noPower(this))return MetrumBuildingUI.tr("no-power");
+                    if(current()!=null)return MetrumBuildingUI.tr("running");
+                    for(ObjectMap.Entry<Item,Item> e:conversions)if(items.get(e.key)>=inputAmount)return MetrumBuildingUI.blocked(e.value);
+                    return MetrumBuildingUI.tr("no-input");
+                });
+            });
+        }
+
         @Override
         public void write(Writes write) {
             super.write(write);

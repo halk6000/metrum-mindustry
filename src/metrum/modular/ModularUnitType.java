@@ -8,11 +8,11 @@ import mindustry.gen.Unit;
 import mindustry.graphics.Layer;
 import mindustry.type.Item;
 import mindustry.type.Weapon;
-import mindustry.type.unit.ErekirUnitType;
+import metrum.graphics.DetailedUnitType;
 import mindustry.ui.Fonts;
 
 /** A drone built from a hull + modules. Slots = how many modules the hull can carry. */
-public class ModularUnitType extends ErekirUnitType {
+public class ModularUnitType extends DetailedUnitType {
     public final Item hull;
     public final int slots;
 
@@ -50,6 +50,7 @@ public class ModularUnitType extends ErekirUnitType {
     @Override
     public void draw(Unit unit) {
         super.draw(unit);
+        if (metrum.world.MetrumVisibility.masked(unit)) return;
         String n = Loadouts.name(unit);
         if (n == null) return;
         // ship name above the drone

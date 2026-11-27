@@ -63,6 +63,10 @@ public class MetrumTechTree {
 
         // particle physics
         node(steel, MetrumPhysics.atomizer);
+        TechNode chemistry = node(steel, MetrumPhysics.chemicalSplitter);
+        if (chemistry != null) chemistry.objectives.add(new mindustry.game.Objectives.Research(Items.oxide));
+        node(MetrumPhysics.chemicalSplitter, MetrumLiquids.oxygen);
+        node(MetrumPhysics.chemicalSplitter, MetrumPhysics.compoundDensifier);
         node(MetrumPhysics.atomizer, atomicCarbon);
         node(MetrumPhysics.atomizer, atomicSilicon);
         node(MetrumPhysics.atomizer, atomicBeryllium);

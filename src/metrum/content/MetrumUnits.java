@@ -16,7 +16,7 @@ import mindustry.gen.UnitEntity;
 import mindustry.type.Item;
 import mindustry.type.UnitType;
 import mindustry.type.Weapon;
-import mindustry.type.unit.ErekirUnitType;
+import metrum.graphics.DetailedUnitType;
 
 /** MonoMet mining drones ported from the original Metrum JSON mod. */
 public class MetrumUnits {
@@ -91,6 +91,12 @@ public class MetrumUnits {
             missile(true, 140f, 1, 25f, missileBullet(8f, 300f, 60f, 30f, 60f, "e00600", "e0c706", 160f, 80f)));
 
         loadBoosters();
+        // Configure the visual hardpoints before UnitType.init() creates mirrored mounts.
+        // The original weapon count, projectile types, damage and reload stay unchanged.
+        for (UnitType t : new UnitType[]{monoMetT3, monoMetT3b, monoMetT3c, monoMetT3d}) {
+            DetailedUnitType detailed = (DetailedUnitType)t;
+            detailed.graphics.mountWeapons(t);
+        }
     }
 
     /**
@@ -257,7 +263,7 @@ public class MetrumUnits {
     }
 
     private static UnitType booster(String name, UnitType from, float rangeTiles, float healthMul, float reload) {
-        ErekirUnitType u = new ErekirUnitType(name);
+        DetailedUnitType u = new DetailedUnitType(name);
         // C and above can lift and place hull turrets (2x2 payloads)
         u.constructor = mindustry.gen.PayloadUnit::create;
         u.payloadCapacity = (2f * 8f) * (2f * 8f);
@@ -305,7 +311,7 @@ public class MetrumUnits {
     private static UnitType miner(String name, float hitSize, float speed, float accel, float health, float engineSize,
                                   int itemCapacity, float range, float buildSpeed, int mineTier, float mineSpeed,
                                   boolean hasCell, Item... mineItems) {
-        ErekirUnitType u = new ErekirUnitType(name);
+        DetailedUnitType u = new DetailedUnitType(name);
         u.constructor = UnitEntity::create;
         // no fixed controller: player units get CommandAI (shift+click RTS commands work),
         // starting with the mine command; enemy/AI teams fall back to the type's default AI

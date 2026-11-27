@@ -7,7 +7,6 @@ import mindustry.type.ItemStack;
 import mindustry.type.Liquid;
 import mindustry.type.LiquidStack;
 import mindustry.type.UnitType;
-import mindustry.world.blocks.units.Reconstructor;
 import mindustry.world.consumers.ConsumeItemDynamic;
 import mindustry.world.consumers.ConsumeLiquidsDynamic;
 
@@ -16,7 +15,7 @@ import mindustry.world.consumers.ConsumeLiquidsDynamic;
  * The resource cost grows exponentially: base cost x {@link #costGrowth}^(level - 1),
  * where level 1 = first upgrade it performs (B->C).
  */
-public class WarReconstructor extends Reconstructor {
+public class WarReconstructor extends ScaledReconstructor {
     public ItemStack[] baseItems = {};
     public Liquid liquid;
     /** liquid per second at level 1 */
@@ -30,6 +29,7 @@ public class WarReconstructor extends Reconstructor {
 
     public WarReconstructor(String name) {
         super(name);
+        buildType = WarReconstructorBuild::new;
     }
 
     /** registers an upgrade pair at the given level */
@@ -55,7 +55,7 @@ public class WarReconstructor extends Reconstructor {
         }
     }
 
-    public class WarReconstructorBuild extends ReconstructorBuild {
+    public class WarReconstructorBuild extends ScaledReconstructorBuild {
         /** one upgrade per visit: like other factories, the upgraded unit is pushed out, not upgraded again */
         public boolean upgradedHere;
 

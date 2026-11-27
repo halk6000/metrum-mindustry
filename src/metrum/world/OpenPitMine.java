@@ -181,12 +181,19 @@ public class OpenPitMine extends Block {
             return fraction();
         }
 
-        @Override
-        public void display(Table table) {
-            super.display(table);
-            if (team != Vars.player.team()) return;
-            table.row();
-            table.table(list -> {
+        @Override public void display(Table table) {
+            MetrumBuildingUI.display(table, this, this::panelModules);
+        }
+        private void panelModules(Table t) {
+            MetrumBuildingUI.section(t,"excavation");
+            MetrumBuildingUI.bar(t, () -> arc.Core.bundle.format("metrum.pit.progress", Math.round(fraction()*100f)), () -> Pal.ammo, this::fraction);
+            MetrumBuildingUI.progress(t, () -> stepProgress);
+            MetrumBuildingUI.value(t,"step-time", () -> arc.util.Strings.autoFixed(currentStepTime()/60f,1)+" s");
+            MetrumBuildingUI.value(t,"discovery", () -> Math.round(chance(optionalEfficiency)*100f)+"%");
+            MetrumBuildingUI.section(t,"boosters");
+            MetrumBuildingUI.bar(t, () -> "Radar: "+(radarEfficiency()>0f?"ON":"OFF"), () -> radarEfficiency()>0f?Color.green:Color.scarlet, this::radarEfficiency);
+            MetrumBuildingUI.bar(t, () -> mindustry.content.Liquids.water.localizedName+": "+Math.round(optionalEfficiency*100f)+"%", () -> mindustry.content.Liquids.water.color, () -> optionalEfficiency);
+            t.table(list -> {
                 String[] shown = {null};
                 list.left();
                 list.update(() -> {
@@ -194,7 +201,7 @@ public class OpenPitMine extends Block {
                     if (state.equals(shown[0])) return;
                     shown[0] = state;
                     list.clearChildren();
-                    list.add(arc.Core.bundle.get(found.isEmpty() ? "metrum.pit.empty" : "metrum.pit.found")).left().colspan(2).row();
+                    list.add(arc.Core.bundle.get(found.isEmpty() ? "metrum.pit.empty" : "metrum.pit.found")).color(Pal.accent).left().colspan(2).row();
                     for (Item item : Vars.content.items()) {
                         int amount = found.get(item);
                         if (amount <= 0) continue;
@@ -202,7 +209,9 @@ public class OpenPitMine extends Block {
                         list.add(item.localizedName + ": " + amount).left().row();
                     }
                 });
-            }).growX().left().padTop(4f);
+            }).growX().left().row();
+            MetrumBuildingUI.section(t,"diagnostics");
+            MetrumBuildingUI.status(t,this,()->MetrumBuildingUI.tr(step>=steps?"complete":"running"));
         }
 
         @Override

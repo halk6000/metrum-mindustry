@@ -42,7 +42,7 @@ public class MetrumProduction {
             drawer = new metrum.world.DrawSteamBoiler();
         }};
 
-        largeSteamFurnace = new GenericCrafter("large-steam-furnace") {{
+        largeSteamFurnace = new metrum.world.OxidizingFurnace("large-steam-furnace") {{
             requirements(Category.crafting, with(MetrumItems.pieceRock, 120, MetrumItems.iron, 60, Items.graphite, 60, Items.silicon, 50));
             size = 3;
             craftTime = 30f;

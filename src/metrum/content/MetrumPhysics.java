@@ -1,6 +1,9 @@
 package metrum.content;
 
 import mindustry.content.Items;
+import mindustry.content.Liquids;
+import metrum.world.ChemicalSplitter;
+import metrum.world.ChemicalSplitter.Product;
 import mindustry.type.Category;
 import metrum.world.Atomizer;
 import metrum.world.AtomizerFactory;
@@ -14,8 +17,37 @@ public class MetrumPhysics {
     public static Atomizer atomizer, deAtomizer;
     public static AtomizerFactory atomizerFactory;
     public static HadronCollider hadronCollider;
+    public static ChemicalSplitter chemicalSplitter;
+    public static metrum.world.CompoundDensifier compoundDensifier;
 
     public static void load() {
+        chemicalSplitter = new ChemicalSplitter("chemical-splitter");
+        chemicalSplitter.requirements(Category.crafting, with(steel,75,Items.oxide,60,Items.silicon,40));
+        chemicalSplitter.size=4;
+        chemicalSplitter.craftTime=60f;
+        chemicalSplitter.consumePower(250f/60f);
+        chemicalSplitter.boostItem=quarkMatter;
+        chemicalSplitter.boostMultiplier=2.5f;
+        // Game units represent elemental equivalents, not molecular gas volumes.
+        chemicalSplitter.recipe(Liquids.water,new Product(Liquids.hydrogen,4),new Product(MetrumLiquids.oxygen,2))
+            .recipe(Liquids.ozone,new Product(MetrumLiquids.oxygen,6))
+            .recipe(Liquids.cyanogen,new Product(Items.graphite,4),new Product(Liquids.nitrogen,4))
+            .recipe(Items.sand,new Product(Items.silicon,2),new Product(MetrumLiquids.oxygen,4))
+            .recipe(Items.oxide,new Product(Items.beryllium,2),new Product(MetrumLiquids.oxygen,2))
+            .recipe(carborundum,new Product(Items.silicon,2),new Product(Items.graphite,2))
+            .recipe(tungstenCarbide,new Product(Items.tungsten,2),new Product(Items.graphite,2))
+            .recipe(Liquids.arkycite,new Product(Items.graphite,4),new Product(MetrumLiquids.ammonia,2))
+            .recipe(MetrumLiquids.ammonia,new Product(Liquids.hydrogen,6),new Product(Liquids.nitrogen,2));
+
+        compoundDensifier = new metrum.world.CompoundDensifier("compound-densifier");
+        compoundDensifier.requirements(Category.crafting, with(steel,40,Items.oxide,60,Items.silicon,30));
+        compoundDensifier.size=2;
+        compoundDensifier.craftTime=60f;
+        compoundDensifier.consumePower(90f/60f);
+        compoundDensifier.boostItem=quarkMatter;
+        compoundDensifier.boostMultiplier=2.5f;
+        compoundDensifier.recipe(MetrumLiquids.oxygen,6,Liquids.ozone,2);
+
         atomizer = new Atomizer("atomizer");
         atomizer.requirements(Category.crafting, with(steel, 60, Items.silicon, 80, Items.tungsten, 40, Items.graphite, 40));
         atomizer.size = 2;

@@ -21,8 +21,23 @@ public class CaretakerAI extends AIController {
     /** repairing is done only with the unit's own healing guns (vanilla repair behaviour) */
     final mindustry.ai.types.RepairAI repair = new mindustry.ai.types.RepairAI();
 
+    private mindustry.gen.Building home;
+    private mindustry.entities.units.UnitController previousController;
+    public void delegate(mindustry.gen.Building core, mindustry.entities.units.UnitController previous) {
+        home = core;
+        previousController = previous;
+    }
+    public boolean delegatedTo(mindustry.gen.Building core) { return home == core; }
+    public void releaseOrder() {
+        if (home != null && unit.plans.isEmpty() && !unit.activelyBuilding()) unit.controller(previousController);
+    }
+
     @Override
     public void updateUnit() {
+        if (home != null && (!home.isValid() || home.team != unit.team)) {
+            releaseOrder();
+            if (unit.plans.isEmpty() && !unit.activelyBuilding()) return;
+        }
         boolean rebuildWork = unit.canBuild() && !unit.team.data().plans.isEmpty();
         AIController ai = rebuildWork || unit.activelyBuilding() ? builder : repair;
         ai.unit(unit);

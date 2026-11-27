@@ -8,8 +8,8 @@ import mindustry.content.Items;
 import mindustry.type.Category;
 import mindustry.type.UnitType;
 import mindustry.world.Block;
-import mindustry.world.blocks.units.Reconstructor;
-import mindustry.world.blocks.units.UnitFactory;
+import metrum.world.ScaledReconstructor;
+import metrum.world.ScaledUnitFactory;
 
 import static mindustry.type.ItemStack.with;
 
@@ -23,7 +23,7 @@ public class MetrumUnitBlocks {
     public static FuelStation fuelStation;
 
     public static void load() {
-        airMinerDock = new UnitFactory("air-miner-dock") {{
+        airMinerDock = new ScaledUnitFactory("air-miner-dock") {{
             quickRotate = true;
             requirements(Category.units, with(Items.beryllium, 250, Items.graphite, 80, Items.silicon, 20));
             size = 3;
@@ -36,7 +36,7 @@ public class MetrumUnitBlocks {
                 new UnitPlan(MetrumUnits.monoMetT3, 1000f, with(Items.beryllium, 100, Items.silicon, 30, Items.graphite, 60)));
         }};
 
-        airMinerRebuilder = new Reconstructor("air-miner-rebuilder") {{
+        airMinerRebuilder = new ScaledReconstructor("air-miner-rebuilder") {{
             requirements(Category.units, with(Items.beryllium, 60, MetrumItems.iron, 20, Items.silicon, 20));
             size = 3;
             health = 1200;

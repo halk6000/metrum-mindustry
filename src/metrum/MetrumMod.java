@@ -18,6 +18,7 @@ import metrum.content.MetrumLiquids;
 import mindustry.mod.Mod;
 
 public class MetrumMod extends Mod {
+    public static metrum.world.MicroPipe microPipe;
     @Override
     public void loadContent() {
         FuelSystem.load();
@@ -36,7 +37,10 @@ public class MetrumMod extends Mod {
         MetrumUnitBlocks.load();
         MetrumPhysics.load();
         MetrumPower.loadReactors();
+        microPipe = new metrum.world.MicroPipe("micro-pipe");
+        microPipe.requirements(mindustry.type.Category.liquid, mindustry.type.ItemStack.with(MetrumItems.steel, 12, mindustry.content.Items.silicon, 8, mindustry.content.Items.beryllium, 6));
         MetrumTechTree.load();
+        MetrumTechTree.node(mindustry.content.Blocks.ductBridge, microPipe);
         MetrumPlanets.load();
         Log.info("[Metrum] content loaded");
         mark("content loaded");
@@ -104,12 +108,14 @@ public class MetrumMod extends Mod {
         metrum.ai.planner.BasePlanner.init();
         // Settings -> Metrum: enemy AI level (separate AI mode)
         if (!mindustry.Vars.headless) {
+            metrum.world.MetrumVisibility.init();
             mindustry.mod.Mods.LoadedMod mod = mindustry.Vars.mods.getMod(MetrumMod.class);
             if (mod != null) mod.meta.description = arc.Core.bundle.get("metrum.mod.description", mod.meta.description);
             mindustry.Vars.ui.settings.addCategory(arc.Core.bundle.get("metrum.settings"), mindustry.gen.Icon.terrain, t -> {
                 t.sliderPref(metrum.ai.planner.AiLevel.setting, 2, 0, metrum.ai.planner.AiLevel.values().length - 1, 1,
                     i -> metrum.ai.planner.AiLevel.values()[i].localized());
                 t.checkPref(metrum.ai.planner.BasePlanner.everywhereSetting, true);
+                t.button("@metrum.visibility.title", metrum.world.MetrumVisibility::show).growX().padTop(8f).row();
                 t.button("@metrum.welcome.open", mindustry.gen.Icon.info, WelcomeDialog::show).growX().padTop(8f).row();
                 t.button("@metrum.features.title", mindustry.gen.Icon.box, WelcomeDialog::showFeatures).growX().padTop(8f).row();
             });
@@ -138,6 +144,13 @@ public class MetrumMod extends Mod {
                 t.mineTier = Math.max(t.mineTier, 3 + Math.min(lvl, 2));
                 for (int k = 1; k <= lvl; k++) if (!t.mineItems.contains(extra[k])) t.mineItems.add(extra[k]);
                 if (!t.mineItems.contains(MetrumItems.iron)) t.mineItems.add(MetrumItems.iron);
+                // Include every ore within the actual mining tier, not just the original shortlist.
+                for (mindustry.world.Block ore : mindustry.Vars.content.blocks()) {
+                    mindustry.type.Item item = ore.itemDrop;
+                    if (item != null && item.hardness <= t.mineTier && !t.mineItems.contains(item)
+                        && (ore instanceof mindustry.world.blocks.environment.OreBlock
+                            || ore instanceof mindustry.world.blocks.environment.Floor)) t.mineItems.add(item);
+                }
                 t.defaultCommand = metrum.ai.SmartMining.command;
             }
         }

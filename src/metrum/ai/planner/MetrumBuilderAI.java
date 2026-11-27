@@ -9,26 +9,6 @@ public class MetrumBuilderAI extends mindustry.ai.types.BuilderAI {
     private mindustry.type.Item constructionOre;
     private final metrum.ai.SmartMining.SmartMinerAI idleMiner = new metrum.ai.SmartMining.SmartMinerAI() {
         @Override
-        public void updateMovement() {
-            mindustry.gen.Building core = unit.closestCore();
-            if (deliverBeforeIncineration(core)) return;
-            if (unit.stack.amount > 0 && core != null) {
-                int accepted = core.acceptStack(unit.stack.item, unit.stack.amount, unit);
-                if (mining && targetItem != null && core.acceptStack(targetItem, 1, unit) == 0) mining = false;
-                // Handle partial deliveries here because vanilla MinerAI clears the entire stack.
-                if (accepted < unit.stack.amount) {
-                    mining = false;
-                    unit.mineTile = null;
-                    if (accepted > 0 && unit.within(core, unit.type.range)) {
-                        mindustry.gen.Call.transferItemTo(unit, unit.stack.item, accepted, unit.x, unit.y, core);
-                    }
-                    moveTo(core, unit.type.range * 0.8f);
-                    return;
-                }
-            }
-            super.updateMovement();
-        }
-        @Override
         protected mindustry.type.Item desired() {
             if (constructionOre != null) return constructionOre;
             mindustry.world.blocks.storage.CoreBlock.CoreBuild home = unit.team.cores().find(
@@ -40,9 +20,8 @@ public class MetrumBuilderAI extends mindustry.ai.types.BuilderAI {
             return super.desired();
         }
     };
-    public MetrumBuilderAI() { super(true, 600f); }
-    int incomingCargo(mindustry.gen.Building destination, mindustry.type.Item item) {
-        return unit.plans.isEmpty() ? idleMiner.incomingCargo(destination, item) : 0;
+    public MetrumBuilderAI() {
+        super(true, 600f);
     }
 
     private void mineWhileIdle(boolean deliverCargo) {

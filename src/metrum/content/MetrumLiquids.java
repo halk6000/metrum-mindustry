@@ -5,9 +5,10 @@ import mindustry.type.Liquid;
 
 /** Liquids ported from the original Metrum JSON mod ("Stream" = steam). */
 public class MetrumLiquids {
-    public static Liquid steam, magma, plasma;
+    public static Liquid steam, magma, plasma, oxygen, ammonia;
 
     public static void load() {
+        oxygen = new Liquid("oxygen", Color.valueOf("a9d8f8")) {{ gas = true; }};
         steam = new Liquid("steam", Color.valueOf("f5f5f5")) {{
             gas = true;
             temperature = 0.9f;
@@ -26,5 +27,7 @@ public class MetrumLiquids {
             temperature = 1f;
             lightColor = Color.valueOf("c896ff").a(0.6f);
         }};
+
+        ammonia = new Liquid("ammonia", Color.valueOf("d1e5a0")) {{ gas = true; }};
     }
 }

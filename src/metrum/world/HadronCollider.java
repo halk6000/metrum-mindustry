@@ -18,10 +18,7 @@ import mindustry.world.Block;
 import mindustry.world.meta.Stat;
 import mindustry.world.meta.StatUnit;
 
-/**
- * Collides two kinds of atomic items; the product depends on which pair is supplied.
- * The first recipe whose inputs are both present is run.
- */
+/** Collides atomic items using the first available recipe. */
 public class HadronCollider extends Block {
     public static class Recipe {
         public final Item a, b, output;
@@ -51,6 +48,7 @@ public class HadronCollider extends Block {
         hasItems = true;
         hasPower = true;
         itemCapacity = 20;
+        buildType = HadronColliderBuild::new;
     }
 
     public HadronCollider recipe(Item a, Item b, Item output, int amount) {
@@ -78,13 +76,18 @@ public class HadronCollider extends Block {
 
     public class HadronColliderBuild extends Building {
         public float progress, spin;
+        private Recipe activeRecipe;
+
+        private boolean ready(Recipe r) {
+            if (r == null || items == null) return false;
+            return items.get(r.a) >= (r.a == r.b ? 2 : 1)
+                && items.get(r.b) >= 1
+                && items.get(r.output) + r.amount <= itemCapacity;
+        }
 
         Recipe current() {
-            for (Recipe r : recipes) {
-                int need = r.a == r.b ? 2 : 1;
-                if (items.get(r.a) >= need && items.get(r.b) >= need
-                    && items.get(r.output) + r.amount <= itemCapacity) return r;
-            }
+            if (ready(activeRecipe)) return activeRecipe;
+            for (Recipe r : recipes) if (ready(r)) return r;
             return null;
         }
 
@@ -102,20 +105,26 @@ public class HadronCollider extends Block {
 
         @Override
         public void updateTile() {
+            for (Recipe rec : recipes) {
+                if (items.get(rec.output) > 0 && !rec.uses(rec.output)) dump(rec.output);
+            }
             Recipe r = current();
-            if (r != null && efficiency > 0f) {
+            if (r != activeRecipe) {
+                progress = 0f;
+                activeRecipe = r;
+            }
+            if (enabled && r != null && efficiency > 0f) {
                 spin += edelta() * 6f;
                 progress += getProgressIncrease(craftTime);
-                if (progress >= 1f) {
-                    progress %= 1f;
+                if (progress >= 1f && ready(r)) {
+                    progress = 0f;
                     items.remove(r.a, 1);
                     items.remove(r.b, 1);
                     items.add(r.output, r.amount);
                     craftEffect.at(x, y, r.output.color);
+                    dump(r.output);
+                    activeRecipe = null;
                 }
-            }
-            for (Recipe rec : recipes) {
-                if (items.get(rec.output) > 0 && !rec.uses(rec.output)) dump(rec.output);
             }
         }
 
@@ -142,6 +151,23 @@ public class HadronCollider extends Block {
             Draw.reset();
         }
 
+        @Override public void display(arc.scene.ui.layout.Table table) {
+            MetrumBuildingUI.display(table,this,t -> {
+                MetrumBuildingUI.section(t,"chambers");
+                MetrumBuildingUI.chamber(t,"chamber1",()->current()==null?null:current().a,()->current()==null?0f:items.get(current().a)/(float)itemCapacity);
+                MetrumBuildingUI.chamber(t,"chamber2",()->current()==null?null:current().b,()->current()==null?0f:items.get(current().b)/(float)itemCapacity);
+                MetrumBuildingUI.chamber(t,"output",()->current()==null?null:current().output,()->current()==null?0f:items.get(current().output)/(float)itemCapacity);
+                MetrumBuildingUI.progress(t,()->progress);
+                MetrumBuildingUI.section(t,"diagnostics");
+                MetrumBuildingUI.status(t,this,()->{
+                    if(MetrumBuildingUI.noPower(this))return MetrumBuildingUI.tr("no-power");
+                    if(current()!=null)return MetrumBuildingUI.tr("running");
+                    for(Recipe r:recipes)if(items.get(r.a)>=(r.a==r.b?2:1)&&items.get(r.b)>=1)return MetrumBuildingUI.blocked(r.output);
+                    return MetrumBuildingUI.tr("no-input");
+                });
+            });
+        }
+
         @Override
         public void write(Writes write) {
             super.write(write);
@@ -151,7 +177,9 @@ public class HadronCollider extends Block {
         @Override
         public void read(Reads read, byte revision) {
             super.read(read, revision);
-            progress = read.f();
+            read.f(); // Old saves do not identify the active recipe.
+            progress = 0f;
+            activeRecipe = null;
         }
     }
 }

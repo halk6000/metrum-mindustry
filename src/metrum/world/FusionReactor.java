@@ -207,6 +207,22 @@ public class FusionReactor extends PowerGenerator {
             return 2;
         }
 
+        @Override public void display(arc.scene.ui.layout.Table table) {
+            MetrumBuildingUI.display(table,this,t -> {
+                MetrumBuildingUI.section(t,"reactor");
+                MetrumBuildingUI.bar(t,()->MetrumBuildingUI.tr("warmup")+": "+Math.round(warmup*100f)+"%",()->Color.valueOf("ff50c8"),()->warmup);
+                MetrumBuildingUI.chamber(t,"fuel",()->fuel,()->items.get(fuel)/(float)itemCapacity);
+                MetrumBuildingUI.chamber(t,"coolant",()->coolant,()->liquids.get(coolant)/liquidCapacity);
+                MetrumBuildingUI.chamber(t,"output",()->steam,()->liquids.get(steam)/liquidCapacity);
+                MetrumBuildingUI.bar(t,()->MetrumBuildingUI.tr("meltdown")+": "+Math.round(Mathf.clamp(dryTime/(heatupDelay+meltdownTime))*100f)+"%",()->Color.scarlet,()->dryTime/(heatupDelay+meltdownTime));
+                MetrumBuildingUI.section(t,"reaction");
+                MetrumBuildingUI.chamber(t,"input",()->transmuteInput,()->transmuteProgress);
+                MetrumBuildingUI.value(t,"target",()->panel()==null?"—":panel().target.localizedName);
+                MetrumBuildingUI.section(t,"diagnostics");
+                MetrumBuildingUI.status(t,this,()->MetrumBuildingUI.tr(dryTime>0.01f?"cooling-alert":items.get(fuel)==0?"no-input":warmup<0.99f?"warmup":"running"));
+            });
+        }
+
         @Override
         public void write(Writes write) {
             super.write(write);
