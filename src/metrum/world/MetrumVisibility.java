@@ -81,6 +81,12 @@ public final class MetrumVisibility {
         dialog.cont.label(()->Core.bundle.get(Core.settings.getBool(drones,false)?"metrum.visibility.dim":"metrum.visibility.full")).pad(8f).row();
         dialog.cont.button("MicroPipe",()->Core.settings.put(pipes,(Core.settings.getInt(pipes,0)+1)%3)).growX().height(48f).row();
         dialog.cont.label(()->Core.bundle.get(pipeOpacity()==0f?"metrum.visibility.hidden":pipeOpacity()<1f?"metrum.visibility.dim":"metrum.visibility.full")).pad(8f).row();
+        // power lasers use the game's own "lasersopacity" setting (0-100): full -> 20% -> hidden
+        dialog.cont.button(Core.bundle.get("metrum.visibility.lasers"),()->{
+            int now=Core.settings.getInt("lasersopacity",100);
+            Core.settings.put("lasersopacity",now>20?20:now>0?0:100);
+        }).growX().height(48f).row();
+        dialog.cont.label(()->{int v=Core.settings.getInt("lasersopacity",100);return Core.bundle.get(v==0?"metrum.visibility.hidden":v<100?"metrum.visibility.dim":"metrum.visibility.full");}).pad(8f).row();
         dialog.addCloseButton();dialog.show();
     }
 }
