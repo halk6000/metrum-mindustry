@@ -122,7 +122,7 @@ public class SteamEngineGroupTest {
         Vars.world.tiles.fill();
         mindustry.gen.Groups.init();
         metrum.world.AtomizerFactory.FactoryBuild factory = factoryFixture(block);
-        int[][] sides = {{6, 4}, {4, 6}, {2, 4}, {4, 2}};
+        int[][] sides = {{2, 5}, {2, 3}, {3, 6}, {5, 6}}; // the four input ports
         mindustry.type.Item[] minerals = {mindustry.content.Items.copper, mindustry.content.Items.lead,
             mindustry.content.Items.graphite, mindustry.content.Items.silicon};
         mindustry.world.Block duct = mindustry.content.Blocks.duct;
@@ -130,6 +130,7 @@ public class SteamEngineGroupTest {
             mindustry.world.Tile tile = Vars.world.tile(sides[side][0], sides[side][1]);
             mindustry.gen.Building feeder = mindustry.gen.Building.create();
             feeder.tile = tile;
+            tile.build = feeder;
             feeder.block = duct;
             factory.proximity.add(feeder);
             feeder.team = Team.crux;
@@ -187,7 +188,8 @@ public class SteamEngineGroupTest {
         metrum.world.AtomizerFactory.FactoryBuild factory = factoryFixture(block);
         mindustry.world.Block duct = mindustry.content.Blocks.duct;
         mindustry.gen.Building feeder = duct.buildType.get();
-        feeder.tile = Vars.world.tile(6, 4);
+        feeder.tile = Vars.world.tile(2, 5);
+        feeder.tile.build = feeder;
         feeder.block = duct;
         feeder.rotation = 2;
         feeder.items = new mindustry.world.modules.ItemModule();

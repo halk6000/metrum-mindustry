@@ -75,6 +75,7 @@ public class AtomizerFactory extends Block {
         }
         @Override public boolean shouldConsume() { return activeSlots() > 0; }
         @Override public boolean acceptItem(Building source, Item item) {
+            if (source == null || source.team != team) return false;
             int i=port(source);
             return i>=0 && conversions.containsKey(item) && input[i]<capacity && (material[i]==null || material[i]==item);
         }
