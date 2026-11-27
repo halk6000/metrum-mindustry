@@ -28,12 +28,14 @@ public class DrawSteamBoiler extends DrawBlock {
 
     /** optional HD art: <block>-frame-0..15, -flame-0..3, -steam-0..3 (any size, drawn on the block footprint) */
     private arc.graphics.g2d.TextureRegion[] frames, flames, steams;
+    /** firebox and chimney on the HD furnace body, as fractions of the block width from its centre */
+    public float fireX = 0.03f, fireY = -0.05f, fireW = 0.38f, fireH = 0.33f, chimneyX = 0.24f, chimneyY = 0.52f;
 
     @Override
     public void load(mindustry.world.Block block) {
         frames = regions(block.name + "-frame-", 16);
-        flames = regions(block.name + "-flame-", 4);
-        steams = regions(block.name + "-steam-", 4);
+        flames = regions(block.name + "-flame-", 8);
+        steams = regions(block.name + "-steam-", 8);
     }
 
     private static arc.graphics.g2d.TextureRegion[] regions(String prefix, int max) {
@@ -52,15 +54,17 @@ public class DrawSteamBoiler extends DrawBlock {
         float w = build.block.size * mindustry.Vars.tilesize, warm = build.warmup(), t = build.totalProgress();
         int loop = Math.min(4, frames.length);
         Draw.rect(frames[warm > 0.1f ? (int) (t / 6f) % loop : 0], build.x, build.y, w, w);
+        // flame in the firebox and steam over the chimney, positioned on the HD body (fractions of the footprint)
         if (flames.length > 0 && warm > 0.01f) {
-            Draw.alpha(warm);
-            Draw.rect(flames[(int) (t / 5f) % flames.length], build.x, build.y, w, w);
+            Draw.alpha(warm * (0.8f + Mathf.absin(t, 3f, 0.2f)));
+            Draw.rect(flames[(int) (t / 5f) % flames.length], build.x + w * fireX, build.y + w * fireY, w * fireW, w * fireH);
         }
         if (steams.length > 0 && warm > 0.3f) {
             float z = Draw.z();
             Draw.z(mindustry.graphics.Layer.effect);
-            Draw.alpha(warm);
-            Draw.rect(steams[(int) (t / 8f) % steams.length], build.x, build.y, w, w);
+            float puff = (t / 8f) % steams.length;
+            Draw.alpha(warm * 0.85f);
+            Draw.rect(steams[(int) puff], build.x + w * chimneyX, build.y + w * chimneyY + puff * 0.6f, w * 0.3f, w * 0.3f);
             Draw.z(z);
         }
         Draw.reset();
