@@ -109,12 +109,14 @@ public class MetrumMod extends Mod {
         // Settings -> Metrum: enemy AI level (separate AI mode)
         if (!mindustry.Vars.headless) {
             metrum.world.MetrumVisibility.init();
+            metrum.graphics.TeamFlags.init();
             mindustry.mod.Mods.LoadedMod mod = mindustry.Vars.mods.getMod(MetrumMod.class);
             if (mod != null) mod.meta.description = arc.Core.bundle.get("metrum.mod.description", mod.meta.description);
             mindustry.Vars.ui.settings.addCategory(arc.Core.bundle.get("metrum.settings"), mindustry.gen.Icon.terrain, t -> {
                 t.sliderPref(metrum.ai.planner.AiLevel.setting, 2, 0, metrum.ai.planner.AiLevel.values().length - 1, 1,
                     i -> metrum.ai.planner.AiLevel.values()[i].localized());
                 t.checkPref(metrum.ai.planner.BasePlanner.everywhereSetting, true);
+                t.checkPref(metrum.graphics.TeamFlags.setting, true);
                 t.button("@metrum.visibility.title", metrum.world.MetrumVisibility::show).growX().padTop(8f).row();
                 t.button("@metrum.welcome.open", mindustry.gen.Icon.info, WelcomeDialog::show).growX().padTop(8f).row();
                 t.button("@metrum.features.title", mindustry.gen.Icon.box, WelcomeDialog::showFeatures).growX().padTop(8f).row();
