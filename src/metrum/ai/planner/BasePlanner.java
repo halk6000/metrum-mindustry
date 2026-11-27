@@ -617,7 +617,7 @@ public class BasePlanner {
         if (builder != null && !builder.plans.isEmpty()) return stalled("konstruktor realizuje plan budowy");
         if (builder != null && resumeConstruction(core, builder)) return true;
         // Early exits in the construction plan must still allow safe space reclamation.
-        return buildStep(core, level) || clearUnusedWaterPipes(core);
+        return buildStep(core, level) || clearUnusedWaterPipes(core) || removeLeakingPipeEnds(core);
     }
 
     static boolean canResumeConstruction(mindustry.world.blocks.ConstructBlock.ConstructBuild site, mindustry.gen.Unit builder) {
@@ -1678,6 +1678,31 @@ public class BasePlanner {
     // ---------- step 3: water - conduit from a water source (turbine condenser / pump) to a thirsty consumer ----------
 
     /** Free space only in empty pipe components having no connection to any liquid building. */
+    /**
+     * A pipe that ends on empty ground spills its liquid. Take open ends apart a few at a time;
+     * the next one in the dead branch becomes the new open end and goes in a later step.
+     */
+    static boolean removeLeakingPipeEnds(CoreBuild core) {
+        mindustry.gen.Unit builder = assignedBuilder(core);
+        if (builder == null || !builder.plans.isEmpty()) return false;
+        Seq<Building> ends = new Seq<>();
+        Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
+            b -> b.block instanceof mindustry.world.blocks.liquid.Conduit && leaks(b), ends::add);
+        int queued = 0;
+        for (Building end : ends) {
+            if (queued >= 4 || !Build.validBreak(core.team, end.tileX(), end.tileY())) continue;
+            builder.addBuild(new BuildPlan(end.tileX(), end.tileY()));
+            queued++;
+        }
+        return queued > 0;
+    }
+
+    /** the pipe's output points at bare ground (no building, no construction site) */
+    static boolean leaks(Building pipe) {
+        Tile out = pipe.tile.nearby(pipe.rotation);
+        return out != null && out.build == null && !out.solid();
+    }
+
     static boolean clearUnusedWaterPipes(CoreBuild core) {
         Seq<Building> pipes = new Seq<>();
         Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,

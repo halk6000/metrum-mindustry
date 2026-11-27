@@ -101,6 +101,14 @@ public class IdleMinersTest {
         Tile start = Vars.world.tile(2, 10);
         check(BasePlanner.beamNodeStep(route, start, 10) == Vars.world.tile(12, 10), "node at the end of the beam reach");
         check(BasePlanner.beamNodeStep(route, start, 20) == Vars.world.tile(14, 10), "node at the corner when in reach");
+        // a pipe pointing at bare ground leaks; one pointing at a building does not
+        mindustry.world.blocks.liquid.Conduit conduitBlock = new mindustry.world.blocks.liquid.Conduit("test-conduit");
+        mindustry.gen.Building pipe = conduitBlock.newBuilding();
+        pipe.block = conduitBlock; pipe.team = Team.crux; pipe.tile = Vars.world.tile(8, 8); pipe.rotation = 0;
+        check(BasePlanner.leaks(pipe), "open pipe end leaks");
+        Vars.world.tile(9, 8).build = core;
+        check(!BasePlanner.leaks(pipe), "pipe into a building does not leak");
+        Vars.world.tile(9, 8).build = null;
         System.out.println("OK: all idle AI miners mine; ordered, combat and full-core cases left alone");
     }
 
