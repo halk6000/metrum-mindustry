@@ -141,7 +141,7 @@ def compileIdleMinersTest = tasks.register('compileIdleMinersTest', JavaCompile)
     classpath = sourceSets.main.output + files(gameJar)
     destinationDirectory = layout.buildDirectory.dir('idle-miners-test-classes')
 }
-tasks.register('idleMinersTest', 'microPipeTest', JavaExec) {
+tasks.register('idleMinersTest', JavaExec) {
     group = 'verification'
     description = 'Checks that every idle AI miner drone starts mining.'
     dependsOn compileIdleMinersTest
@@ -163,7 +163,7 @@ tasks.register('microPipeTest', JavaExec) {
     mainClass = 'MicroPipeTest'
 }
 tasks.named('check') {
-    dependsOn 'salvagerTest', 'steamEngineTest', 'openPitTest', 'depositsTest', 'builderQueueTest', 'bridgeFlowTest', 'idleMinersTest'
+    dependsOn 'salvagerTest', 'steamEngineTest', 'openPitTest', 'depositsTest', 'builderQueueTest', 'bridgeFlowTest', 'idleMinersTest', 'microPipeTest'
 }
 
 // gradlew deploy: build and install into the game (same file name the in-game importer uses)
