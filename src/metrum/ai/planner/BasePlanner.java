@@ -2653,7 +2653,15 @@ public class BasePlanner {
     private static Tile findCoreWorkshopSite(CoreBuild core, Block producer) {
         mindustry.type.Liquid steam = metrum.content.MetrumLiquids.steam;
         boolean needsSteam = steam != null && producer.consumesLiquid(steam);
-        boolean scanCoreEdge = needsSteam || isSiliconArcFurnace(producer);
+        // water drinkers go to the core side nearest a water source, so the pipe stays short
+        boolean needsWater = !needsSteam && producer.consumesLiquid(mindustry.content.Liquids.water);
+        Seq<Building> water = new Seq<>();
+        if (needsWater) Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
+            b -> b.enabled && b.liquids != null && b.block.outputsLiquid && b.liquids.get(mindustry.content.Liquids.water) > 0.01f,
+            water::add);
+        Tile nearestWater = null;
+        float bestWater = Float.MAX_VALUE;
+        boolean scanCoreEdge = needsSteam || needsWater || isSiliconArcFurnace(producer);
         int coreMin = -(core.block.size - 1) / 2, coreMax = core.block.size / 2;
         int factoryMin = -(producer.size - 1) / 2, factoryMax = producer.size / 2;
         int offsetMin = scanCoreEdge ? coreMin - factoryMax : 0;
@@ -2667,6 +2675,12 @@ public class BasePlanner {
                     core.tileY() + dy * distance + dx * offset);
                 if (site == null || !Build.validPlace(producer, core.team, site.x, site.y, 0, false)) continue;
                 if (fallback == null) fallback = site;
+                if (needsWater && !water.isEmpty()) {
+                    Tile at = site;
+                    float d = water.min(b -> b.dst2(at.worldx(), at.worldy())).dst2(at.worldx(), at.worldy());
+                    if (d < bestWater) { bestWater = d; nearestWater = site; }
+                    continue;
+                }
                 if (!needsSteam) {
                     if (offset == 0) return site;
                     continue;
@@ -2680,6 +2694,7 @@ public class BasePlanner {
                 }
             }
         }
+        if (nearestWater != null) return nearestWater;
         return fallback == null && isSiliconArcFurnace(producer) ? findLinkedWorkshopSite(core, producer) : fallback;
     }
 
