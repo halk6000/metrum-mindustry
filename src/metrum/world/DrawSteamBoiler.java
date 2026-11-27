@@ -29,6 +29,8 @@ public class DrawSteamBoiler extends DrawBlock {
     /** optional HD art: <block>-frame-0..15, -flame-0..3, -steam-0..3 (any size, drawn on the block footprint) */
     private arc.graphics.g2d.TextureRegion[] frames, flames, steams, gauges;
     public float gaugeX = 0.305f, gaugeY = 0.31f, gaugeSize = 0.17f;
+    /** blue water pipe on the HD body: polyline in fractions of the block width from its centre */
+    public float[] pipePath = {-0.371f, -0.109f, -0.383f, -0.215f, -0.332f, -0.32f, -0.215f, -0.371f, -0.137f, -0.352f};
     /** firebox and chimney on the HD furnace body, as fractions of the block width from its centre */
     public float fireX = 0.03f, fireY = -0.05f, fireW = 0.38f, fireH = 0.33f, chimneyX = 0.24f, chimneyY = 0.52f;
 
@@ -56,6 +58,19 @@ public class DrawSteamBoiler extends DrawBlock {
         float w = build.block.size * mindustry.Vars.tilesize, warm = build.warmup(), t = build.totalProgress();
         int loop = Math.min(4, frames.length);
         Draw.rect(frames[warm > 0.1f ? (int) (t / 6f) % loop : 0], build.x, build.y, w, w);
+        // water flowing into the furnace: a light pulse travels along the blue pipe
+        if (frames.length > 0 && warm > 0.05f && pipePath.length >= 4) {
+            int segs = pipePath.length / 2 - 1;
+            float pos = (t / 40f) % 1f * segs;
+            int i = Math.min((int) pos, segs - 1);
+            float f = pos - i;
+            float px = Mathf.lerp(pipePath[i * 2], pipePath[i * 2 + 2], f), py = Mathf.lerp(pipePath[i * 2 + 1], pipePath[i * 2 + 3], f);
+            Draw.color(Color.valueOf("7fd8ff"), warm * 0.55f);
+            Fill.circle(build.x + w * px, build.y + w * py, w * 0.045f);
+            Draw.color(Color.white, warm * 0.8f);
+            Fill.circle(build.x + w * px, build.y + w * py, w * 0.018f);
+            Draw.color();
+        }
         // pressure gauge: needle follows how full the steam tank is
         if (gauges.length > 0 && build.liquids != null && metrum.content.MetrumLiquids.steam != null) {
             float fill = Mathf.clamp(build.liquids.get(metrum.content.MetrumLiquids.steam) / build.block.liquidCapacity);
