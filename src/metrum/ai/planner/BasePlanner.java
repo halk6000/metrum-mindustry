@@ -560,7 +560,8 @@ public class BasePlanner {
         }
         if (block instanceof mindustry.world.blocks.production.Drill || block instanceof mindustry.world.blocks.production.BeamDrill
             || block instanceof mindustry.world.blocks.production.WallCrafter || block.group == mindustry.world.meta.BlockGroup.transportation) return 1;
-        if (block.outputsPower || block.consumesPower || block.group == mindustry.world.meta.BlockGroup.power) return 2;
+        if (block.hasPower && block.outputsPower || block.group == mindustry.world.meta.BlockGroup.power
+            || block instanceof mindustry.world.blocks.power.PowerNode || block instanceof mindustry.world.blocks.power.BeamNode) return 2;
         if (block instanceof mindustry.world.blocks.defense.turrets.Turret) return 3;
         return block instanceof mindustry.world.blocks.defense.Wall ? 5 : 4;
     }
