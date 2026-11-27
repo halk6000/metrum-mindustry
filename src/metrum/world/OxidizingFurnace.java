@@ -135,6 +135,10 @@ public class OxidizingFurnace extends GenericCrafter {
                 MetrumBuildingUI.value(body,"fire",()->displayedGas()==Liquids.ozone?"20%":displayedGas()==MetrumLiquids.oxygen?"10%":"0%");
                 MetrumBuildingUI.value(body,"explosion",()->displayedGas()==Liquids.ozone?arc.util.Strings.autoFixed((radarPowered()?radarExplosionChance:explosionChance)*100f,1)+"%":"0%");
                 MetrumBuildingUI.value(body,"interval",()->arc.util.Strings.autoFixed(explosionInterval,0));
+                // countdown of the "no major failure" event
+                if(upgradeTo!=null)MetrumBuildingUI.bar(body,
+                    ()->arc.Core.bundle.format("metrum.panel.safe-event",(int)(safeClock/60f),(int)(upgradeTicks/60f)),
+                    ()->Color.valueOf("69c88b"),()->Mathf.clamp(safeClock/upgradeTicks));
                 MetrumBuildingUI.section(body,"diagnostics");
                 MetrumBuildingUI.status(body,this,this::diagnostic);
         }
