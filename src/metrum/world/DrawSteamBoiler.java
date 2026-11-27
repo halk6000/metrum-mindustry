@@ -24,8 +24,50 @@ public class DrawSteamBoiler extends DrawBlock {
     private final Color metal = Color.valueOf("656b76"), edge = Color.valueOf("30343c"),
         highlight = Color.valueOf("a6adb8"), hot = Color.valueOf("ffac64");
 
+    /** optional HD art: <block>-frame-0..15, -flame-0..3, -steam-0..3 (any size, drawn on the block footprint) */
+    private arc.graphics.g2d.TextureRegion[] frames, flames, steams;
+
+    @Override
+    public void load(mindustry.world.Block block) {
+        frames = regions(block.name + "-frame-", 16);
+        flames = regions(block.name + "-flame-", 4);
+        steams = regions(block.name + "-steam-", 4);
+    }
+
+    private static arc.graphics.g2d.TextureRegion[] regions(String prefix, int max) {
+        arc.struct.Seq<arc.graphics.g2d.TextureRegion> found = new arc.struct.Seq<>();
+        for (int i = 0; i < max; i++) {
+            arc.graphics.g2d.TextureRegion r = arc.Core.atlas.find(prefix + i);
+            if (!r.found()) break;
+            found.add(r);
+        }
+        return found.toArray(arc.graphics.g2d.TextureRegion.class);
+    }
+
+    /** HD frames: loop 0-3 while working, frame 0 when idle; flame and steam layers fade with warm-up */
+    private boolean drawFrames(Building build) {
+        if (frames == null || frames.length == 0) return false;
+        float w = build.block.size * mindustry.Vars.tilesize, warm = build.warmup(), t = build.totalProgress();
+        int loop = Math.min(4, frames.length);
+        Draw.rect(frames[warm > 0.1f ? (int) (t / 6f) % loop : 0], build.x, build.y, w, w);
+        if (flames.length > 0 && warm > 0.01f) {
+            Draw.alpha(warm);
+            Draw.rect(flames[(int) (t / 5f) % flames.length], build.x, build.y, w, w);
+        }
+        if (steams.length > 0 && warm > 0.3f) {
+            float z = Draw.z();
+            Draw.z(mindustry.graphics.Layer.effect);
+            Draw.alpha(warm);
+            Draw.rect(steams[(int) (t / 8f) % steams.length], build.x, build.y, w, w);
+            Draw.z(z);
+        }
+        Draw.reset();
+        return true;
+    }
+
     @Override
     public void draw(Building build) {
+        if (drawFrames(build)) return;
         float x = build.x, y = build.y;
         float stroke = Lines.getStroke();
         if (build.block.size == 3) {
