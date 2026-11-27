@@ -18,7 +18,7 @@ import metrum.content.MetrumLiquids;
 import mindustry.mod.Mod;
 
 public class MetrumMod extends Mod {
-    public static metrum.world.MicroPipe microPipe;
+    public static metrum.world.MicroPipe microPipe, microPipe2, microPipe3, microPipe4;
     @Override
     public void loadContent() {
         FuelSystem.load();
@@ -41,6 +41,13 @@ public class MetrumMod extends Mod {
         microPipe.requirements(mindustry.type.Category.liquid, mindustry.type.ItemStack.with(MetrumItems.steel, 12, mindustry.content.Items.silicon, 8, mindustry.content.Items.beryllium, 6));
         MetrumTechTree.load();
         MetrumTechTree.node(mindustry.content.Blocks.ductBridge, microPipe);
+        // higher tiers: more flow; each costs the previous one x1.33
+        microPipe2 = microPipeTier("micro-pipe-2", 20f, 1);
+        microPipe3 = microPipeTier("micro-pipe-3", 32f, 2);
+        microPipe4 = microPipeTier("micro-pipe-4", 64f, 3);
+        MetrumTechTree.node(microPipe, microPipe2);
+        MetrumTechTree.node(microPipe2, microPipe3);
+        MetrumTechTree.node(microPipe3, microPipe4);
         MetrumPlanets.load();
         Log.info("[Metrum] content loaded");
         mark("content loaded");
@@ -223,5 +230,17 @@ public class MetrumMod extends Mod {
         sb.append("content=").append(count).append(" missingSprites=").append(missing).append(" errors=").append(errors).append("\n");
         mindustry.Vars.dataDirectory.child("metrum-load.txt").writeString(sb.toString());
         Log.info("[Metrum] " + sb.toString().trim().replace("\n", " | "));
+    }
+
+    /** MicroPipe tier: flow in units/s, cost = base cost x 1.33^tier */
+    static metrum.world.MicroPipe microPipeTier(String name, float perSecond, int tier) {
+        metrum.world.MicroPipe pipe = new metrum.world.MicroPipe(name);
+        pipe.flow = perSecond / 60f;
+        pipe.liquidCapacity = Math.max(20f, perSecond * 1.5f);
+        float mul = (float) Math.pow(1.33, tier);
+        pipe.requirements(mindustry.type.Category.liquid, mindustry.type.ItemStack.with(
+            MetrumItems.steel, Math.round(12 * mul), mindustry.content.Items.silicon, Math.round(8 * mul),
+            mindustry.content.Items.beryllium, Math.round(6 * mul)));
+        return pipe;
     }
 }
