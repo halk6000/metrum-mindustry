@@ -177,3 +177,47 @@
 ## Ustalenia: rozbijacz chemiczny i wieża amoniakowa (26.11)
 - [ ] Rozbijacz chemiczny: maksymalnie dwa produkty na recepturę, sztywne porty A/B, bez automatycznego ponownego przetwarzania własnego produktu. Arkycyt (umownie C₂H₃N) rozkładać w dwóch osobnych maszynach: 2 arkycytu → 4 węgla + 2 amoniaku (NH₃); następnie 2 amoniaku → 6 wodoru + 2 azotu. Każdy cykl może niezależnie korzystać z boostera kwarkowego ×2,5. Poprawka przygotowana lokalnie, test w grze do wykonania.
 - [ ] **Wieża znakująca teren amoniakiem** (pomysł użytkownika): po podłączeniu amoniaku znakuje sektor i co 5 minut wymusza falę wrogów do odparcia. Do ustalenia: koszt budowy, zużycie amoniaku, działanie na zdobytych sektorach, skład fal, zachowanie po odłączeniu paliwa i w trybie offline. Proponowane zabezpieczenie: wspólny licznik sektora, aby wiele wież nie mnożyło przypadkowo liczby fal.
+
+## Aktualizacja 27.11.2026 — przemysł, interfejs i logistyka AI
+
+Statusy poniżej opisują ustalenia rozmowy i poprawki lokalne, nie potwierdzają obecności całego kodu w repozytorium. Dotychczasowe wpisy pozostają bez zmian. Zadania z wcześniejszych sekcji należy uznać za zamknięte dopiero po integracji i właściwych testach.
+
+### Przemysł i chemia
+- [x] Rozbijacz chemiczny: użytkownik potwierdził działanie podstawowego cyklu, osobnych komór i pasków GUI; przygotowano sztywne porty A/B oraz dwuetapowe przetwarzanie arkycytu przez amoniak.
+- [ ] Dokończyć testy wszystkich receptur, portów, pełnych komór, zapisu i synchronizacji boostera kwarkowego ×2,5. Nie przetwarzać automatycznie własnego produktu. Sprawdzić bilans masy według jednostek gry.
+- [ ] Fabryka atomizerów: cztery niezależne komory wejście/wyjście, 3×3, HP 750, koszt 100 stali + 10 karborundu + 12 elektrum, 2 surowce → 1 atom na komorę co 0,5 s; 127,5 energii/s na aktywną komorę, 510/s przy czterech. Kod/GUI przygotowane lokalnie; sprawdzić konfigurację, równoległą pracę i blokadę pojedynczego wyjścia.
+- [ ] Zagęszczacz związkowy: 2×2, 40 stali + 60 tlenku berylu + 30 krzemu, 90 energii/s, cykl 1 s; 6 jednostek tlenu → 2 ozonu (5 z boosterem kwarkowym). Sprawdzić dalsze receptury, skalę podglądu, kartę techniczną i działanie boostera.
+- [x] Duży piec parowy: użytkownik potwierdził działanie poprawionego GUI i wykrywania radaru BHP. Przyjęte parametry: tlen +45% prędkości / +30% uzysku, 10% ryzyka zapłonu; ozon +60% / +50%, 20% zapłonu i 5% wybuchu, zasilony radar obniża ryzyko wybuchu do 2%; losowanie co 18 ticków. Zasięg radaru w poprawce lokalnej obejmuje również skos i jedno wolne pole.
+- [ ] Zweryfikować faktyczny uzysk pieca, zużycie gazu, pożary i wybuchy na różnych planetach oraz radar BHP w kopalni odkrywkowej. Nie zmieniać zatwierdzonych parametrów bez uzgodnienia.
+- [ ] Rozważyć CO₂ jako produkt uboczny spalania węgla i odzysk węgla/tlenu w rozbijaczu chemicznym. Pomysł omówiony, nie zatwierdzono kosztów ani receptur. Nie dopuścić do darmowego zamkniętego obiegu.
+- [ ] Jonizator/dejonizator gazów, rozszerzenie atomów, synteza wody, dalsza fuzja i wieża amoniakowa: pozostają zadaniami z wcześniejszych sekcji.
+
+### GUI, grafika i warstwy widoczności
+- [ ] Wspólne modułowe GUI z rzeczywistymi danymi budynków: komory, receptury, postęp, zasilanie, booster i jednoznaczna diagnostyka (brak wejścia, energii lub miejsca na konkretnym wyjściu). Rozszerzenie przygotowane lokalnie dla kopalni odkrywkowej, atomizerów, zderzacza, reaktorów, maszyn parowych i wybranych fabryk. Użytkownik potwierdził pięć budynków; pozostałych nie testował. Proste bloki zachowują standardowe GUI.
+- [ ] Sprawdzić PL/EN wszystkich nowych paneli i kart technicznych w grze, długość etykiet, brak zawijania przycisków, brakujące klucze i ikony. Sam komplet kluczy nie potwierdza czytelności.
+- [ ] MicroPipe: transport cieczy i gazów nad budynkami, połączenia klikane jak słupy energetyczne, wolna przestrzeń pod przewodem. Pierwsza lokalna wersja: przyłącza 1×1, zasięg 12 pól, przepustowość 12/s, bufor 20, koszt 12 stali + 8 krzemu + 6 berylu (parametry robocze); bez rozgałęzień. Dokończyć rozgałęzienia, zapis, synchronizację, kierunki przepływu i blokady mieszania mediów.
+- [ ] Warstwy widoczności: przycisk „Widoczność” / „Visibility” przy przedmiotach w rdzeniu; nie otwierać okna automatycznie po kliknięciu rdzenia ani blokować pobierania przedmiotów. Maskowanie dronów do 20% widoczności (również efektów wydobycia i napraw), niezależne tryby MicroPipe: 100%, 20%, ukryte. Ustawienia lokalne gracza, bez wpływu na symulację, kolizje czy AI. Poprawkę przycisku przygotowano po wykryciu złego zawijania; sprawdzić końcową wersję, pusty rdzeń, budowanie pod dronami i multiplayer.
+- [ ] Grafiki HD jednostek T3–T3D: modułowe kadłuby, uzbrojenie, reaktory, silniki i 4 sloty ładunku (po jednym na kolejne 25% pojemności). Użytkownik potwierdził renderowanie i portret. Sprawdzić skalę 70% w świecie i 40% podczas produkcji względem pierwotnego podglądu, wszystkie warianty, rekonstruktory i wydajność; nie zmieniać hitboxów z powodu skali grafiki.
+- [ ] Nowa grafika promocyjna oficjalnej wersji „Metrum Industry Drones” z planetą i dronami: koncepcja przygotowana, pozostaje włączenie do wydania oraz czytelność małej ikony.
+
+### AI — delegowanie zamiast dublowania sterowników
+- [ ] Planer wyznacza cele i priorytety, wykorzystuje istniejące komendy wydobycia, inteligentnego wydobycia, opieki, odbudowy i budowy. Lokalny refaktor usuwa osobny ResourceDroneAI na rzecz SmartMining i CaretakerAI; zachować obsługę ładunku, przypisania do rdzenia, przestojów, powrotu do wcześniejszych zadań i nie przerywać rozpoczętej budowy. Sprawdzić limit jednego delegowanego górnika i opiekuna na rdzeń jako rozwiązanie tymczasowe.
+- [ ] **Nienaruszalna zasada logistyki:** drony wydobywcze oddają surowce wyłącznie do rdzenia. Nie delegować im bezpośrednich dostaw do pieców. Rdzeń spala/nie magazynuje m.in. węgla i piasku; dynamicznie wykrywać możliwość magazynowania, nie wpisywać wyjątku dla każdego materiału. Dla niemagazynowalnych surowców planować wiertnię/ekstraktor lub źródło produkcyjne oraz fizyczną trasę do odbiorcy. Surowce wytworzone przez fabryki mogą zasilać dalsze fabryki zgodnie z regułami gry.
+- [ ] Test regresji: inteligentne wydobycie nie zapętla się na węglu/piasku, drony z istniejącym ładunkiem nie tracą go bez uzasadnienia, planer nie produkuje zbędnych górników. Oddzielić zapas rdzenia od rzeczywistych zapasów i dostaw każdej maszyny.
+- [ ] Posiłki: lokalna poprawka tankowania po błędzie nieistniejącej metody FuelSystem.refillFull; zweryfikować działanie istniejącego API paliwowego, limit 30 żywych jednostek plus rezerwacje w drodze i brak posiłków z innych sektorów na pierwszej mapie.
+
+### AI — uniwersalny LogisticsPlanner (priorytet)
+- [ ] Zintegrować przygotowany lokalnie moduł LogisticsPlanner.java z BasePlanner.java. Główny planer zleca połączenie źródła, odbiorcy i surowca; moduł odpowiada za analizę i budowę infrastruktury.
+- [ ] Rozpoznawać faktyczne źródła, receptury, odbiorców, kierunki i rodzaje surowców na trasie, także gdy taśma/most chwilowo jest pusty. Nie uznawać samego istnienia wiertni ani fabryki za zapewnioną dostawę.
+- [ ] Jeden surowiec i dwóch uprawnionych odbiorców: zwykłe rozgałęzienie. Jeżeli rdzeń nie magazynuje materiału, nie kierować go do rdzenia jako magazynu. Mieszana taśma: filtrowany rozdzielacz na surowiec zainteresowania oraz boczny transport pozostałych zasobów. Zachować poprawne kierunki wejść i wyjść.
+- [ ] Planowanie tras podobne do natywnego układania dróg i rur Mindustry: dobierać taśmy/rury, łączniki, skrzyżowania, obejścia i mosty w zależności od kolizji oraz zgodności transportowanego medium. Pierwsza wersja obejmuje przedmioty i ograniczone wyszukiwanie mostów; płyny, gazy i MicroPipe oraz pełna obsługa kolizji pozostają do wykonania.
+- [ ] Najpierw zbudować alternatywną trasę, potem modyfikować istniejące połączenie. Sprawdzać koszt całej trasy, dostępne materiały, kolejkę konstruktorów, wolne wyjścia fabryk i blokady przestrzeni. Przy niepowodzeniu ponownie planować zamiast powtarzać nieskuteczną operację.
+- [ ] Krytyczny test na Starym Wąwozie: piec łukowy otrzymuje 4 piasku i 1 grafit na partię zgodnie z aktualną recepturą testowanego pieca; powstaje realne rozgałęzienie/filtr, a krzem faktycznie trafia do gospodarki. Nie mylić tego z wcześniej planowanym podkręconym piecem o innych recepturach. Testować również mieszany transport, pełne magazyny, brak miejsca, zniszczenie mostu oraz utratę źródła. Nie dosypywać rud na mapie jako obejścia błędu.
+- [ ] Po stabilizacji transportu połączyć moduł z uniwersalnym grafem zależności celów, przepustowością i diagnostyką myśli AI. Dalsza rozbudowa bazy dopiero po potwierdzeniu działających dostaw.
+
+### Kolejność dalszych prac
+1. Regresja wydobycia i logistyki AI, rzeczywista produkcja krzemu, testy rozdzielaczy i mostów.
+2. Uniwersalny graf zależności oraz transport płynów/gazów; dokończenie MicroPipe.
+3. Testy pozostałych GUI, maskowania, chemii, kopalni i balansu; pełny build 160.8, zapis/wczytanie i multiplayer.
+4. Rozwój gospodarczy AI, symulacja offline i wsparcie sektorowe; dokończenie Metonii.
+5. Kolejne mechaniki chemiczne, wieża amoniakowa i Venoms Issland, zgodnie z wcześniejszymi sekcjami.
