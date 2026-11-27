@@ -33,6 +33,8 @@ public class OxidizingFurnace extends GenericCrafter {
     /** "no major failure" event: after this long on ozone without an explosion the furnace becomes upgradeTo */
     public OxidizingFurnace upgradeTo;
     public float upgradeTicks = 80f * 60f;
+    /** how much one explosion takes off the event timer */
+    public float safePenaltyTicks = 10f * 60f;
     public OxidizingFurnace(String name){
         super(name);
         buildType = OxidizingBuild::new; configurable=true;
@@ -184,7 +186,7 @@ public class OxidizingFurnace extends GenericCrafter {
                             while(explosionClock>=Math.max(1f,explosionInterval) && health>0f){
                                 explosionClock-=Math.max(1f,explosionInterval);
                                 if(Mathf.chance(radarPowered()?radarExplosionChance:explosionChance)){
-                                    safeClock=0f;
+                                    safeClock=Math.max(0f,safeClock-safePenaltyTicks); // an explosion sets the event back, not to zero
                                     // a real, noticeable blast: big flash, sound, shake, fire and splash on neighbours
                                     Fx.massiveExplosion.at(x,y);
                                     mindustry.gen.Sounds.explosion.at(x,y,arc.math.Mathf.random(0.9f,1.1f));
