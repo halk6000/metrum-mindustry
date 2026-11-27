@@ -137,6 +137,10 @@
 - [x] Prymitywny stapiacz skał 2x2: 1 skała + 1 węgiel -> 12 żużlu, cykl 1 s, 300 prądu/s. Koszt: 60 odłamków skały, 40 żelaza, 30 krzemu. Badanie po kruszarce. (zatwierdzone przez użytkownika)
 - [ ] W kolejnych etapach okresowo sprawdzać origin/main:ROADMAP.md przez git fetch; nie nadpisywać zmian użytkownika ani lokalnej pracy AI.
 
+## Bezpieczny piec parowy — ustalenia użytkownika (27.11)
+- [x] Duży piec parowy po 80 s pracy na ozonie zmienia się w Bezpieczny piec parowy: tylko ozon, prędkość 200%, wybuch 1% co 30 ticków, 5% obrażeń dla siebie i 20 dla sąsiadów, +50% życia, inny wygląd. Przetestowane w grze.
+- [x] Wybuch odejmuje 10 s od licznika zdarzenia zamiast go zerować. Bez radaru przemiana wymaga szczęścia, z radarem trwa ok. 4 min — decyzja użytkownika: zostawić tak.
+
 ## Wzorzec układu bazy AI — na podstawie bazy użytkownika (27.11)
 - [ ] Zwartość: maszyny jednego łańcucha stoją obok siebie, wyjście jednej wpada prosto do następnej; bez taśm tam, gdzie wystarczy sąsiedztwo.
 - [ ] Jedna główna pętla taśm wokół rdzenia, do której dochodzą krótkie odgałęzienia z wiertnic; bez równoległych tras dla tego samego surowca.
