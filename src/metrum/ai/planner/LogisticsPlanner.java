@@ -226,6 +226,62 @@ public final class LogisticsPlanner {
         return false;
     }
 
+    /** item an extractor is producing, or null */
+    static Item extracted(Building b) {
+        if (b instanceof DrillBuild) return ((DrillBuild)b).dominantItem;
+        if (b instanceof BeamDrillBuild) return ((BeamDrillBuild)b).lastItem;
+        if (b.block instanceof WallCrafter) return ((WallCrafter)b.block).output;
+        return null;
+    }
+
+    /** true when what the extractor mines reaches the core or any consumer (turret, factory) */
+    public static boolean reachesCore(Building extractor, CoreBuild core) {
+        Item item = extracted(extractor);
+        if (item == null) return true; // nothing to deliver yet
+        for (Building next : extractor.proximity) {
+            if (next.team != extractor.team) continue;
+            if (!transport(next) && next.acceptItem(extractor, item)) return true; // feeds a neighbour directly
+            if (sends(extractor, next, item) && delivers(next, item, new HashSet<Building>())) return true;
+        }
+        return false;
+    }
+
+    /** a transport chain that ends in something which takes the item */
+    private static boolean delivers(Building b, Item item, Set<Building> seen) {
+        if (!transport(b)) return true;
+        if (!b.enabled || seen.size() >= maxTrace || !seen.add(b)) return false;
+        if (b instanceof DuctBridgeBuild) {
+            Building link = ((DuctBridgeBuild)b).findLink();
+            if (link != null) return delivers(link, item, seen);
+        }
+        for (Building next : b.proximity) if (sends(b, next, item) && delivers(next, item, seen)) return true;
+        return false;
+    }
+
+    /**
+     * After a rebuild the drill often stands alone because its line was destroyed:
+     * lay a new line from the nearest cut-off extractor to the core.
+     */
+    public static boolean reconnectExtractors(CoreBuild core) {
+        Seq<Building> cut = new Seq<>();
+        Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
+            b -> b.enabled && b.closestCore() == core && extracted(b) != null && !reachesCore(b, core), cut::add);
+        cut.sort(b -> b.dst2(core));
+        for (Building drill : cut) {
+            Set<Tile> footprint = new HashSet<>();
+            for (Tile t : drill.tile.getLinkedTiles(new Seq<>())) footprint.add(t);
+            Seq<BuildPlan> best = null;
+            for (Tile t : footprint) for (int d = 0; d < 4; d++) {
+                Tile outlet = t.nearby(d);
+                if (outlet == null || footprint.contains(outlet)) continue;
+                Seq<BuildPlan> plans = route(core, outlet, core, footprint);
+                if (plans != null && (best == null || plans.size < best.size)) best = plans;
+            }
+            if (best != null && affordable(core, best) && BasePlanner.queueConstructionBatch(core, best)) return true;
+        }
+        return false;
+    }
+
     public static boolean connect(CoreBuild core, Building target, Item item) {
         if(target==null || item==null || !target.enabled || (target.items==null && !(target instanceof mindustry.world.blocks.defense.turrets.ItemTurret.ItemTurretBuild)) || !Blocks.ductRouter.environmentBuildable()) return false;
         for(Building b:target.proximity) if(sends(b,target,item) && source(b,item,new HashSet<Building>())) return false;

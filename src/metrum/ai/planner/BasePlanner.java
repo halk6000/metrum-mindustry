@@ -720,7 +720,7 @@ public class BasePlanner {
         }
         if (builder != null && resumeConstruction(core, builder)) return true;
         // Early exits in the construction plan must still allow safe space reclamation.
-        return StrategicPlanner.step(core, level) || clearUnusedWaterPipes(core) || removeLeakingPipeEnds(core);
+        return LogisticsPlanner.reconnectExtractors(core) || StrategicPlanner.step(core, level) || clearUnusedWaterPipes(core) || removeLeakingPipeEnds(core);
     }
 
     /** Never let a material-starved construction monopolize the only constructor. */
