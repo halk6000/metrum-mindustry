@@ -27,7 +27,8 @@ public class DrawSteamBoiler extends DrawBlock {
         highlight = Color.valueOf("a6adb8"), hot = Color.valueOf("ffac64");
 
     /** optional HD art: <block>-frame-0..15, -flame-0..3, -steam-0..3 (any size, drawn on the block footprint) */
-    private arc.graphics.g2d.TextureRegion[] frames, flames, steams;
+    private arc.graphics.g2d.TextureRegion[] frames, flames, steams, gauges;
+    public float gaugeX = 0.305f, gaugeY = 0.31f, gaugeSize = 0.17f;
     /** firebox and chimney on the HD furnace body, as fractions of the block width from its centre */
     public float fireX = 0.03f, fireY = -0.05f, fireW = 0.38f, fireH = 0.33f, chimneyX = 0.24f, chimneyY = 0.52f;
 
@@ -36,6 +37,7 @@ public class DrawSteamBoiler extends DrawBlock {
         frames = regions(block.name + "-frame-", 16);
         flames = regions(block.name + "-flame-", 8);
         steams = regions(block.name + "-steam-", 8);
+        gauges = regions(block.name + "-gauge-", 16);
     }
 
     private static arc.graphics.g2d.TextureRegion[] regions(String prefix, int max) {
@@ -54,6 +56,11 @@ public class DrawSteamBoiler extends DrawBlock {
         float w = build.block.size * mindustry.Vars.tilesize, warm = build.warmup(), t = build.totalProgress();
         int loop = Math.min(4, frames.length);
         Draw.rect(frames[warm > 0.1f ? (int) (t / 6f) % loop : 0], build.x, build.y, w, w);
+        // pressure gauge: needle follows how full the steam tank is
+        if (gauges.length > 0 && build.liquids != null && metrum.content.MetrumLiquids.steam != null) {
+            float fill = Mathf.clamp(build.liquids.get(metrum.content.MetrumLiquids.steam) / build.block.liquidCapacity);
+            Draw.rect(gauges[Math.round(fill * (gauges.length - 1))], build.x + w * gaugeX, build.y + w * gaugeY, w * gaugeSize, w * gaugeSize);
+        }
         // flame in the firebox and steam over the chimney, positioned on the HD body (fractions of the footprint)
         if (flames.length > 0 && warm > 0.01f) {
             Draw.alpha(warm * (0.8f + Mathf.absin(t, 3f, 0.2f)));
