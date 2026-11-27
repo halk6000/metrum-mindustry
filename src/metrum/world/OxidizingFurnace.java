@@ -8,6 +8,7 @@ import arc.util.io.Writes;
 import mindustry.Vars;
 import mindustry.content.Blocks;
 import mindustry.content.Fx;
+import mindustry.entities.Effect;
 import mindustry.content.Liquids;
 import mindustry.entities.Fires;
 import mindustry.gen.Building;
@@ -21,6 +22,8 @@ public class OxidizingFurnace extends GenericCrafter {
     public float gasPerSecond = 6f;
     public float riskInterval = 18f; // simulation ticks, not render frames
     public float explosionDamageFraction = 0.20f;
+    /** damage to everything within 1.5x the furnace size */
+    public float explosionSplashDamage = 60f;
     public OxidizingFurnace(String name){
         super(name);
         buildType = OxidizingBuild::new; configurable=true;
@@ -144,7 +147,12 @@ public class OxidizingFurnace extends GenericCrafter {
                                 boolean ozone=gas==Liquids.ozone;
                                 if(Mathf.chance(ozone?0.20:0.10))metrum.entities.MetrumFires.create(tile);
                                 if(ozone && Mathf.chance(radarPowered()?0.02:0.05)){
-                                    Fx.blastExplosion.at(x,y);
+                                    // a real, noticeable blast: big flash, sound, shake, fire and splash on neighbours
+                                    Fx.massiveExplosion.at(x,y);
+                                    mindustry.gen.Sounds.explosion.at(x,y,arc.math.Mathf.random(0.9f,1.1f));
+                                    Effect.shake(3f,20f,x,y);
+                                    mindustry.entities.Damage.damage(null,x,y,size*Vars.tilesize*1.5f,explosionSplashDamage);
+                                    metrum.entities.MetrumFires.create(tile);
                                     damage(maxHealth*explosionDamageFraction);
                                 }
                             }
