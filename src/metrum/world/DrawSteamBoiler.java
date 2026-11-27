@@ -13,7 +13,9 @@ public class DrawSteamBoiler extends DrawBlock {
     @Override
     public void drawPlan(mindustry.world.Block block, mindustry.entities.units.BuildPlan plan,
                          arc.util.Eachable<mindustry.entities.units.BuildPlan> list) {
-        Draw.rect(block.region, plan.drawx(), plan.drawy());
+        // HD art can be larger than the footprint: always draw it at the real block size
+        float w = block.size * mindustry.Vars.tilesize;
+        Draw.rect(block.region, plan.drawx(), plan.drawy(), w, w);
     }
 
     @Override
