@@ -310,6 +310,7 @@ public class BasePlanner {
             assignMiningDrone(core);
             assignCaretaker(core);
             assignIdleMiners(core);
+            if (watchDemandFlow(core, Time.time)) continue;
             for (int i = 0; i < level.stepsPerTick; i++) {
                 if (!step(core, level)) break;
                 completedSteps++;
@@ -531,6 +532,46 @@ public class BasePlanner {
     static CoreBuild retainedDeliveryTarget(mindustry.gen.Unit drone, CoreBuild target) {
         return drone.stack.amount > 0 && target != null && target.isValid() && target.team == drone.team
             && target.acceptStack(drone.stack.item, drone.stack.amount, drone) > 0 ? target : null;
+    }
+
+    /** item, core stock and time of the last increase, per core */
+    static final java.util.Map<CoreBuild, float[]> demandFlow = new java.util.HashMap<>();
+    static float flowStallTicks = 20f * 60f;
+
+    /**
+     * When the demanded material has not arrived for 20 s, go back one step in the production chain:
+     * the producer's missing ingredient becomes the priority instead of rebuilding unrelated parts.
+     */
+    static boolean watchDemandFlow(CoreBuild core, float now) {
+        ItemStack demand = miningDemand.get(core);
+        if (demand == null) {
+            demandFlow.remove(core);
+            return false;
+        }
+        int stock = core.items.get(demand.item);
+        float[] flow = demandFlow.get(core);
+        if (flow == null || flow[0] != demand.item.id || stock > flow[1]) {
+            demandFlow.put(core, new float[]{demand.item.id, stock, now});
+            return false;
+        }
+        flow[1] = stock;
+        if (now - flow[2] < flowStallTicks) return false;
+        flow[2] = now; // one step back per stall period
+        Seq<Building> producers = new Seq<>();
+        Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
+            b -> b.enabled && b.items != null && b.closestCore() == core && producesItem(b.block, demand.item), producers::add);
+        for (Building producer : producers) {
+            for (mindustry.world.consumers.Consume consume : producer.block.nonOptionalConsumers) {
+                if (!(consume instanceof mindustry.world.consumers.ConsumeItems)) continue;
+                for (ItemStack input : ((mindustry.world.consumers.ConsumeItems) consume).items) {
+                    if (producer.items.get(input.item) >= input.amount) continue;
+                    if (prioritizeProducerDependency(core, input.item, Math.max(input.amount * 10, 20))) {
+                        return stalled("brak napływu: " + demand.item.localizedName + " od 20 s, najpierw: " + input.item.localizedName);
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     static float advanceMiningStall(float elapsed, boolean active, boolean progressed, float delta, float limit) {
