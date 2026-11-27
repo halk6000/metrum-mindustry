@@ -35,7 +35,7 @@ public class CompoundDensifier extends Block {
     @Override public void displayExtra(Table t){super.displayExtra(t);TechnicalInfoUI.header(t,this);for(Recipe r:recipes)TechnicalInfoUI.recipe(t,r.input,r.amount,new UnlockableContent[]{r.output},new int[]{r.yield},boostItem,boostMultiplier);}
     @Override public void setBars(){super.setBars();for(int k=0;k<2;k++){final int slot=k;addBar("densifier-"+k,(DensifierBuild b)->new Bar(()->Core.bundle.format(slot==0?"metrum.densifier.in":"metrum.densifier.out",b.material(slot)==null?"-":b.material(slot).localizedName),()->b.color(slot),()->b.fill(slot)));}}
     /** the HD sprite is 256 px; draw the placement ghost at the real 2x2 footprint, not at sprite size */
-    @Override public void drawPlanRegion(mindustry.entities.units.BuildPlan plan, arc.struct.Eachable<mindustry.entities.units.BuildPlan> list){
+    @Override public void drawPlanRegion(mindustry.entities.units.BuildPlan plan, arc.util.Eachable<mindustry.entities.units.BuildPlan> list){
         float w=size*mindustry.Vars.tilesize;
         Draw.rect(region,plan.drawx(),plan.drawy(),w,w);
     }
