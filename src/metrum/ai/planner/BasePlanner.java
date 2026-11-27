@@ -1971,7 +1971,7 @@ public class BasePlanner {
             Tile t = Vars.world.tileWorld(core.x + arc.math.Angles.trnsx(a, d), core.y + arc.math.Angles.trnsy(a, d));
             if (!defenseSiteAvailable(t, turret, core.team)) continue;
             Seq<BuildPlan> plans = Seq.with(new BuildPlan(t.x, t.y, 0, turret));
-            if (level.turretMagazines) {
+            if (false && level.turretMagazines) { // magazines were only filled by teleported ammo; turrets now take it from drill lines
                 Tile site = turretMagazineSite(t, turret, magazine, core.team, a);
                 if (site != null) plans.add(new BuildPlan(site.x, site.y, 0, magazine));
             }
