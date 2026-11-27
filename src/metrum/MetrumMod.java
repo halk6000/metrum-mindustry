@@ -236,6 +236,7 @@ public class MetrumMod extends Mod {
     static metrum.world.MicroPipe microPipeTier(String name, float perSecond, int tier) {
         metrum.world.MicroPipe pipe = new metrum.world.MicroPipe(name);
         pipe.flow = perSecond / 60f;
+        pipe.maxLinks = 1 + tier; // Mk2: 2, Mk3: 3, Mk4: 4 outgoing links
         pipe.liquidCapacity = Math.max(20f, perSecond * 1.5f);
         float mul = (float) Math.pow(1.33, tier);
         pipe.requirements(mindustry.type.Category.liquid, mindustry.type.ItemStack.with(

@@ -141,12 +141,26 @@ def compileIdleMinersTest = tasks.register('compileIdleMinersTest', JavaCompile)
     classpath = sourceSets.main.output + files(gameJar)
     destinationDirectory = layout.buildDirectory.dir('idle-miners-test-classes')
 }
-tasks.register('idleMinersTest', JavaExec) {
+tasks.register('idleMinersTest', 'microPipeTest', JavaExec) {
     group = 'verification'
     description = 'Checks that every idle AI miner drone starts mining.'
     dependsOn compileIdleMinersTest
     classpath = files(compileIdleMinersTest.flatMap { it.destinationDirectory }) + sourceSets.main.output + files(gameJar)
     mainClass = 'metrum.ai.planner.IdleMinersTest'
+}
+// MicroPipe tiers: multi-link relays, even split, saves.
+def compileMicroPipeTest = tasks.register('compileMicroPipeTest', JavaCompile) {
+    dependsOn classes
+    source = files('tools/tests/MicroPipeTest.java')
+    classpath = sourceSets.main.output + files(gameJar)
+    destinationDirectory = layout.buildDirectory.dir('micro-pipe-test-classes')
+}
+tasks.register('microPipeTest', JavaExec) {
+    group = 'verification'
+    description = 'Checks MicroPipe relays, flow split and saves.'
+    dependsOn compileMicroPipeTest
+    classpath = files(compileMicroPipeTest.flatMap { it.destinationDirectory }) + sourceSets.main.output + files(gameJar)
+    mainClass = 'MicroPipeTest'
 }
 tasks.named('check') {
     dependsOn 'salvagerTest', 'steamEngineTest', 'openPitTest', 'depositsTest', 'builderQueueTest', 'bridgeFlowTest', 'idleMinersTest'
