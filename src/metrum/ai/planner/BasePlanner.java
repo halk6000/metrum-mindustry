@@ -578,6 +578,43 @@ public class BasePlanner {
             for (Item ammo : type.ammoTypes.keys()) {
                 if (LogisticsPlanner.connect(core, turret, ammo)) return true;
             }
+            // no line carries ammo yet: a drill of its own, ducted straight into the turret
+            if (((mindustry.world.blocks.defense.turrets.ItemTurret.ItemTurretBuild) turret).totalAmmo == 0
+                && !hasAmmoLine(turret, type) && buildAmmoDrill(core, turret, type)) return true;
+        }
+        return false;
+    }
+
+    static boolean hasAmmoLine(Building turret, mindustry.world.blocks.defense.turrets.ItemTurret type) {
+        for (Building b : turret.proximity) {
+            if (b.team != turret.team) continue;
+            if (b instanceof mindustry.world.blocks.distribution.Duct.DuctBuild && ((mindustry.world.blocks.distribution.Duct.DuctBuild) b).next == turret) return true;
+            if (b instanceof mindustry.world.blocks.production.Drill.DrillBuild
+                && type.ammoTypes.containsKey(((mindustry.world.blocks.production.Drill.DrillBuild) b).dominantItem)) return true;
+        }
+        return false;
+    }
+
+    /** nearest affordable drill on an ore the turret can fire, with its ducts ending in the turret */
+    static boolean buildAmmoDrill(CoreBuild core, Building turret, mindustry.world.blocks.defense.turrets.ItemTurret type) {
+        for (Block drill : Vars.content.blocks()) {
+            boolean beam = drill instanceof mindustry.world.blocks.production.BeamDrill;
+            if (!(beam || drill instanceof mindustry.world.blocks.production.Drill)
+                || !drill.environmentBuildable() || !canSupportDrill(core, drill)) continue;
+            arc.struct.IntSet rejected = new arc.struct.IntSet();
+            for (int attempt = 0; attempt < 4; attempt++) {
+                Tile ore = beam ? findOreSpot(core, drill, 30, rejected)
+                    : findFloorOreSpot(core, (mindustry.world.blocks.production.Drill) drill, 30, rejected);
+                if (ore == null) break;
+                rejected.add(ore.pos());
+                int rotation = beam ? faceWall(ore, drill, core, minedResources(core)) : 0;
+                if (rotation < 0) continue;
+                Item output = beam ? wallOreInDirection(ore, (mindustry.world.blocks.production.BeamDrill) drill, rotation)
+                    : ((mindustry.world.blocks.production.Drill) drill).getDrop(ore);
+                if (output == null || !type.ammoTypes.containsKey(output)) continue;
+                Seq<BuildPlan> plans = extractorPlansTo(core, drill, ore, rotation, turret);
+                if (plans != null && missingPlanMaterials(core, plans) == 0) return queueConstructionBatch(core, plans);
+            }
         }
         return false;
     }
