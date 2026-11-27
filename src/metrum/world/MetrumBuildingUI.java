@@ -47,7 +47,12 @@ public final class MetrumBuildingUI {
         t.table(body -> {
             body.defaults().growX().pad(2f);
             bar(body, () -> tr("health"), () -> Pal.health, b::healthf);
-            if(b.power!=null)bar(body, () -> Core.bundle.get("bar.power"), () -> Pal.powerBar, () -> b.power.status);
+            // a generator's power status is always 0; show what it actually produces instead
+            if(b instanceof mindustry.world.blocks.power.PowerGenerator.GeneratorBuild){
+                mindustry.world.blocks.power.PowerGenerator.GeneratorBuild g=(mindustry.world.blocks.power.PowerGenerator.GeneratorBuild)b;
+                bar(body, () -> Core.bundle.format("bar.poweroutput", arc.util.Strings.fixed(g.getPowerProduction()*60f*g.timeScale(), 1)),
+                    () -> Pal.powerBar, () -> arc.math.Mathf.clamp(g.productionEfficiency));
+            }else if(b.power!=null)bar(body, () -> Core.bundle.get("bar.power"), () -> Pal.powerBar, () -> b.power.status);
             modules.build(body);
         }).growX().left().row();
     }
@@ -71,7 +76,7 @@ public final class MetrumBuildingUI {
     public static void status(Table t,Building b,Prov<String> reason){
         t.label(() -> !b.enabled ? tr("disabled") : reason.get()).wrap().width(236f).left().row();
     }
-    public static boolean noPower(Building b){return b.power!=null && b.power.status<=0.001f;}
+    public static boolean noPower(Building b){return b.power!=null && b.block.consPower!=null && b.power.status<=0.001f;}
     public static String blocked(UnlockableContent c){return Core.bundle.format("metrum.panel.blocked",c.localizedName);}
 
 }
