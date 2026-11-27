@@ -35,9 +35,15 @@ public class OxidizingFurnace extends GenericCrafter {
     public float upgradeTicks = 80f * 60f;
     /** how much one explosion takes off the event timer */
     public float safePenaltyTicks = 10f * 60f;
-    /** a destroyed furnace of this type is rebuilt as this block (the safe furnace must be earned again) */
+    /** a destroyed furnace of this type is rebuilt as itself while the core can pay its full cost, otherwise as this block */
     public OxidizingFurnace rebuildAs;
     private static boolean rebuildHook;
+
+    /** an earned furnace is only rebuilt as itself when the core holds its whole cost (incl. the quark matter) */
+    static boolean downgrade(mindustry.world.Block block, mindustry.world.blocks.storage.CoreBlock.CoreBuild core){
+        if(!(block instanceof OxidizingFurnace) || ((OxidizingFurnace)block).rebuildAs==null)return false;
+        return core==null || !core.items.has(block.requirements, Vars.state.rules.buildCostMultiplier);
+    }
 
     @Override public void init(){
         super.init();
@@ -49,13 +55,13 @@ public class OxidizingFurnace extends GenericCrafter {
                 for(mindustry.game.Team team:mindustry.game.Team.all){
                     if(!team.active())continue;
                     arc.struct.Queue<mindustry.game.Teams.BlockPlan> plans=team.data().plans;
+                    mindustry.world.blocks.storage.CoreBlock.CoreBuild core=team.core();
                     boolean found=false;
-                    for(mindustry.game.Teams.BlockPlan plan:plans)if(plan.block instanceof OxidizingFurnace && ((OxidizingFurnace)plan.block).rebuildAs!=null){found=true;break;}
+                    for(mindustry.game.Teams.BlockPlan plan:plans)if(downgrade(plan.block,core)){found=true;break;}
                     if(!found)continue;
                     arc.struct.Seq<mindustry.game.Teams.BlockPlan> copy=new arc.struct.Seq<>();
                     for(mindustry.game.Teams.BlockPlan plan:plans){
-                        boolean earned=plan.block instanceof OxidizingFurnace && ((OxidizingFurnace)plan.block).rebuildAs!=null;
-                        copy.add(earned?new mindustry.game.Teams.BlockPlan(plan.x,plan.y,plan.rotation,((OxidizingFurnace)plan.block).rebuildAs,plan.config):plan);
+                        copy.add(downgrade(plan.block,core)?new mindustry.game.Teams.BlockPlan(plan.x,plan.y,plan.rotation,((OxidizingFurnace)plan.block).rebuildAs,plan.config):plan);
                     }
                     plans.clear();
                     for(mindustry.game.Teams.BlockPlan plan:copy)plans.addLast(plan);

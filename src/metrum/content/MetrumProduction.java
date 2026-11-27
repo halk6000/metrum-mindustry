@@ -66,7 +66,8 @@ public class MetrumProduction {
             explosionInterval = 30f;
             explosionDamageFraction = 0.05f;
             explosionSplashDamage = 20f;
-            requirements(Category.crafting, with(MetrumItems.pieceRock, 120, MetrumItems.iron, 60, Items.graphite, 60, Items.silicon, 50));
+            // rebuild cost: the large furnace plus 5 quark matter
+            requirements(Category.crafting, with(MetrumItems.pieceRock, 120, MetrumItems.iron, 60, Items.graphite, 60, Items.silicon, 50, MetrumItems.quarkMatter, 5));
             size = 3;
             craftTime = 30f;
             itemCapacity = 30;
