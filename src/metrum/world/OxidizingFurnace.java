@@ -80,6 +80,9 @@ public class OxidizingFurnace extends GenericCrafter {
         }
 
         private float riskClock, explosionClock, safeClock;
+        /** 1 -> 0 while the coal hatch animation plays */
+        public float hatch;
+        private int crafts;
 
         /** survived long enough on ozone: rebuild in place as the safe furnace, keeping its contents */
         void upgrade(){
@@ -206,7 +209,12 @@ public class OxidizingFurnace extends GenericCrafter {
                 }else warmup=Mathf.approachDelta(warmup,0f,warmupSpeed);
             }else warmup=Mathf.approachDelta(warmup,0f,warmupSpeed);
             totalProgress+=warmup*Time.delta;
-            if(progress>=1f && health>0f)craft();
+            if(progress>=1f && health>0f){
+                craft();
+                // visual only: the coal hatch opens to refill once every 30 work cycles
+                if(++crafts%30==0)hatch=1f;
+            }
+            hatch=Math.max(0f,hatch-Time.delta/60f);
             if(health>0f)dumpOutputs();
         }
         @Override public byte version(){return 2;}

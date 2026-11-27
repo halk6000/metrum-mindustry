@@ -27,7 +27,8 @@ public class DrawSteamBoiler extends DrawBlock {
         highlight = Color.valueOf("a6adb8"), hot = Color.valueOf("ffac64");
 
     /** optional HD art: <block>-frame-0..15, -flame-0..3, -steam-0..3 (any size, drawn on the block footprint) */
-    private arc.graphics.g2d.TextureRegion[] frames, flames, steams, gauges;
+    private arc.graphics.g2d.TextureRegion[] frames, flames, steams, gauges, hatches;
+    public float hatchX = 0f, hatchY = 0.33f, hatchW = 0.36f, hatchH = 0.2f;
     public float gaugeX = 0.305f, gaugeY = 0.31f, gaugeSize = 0.17f;
     /** blue water pipe on the HD body: polyline in fractions of the block width from its centre */
     public float[] pipePath = {-0.371f, -0.109f, -0.383f, -0.215f, -0.332f, -0.32f, -0.215f, -0.371f, -0.137f, -0.352f};
@@ -40,6 +41,7 @@ public class DrawSteamBoiler extends DrawBlock {
         flames = regions(block.name + "-flame-", 8);
         steams = regions(block.name + "-steam-", 8);
         gauges = regions(block.name + "-gauge-", 16);
+        hatches = regions(block.name + "-hatch-", 8);
     }
 
     private static arc.graphics.g2d.TextureRegion[] regions(String prefix, int max) {
@@ -70,6 +72,11 @@ public class DrawSteamBoiler extends DrawBlock {
             Draw.color(Color.white, warm * 0.8f);
             Fill.circle(build.x + w * px, build.y + w * py, w * 0.018f);
             Draw.color();
+        }
+        // coal hatch: plays closed -> open -> closed when the furnace refills
+        if (hatches.length > 0 && build instanceof OxidizingFurnace.OxidizingBuild && ((OxidizingFurnace.OxidizingBuild) build).hatch > 0f) {
+            float h = ((OxidizingFurnace.OxidizingBuild) build).hatch;
+            Draw.rect(hatches[Math.min(hatches.length - 1, (int) ((1f - h) * hatches.length))], build.x + w * hatchX, build.y + w * hatchY, w * hatchW, w * hatchH);
         }
         // pressure gauge: needle follows how full the steam tank is
         if (gauges.length > 0 && build.liquids != null && metrum.content.MetrumLiquids.steam != null) {
