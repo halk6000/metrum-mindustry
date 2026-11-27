@@ -35,6 +35,34 @@ public class OxidizingFurnace extends GenericCrafter {
     public float upgradeTicks = 80f * 60f;
     /** how much one explosion takes off the event timer */
     public float safePenaltyTicks = 10f * 60f;
+    /** a destroyed furnace of this type is rebuilt as this block (the safe furnace must be earned again) */
+    public OxidizingFurnace rebuildAs;
+    private static boolean rebuildHook;
+
+    @Override public void init(){
+        super.init();
+        if(rebuildAs!=null && !rebuildHook){
+            rebuildHook=true;
+            // swap rebuild ghosts of earned-only furnaces for their buildable base furnace
+            arc.Events.run(mindustry.game.EventType.Trigger.update,()->{
+                if(!Vars.state.isGame() || Vars.net.client())return;
+                for(mindustry.game.Team team:mindustry.game.Team.all){
+                    if(!team.active())continue;
+                    arc.struct.Queue<mindustry.game.Teams.BlockPlan> plans=team.data().plans;
+                    boolean found=false;
+                    for(mindustry.game.Teams.BlockPlan plan:plans)if(plan.block instanceof OxidizingFurnace && ((OxidizingFurnace)plan.block).rebuildAs!=null){found=true;break;}
+                    if(!found)continue;
+                    arc.struct.Seq<mindustry.game.Teams.BlockPlan> copy=new arc.struct.Seq<>();
+                    for(mindustry.game.Teams.BlockPlan plan:plans){
+                        boolean earned=plan.block instanceof OxidizingFurnace && ((OxidizingFurnace)plan.block).rebuildAs!=null;
+                        copy.add(earned?new mindustry.game.Teams.BlockPlan(plan.x,plan.y,plan.rotation,((OxidizingFurnace)plan.block).rebuildAs,plan.config):plan);
+                    }
+                    plans.clear();
+                    for(mindustry.game.Teams.BlockPlan plan:copy)plans.addLast(plan);
+                }
+            });
+        }
+    }
     public OxidizingFurnace(String name){
         super(name);
         buildType = OxidizingBuild::new; configurable=true;

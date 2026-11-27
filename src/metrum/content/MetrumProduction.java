@@ -79,6 +79,7 @@ public class MetrumProduction {
             drawer = new metrum.world.DrawSteamBoiler();
         }};
         ((metrum.world.OxidizingFurnace) largeSteamFurnace).upgradeTo = safeSteamFurnace;
+        safeSteamFurnace.rebuildAs = (metrum.world.OxidizingFurnace) largeSteamFurnace;
 
         // Heat inverter: accepts heat (Erekir heaters) on one side, boils water into steam.
         heatInverter = new HeatCrafter("heat-inverter") {{
