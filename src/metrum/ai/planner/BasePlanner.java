@@ -1899,6 +1899,8 @@ public class BasePlanner {
             destinations::add);
         // Low liquid level is not proof of a missing line: do not build parallel duplicates.
         destinations.removeAll(to -> sources.contains(from -> connections.connected(from, to)));
+        // One supply is enough: a consumer that already holds water or has a pipe ending in it gets no second line.
+        destinations.removeAll(BasePlanner::hasWaterSupply);
         ItemStack demand = miningDemand.get(core);
         if (demand != null && hasRecoveryGoal(core, demand.item)) {
             Seq<Building> boilers = new Seq<>();
@@ -1913,6 +1915,7 @@ public class BasePlanner {
             }
         }
         if (queueWaterLine(core, sources, destinations, connections)) return true;
+        if (true) return false; // extra parallel lines for thirsty drills made pipe spaghetti; one line per consumer
         Seq<Building> impactDrills = new Seq<>();
         Vars.indexer.eachBlock(core.team, core.x, core.y, 40f * Vars.tilesize,
             b -> b.block == Blocks.impactDrill && b.enabled, impactDrills::add);
@@ -1931,6 +1934,20 @@ public class BasePlanner {
             }
             if (connected && connectedRate + 0.001f < requiredWaterRate(drill)
                 && queueLiquidLine(core, additionalSources, Seq.with(drill), water, true)) return true;
+        }
+        return false;
+    }
+
+    static boolean hasWaterSupply(Building consumer) {
+        if (consumer.liquids != null && consumer.liquids.get(mindustry.content.Liquids.water) > 0.01f) return true;
+        for (Building b : consumer.proximity) {
+            if (b.team != consumer.team || !(b.block instanceof mindustry.world.blocks.liquid.Conduit
+                || b.block instanceof mindustry.world.blocks.liquid.LiquidRouter
+                || b.block instanceof mindustry.world.blocks.liquid.LiquidBridge)) continue;
+            if (b.block instanceof mindustry.world.blocks.liquid.Conduit) {
+                Tile out = b.tile.nearby(b.rotation);
+                if (out != null && out.build == consumer) return true;
+            } else return true;
         }
         return false;
     }
