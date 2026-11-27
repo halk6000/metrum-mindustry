@@ -43,6 +43,7 @@ public class MetrumProduction {
         }};
 
         largeSteamFurnace = new metrum.world.OxidizingFurnace("large-steam-furnace") {{
+            health = 360;
             requirements(Category.crafting, with(MetrumItems.pieceRock, 120, MetrumItems.iron, 60, Items.graphite, 60, Items.silicon, 50));
             size = 3;
             craftTime = 30f;
@@ -55,6 +56,29 @@ public class MetrumProduction {
             outputLiquid = new LiquidStack(MetrumLiquids.steam, 2f);
             drawer = new metrum.world.DrawSteamBoiler();
         }};
+        // earned, not built: a large furnace that runs 80 s on ozone without exploding turns into this
+        metrum.world.OxidizingFurnace safeSteamFurnace = new metrum.world.OxidizingFurnace("safe-steam-furnace") {{
+            buildVisibility = mindustry.world.meta.BuildVisibility.sandboxOnly;
+            health = 540; // +50%
+            ozoneOnly = true;
+            ozoneSpeed = 2f;
+            explosionChance = radarExplosionChance = 0.01f;
+            explosionInterval = 30f;
+            explosionDamageFraction = 0.05f;
+            explosionSplashDamage = 20f;
+            requirements(Category.crafting, with(MetrumItems.pieceRock, 120, MetrumItems.iron, 60, Items.graphite, 60, Items.silicon, 50));
+            size = 3;
+            craftTime = 30f;
+            itemCapacity = 30;
+            liquidCapacity = 300f;
+            updateEffect = Fx.smeltsmoke;
+            consumePower(0.5f);
+            consumeItem(Items.coal);
+            consumeLiquid(Liquids.water, 0.5f);
+            outputLiquid = new LiquidStack(MetrumLiquids.steam, 2f);
+            drawer = new metrum.world.DrawSteamBoiler();
+        }};
+        ((metrum.world.OxidizingFurnace) largeSteamFurnace).upgradeTo = safeSteamFurnace;
 
         // Heat inverter: accepts heat (Erekir heaters) on one side, boils water into steam.
         heatInverter = new HeatCrafter("heat-inverter") {{
