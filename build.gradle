@@ -134,8 +134,22 @@ tasks.register('builderQueueTest', JavaExec) {
     classpath = files(compileBuilderQueueTest.flatMap { it.destinationDirectory }) + sourceSets.main.output + files(gameJar)
     mainClass = 'metrum.ai.planner.BuilderQueueTest'
 }
+// AI: every idle miner drone mines, units with orders are left alone.
+def compileIdleMinersTest = tasks.register('compileIdleMinersTest', JavaCompile) {
+    dependsOn classes
+    source = files('tools/tests/IdleMinersTest.java')
+    classpath = sourceSets.main.output + files(gameJar)
+    destinationDirectory = layout.buildDirectory.dir('idle-miners-test-classes')
+}
+tasks.register('idleMinersTest', JavaExec) {
+    group = 'verification'
+    description = 'Checks that every idle AI miner drone starts mining.'
+    dependsOn compileIdleMinersTest
+    classpath = files(compileIdleMinersTest.flatMap { it.destinationDirectory }) + sourceSets.main.output + files(gameJar)
+    mainClass = 'metrum.ai.planner.IdleMinersTest'
+}
 tasks.named('check') {
-    dependsOn 'salvagerTest', 'steamEngineTest', 'openPitTest', 'depositsTest', 'builderQueueTest', 'bridgeFlowTest'
+    dependsOn 'salvagerTest', 'steamEngineTest', 'openPitTest', 'depositsTest', 'builderQueueTest', 'bridgeFlowTest', 'idleMinersTest'
 }
 
 // gradlew deploy: build and install into the game (same file name the in-game importer uses)

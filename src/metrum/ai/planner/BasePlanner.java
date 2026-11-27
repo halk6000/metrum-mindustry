@@ -309,6 +309,7 @@ public class BasePlanner {
             }
             assignMiningDrone(core);
             assignCaretaker(core);
+            assignIdleMiners(core);
             for (int i = 0; i < level.stepsPerTick; i++) {
                 if (!step(core, level)) break;
                 completedSteps++;
@@ -426,6 +427,37 @@ public class BasePlanner {
         metrum.ai.SmartMining.SmartMinerAI miner = new metrum.ai.SmartMining.SmartMinerAI();
         miner.delegate(core, () -> miningDemand.get(core), drone.controller());
         drone.controller(miner);
+    }
+
+    /**
+     * Every idle miner-type drone gathers what the core has least of, instead of standing still.
+     * Only units whose default order is mining and which have no RTS order are taken; the priority
+     * miner above can still borrow them for a missing material.
+     */
+    static int assignIdleMiners(CoreBuild core) {
+        int assigned = 0;
+        for (mindustry.gen.Unit u : mindustry.gen.Groups.unit) {
+            if (!idleMiner(u, core)) continue;
+            u.controller(new metrum.ai.SmartMining.SmartMinerAI());
+            assigned++;
+        }
+        return assigned;
+    }
+
+    static boolean idleMiner(mindustry.gen.Unit u, CoreBuild core) {
+        if (u.team != core.team || u.dead() || u.isPlayer() || u.flag != 0d || !u.plans.isEmpty()
+            || u.type.defaultCommand != mindustry.ai.UnitCommand.mineCommand || u.type.mineItems.isEmpty()
+            || u.closestCore() != core || !(u.controller() instanceof mindustry.ai.types.CommandAI)) return false;
+        mindustry.ai.types.CommandAI order = (mindustry.ai.types.CommandAI) u.controller();
+        // an RTS squad member or a unit sent somewhere keeps its orders
+        if (order.targetPos != null || order.attackTarget != null || !order.commandQueue.isEmpty()) return false;
+        if (order.command != null && order.command != mindustry.ai.UnitCommand.mineCommand
+            && order.command != mindustry.ai.UnitCommand.moveCommand) return false;
+        for (Item item : u.type.mineItems) {
+            if (u.canMine(item) && metrum.ai.SmartMining.canStoreMined(core, item)
+                && metrum.ai.SmartMining.findMineableOre(u, item) != null) return true;
+        }
+        return false;
     }
 
     // Non-storable ores must travel through extraction/production infrastructure.
