@@ -66,8 +66,8 @@ public class MetrumProduction {
             explosionInterval = 30f;
             explosionDamageFraction = 0.05f;
             explosionSplashDamage = 20f;
-            // rebuild cost: the large furnace plus 5 quark matter
-            requirements(Category.crafting, with(MetrumItems.pieceRock, 120, MetrumItems.iron, 60, Items.graphite, 60, Items.silicon, 50, MetrumItems.quarkMatter, 5));
+            // same cost as the large furnace; rebuilding also takes rebuildFee (charged once the rebuild finishes)
+            requirements(Category.crafting, with(MetrumItems.pieceRock, 120, MetrumItems.iron, 60, Items.graphite, 60, Items.silicon, 50));
             size = 3;
             craftTime = 30f;
             itemCapacity = 30;
@@ -81,6 +81,7 @@ public class MetrumProduction {
         }};
         ((metrum.world.OxidizingFurnace) largeSteamFurnace).upgradeTo = safeSteamFurnace;
         safeSteamFurnace.rebuildAs = (metrum.world.OxidizingFurnace) largeSteamFurnace;
+        safeSteamFurnace.rebuildFee = new mindustry.type.ItemStack(MetrumItems.quarkMatter, 5);
 
         // Heat inverter: accepts heat (Erekir heaters) on one side, boils water into steam.
         heatInverter = new HeatCrafter("heat-inverter") {{

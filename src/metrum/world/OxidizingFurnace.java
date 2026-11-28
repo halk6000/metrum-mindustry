@@ -37,18 +37,29 @@ public class OxidizingFurnace extends GenericCrafter {
     public float safePenaltyTicks = 10f * 60f;
     /** a destroyed furnace of this type is rebuilt as itself while the core can pay its full cost, otherwise as this block */
     public OxidizingFurnace rebuildAs;
+    /** extra price of rebuilding an earned furnace as itself; not part of the build cost, so deconstruction never refunds it */
+    public mindustry.type.ItemStack rebuildFee;
     private static boolean rebuildHook;
 
     /** an earned furnace is only rebuilt as itself when the core holds its whole cost (incl. the quark matter) */
     static boolean downgrade(mindustry.world.Block block, mindustry.world.blocks.storage.CoreBlock.CoreBuild core){
         if(!(block instanceof OxidizingFurnace) || ((OxidizingFurnace)block).rebuildAs==null)return false;
-        return core==null || !core.items.has(block.requirements, Vars.state.rules.buildCostMultiplier);
+        OxidizingFurnace f=(OxidizingFurnace)block;
+        return core==null || !core.items.has(block.requirements, Vars.state.rules.buildCostMultiplier)
+            || (f.rebuildFee!=null && !core.items.has(f.rebuildFee.item, f.rebuildFee.amount));
     }
 
     @Override public void init(){
         super.init();
         if(rebuildAs!=null && !rebuildHook){
             rebuildHook=true;
+            // the rebuild fee is paid when the earned furnace is rebuilt as itself
+            arc.Events.on(mindustry.game.EventType.BlockBuildEndEvent.class,e->{
+                if(e.breaking || Vars.net.client() || e.tile.build==null || !(e.tile.block() instanceof OxidizingFurnace))return;
+                OxidizingFurnace f=(OxidizingFurnace)e.tile.block();
+                mindustry.world.blocks.storage.CoreBlock.CoreBuild core=e.team.core();
+                if(f.rebuildFee!=null && core!=null)core.items.remove(f.rebuildFee.item,Math.min(f.rebuildFee.amount,core.items.get(f.rebuildFee.item)));
+            });
             // swap rebuild ghosts of earned-only furnaces for their buildable base furnace
             arc.Events.run(mindustry.game.EventType.Trigger.update,()->{
                 if(!Vars.state.isGame() || Vars.net.client())return;
