@@ -109,6 +109,13 @@ public class IdleMinersTest {
         Vars.world.tile(9, 8).build = core;
         check(!BasePlanner.leaks(pipe), "pipe into a building does not leak");
         Vars.world.tile(9, 8).build = null;
+        // upgrade families: same size, both directions, never across families or sizes
+        mindustry.world.Block small = new mindustry.world.Block("test-small"), better = new mindustry.world.Block("test-better"),
+            big = new mindustry.world.Block("test-big"), stranger = new mindustry.world.Block("test-stranger");
+        small.size = better.size = stranger.size = 2; big.size = 3;
+        metrum.world.Upgrades.family(small, better, big);
+        check(metrum.world.Upgrades.canReplace(better, small) && metrum.world.Upgrades.canReplace(small, better), "upgrade and downgrade");
+        check(!metrum.world.Upgrades.canReplace(big, small) && !metrum.world.Upgrades.canReplace(stranger, small) && !metrum.world.Upgrades.canReplace(small, small), "size, family, self");
         System.out.println("OK: all idle AI miners mine; ordered, combat and full-core cases left alone");
     }
 

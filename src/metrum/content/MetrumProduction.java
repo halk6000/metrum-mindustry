@@ -240,7 +240,11 @@ public class MetrumProduction {
                     particles = 16;
                 }}
             );
-        }};
+        }
+            @Override public boolean canReplace(mindustry.world.Block other) {
+                return metrum.world.Upgrades.canReplace(this, other) || super.canReplace(other);
+            }
+        };
 
         // Same cycle as the Salvager; each iron roll yields two items, sand yields one.
         salvagerOverclocked = new Separator("salvager-overclocked") {{
@@ -268,7 +272,11 @@ public class MetrumProduction {
                     if (item == MetrumItems.iron) super.offload(item);
                 }
             };
-        }};
+        }
+            @Override public boolean canReplace(mindustry.world.Block other) {
+                return metrum.world.Upgrades.canReplace(this, other) || super.canReplace(other);
+            }
+        };
 
         // advanced 3x3: also recovers beryllium and tungsten - iron 60% / sand 20% / beryllium 15% / tungsten 5%
         salvagerAdvanced = new Separator("salvager-advanced") {{
@@ -282,7 +290,11 @@ public class MetrumProduction {
             consumeLiquid(MetrumLiquids.steam, 0.2f);
             results = with(MetrumItems.iron, 60, Items.sand, 20, Items.beryllium, 15, Items.tungsten, 5);
             drawer = new metrum.world.DrawSalvager() {{ advanced = true; }};
-        }};
+        }
+            @Override public boolean canReplace(mindustry.world.Block other) {
+                return metrum.world.Upgrades.canReplace(this, other) || super.canReplace(other);
+            }
+        };
 
         salvager = new Separator("salvager") {{
             requirements(Category.crafting, with(MetrumItems.pieceRock, 30, Items.graphite, 80, Items.silicon, 20));
@@ -295,7 +307,18 @@ public class MetrumProduction {
             consumeLiquid(MetrumLiquids.steam, 0.12f);
             results = with(MetrumItems.iron, 2, Items.sand, 3);
             drawer = new metrum.world.DrawSalvager();
-        }};
+        }
+            @Override public boolean canReplace(mindustry.world.Block other) {
+                return metrum.world.Upgrades.canReplace(this, other) || super.canReplace(other);
+            }
+        };
+    }
+
+    /** same-size upgrade families: build the better (or weaker) version straight over the other */
+    public static void upgradeFamilies() {
+        metrum.world.Upgrades.family(graphiteDecompressor, graphiteDecompressorOverclocked);
+        metrum.world.Upgrades.family(salvager, salvagerOverclocked);
+        metrum.world.Upgrades.family(mindustry.content.Blocks.siliconArcFurnace, arcFurnaceOverclocked);
     }
 
     private static GenericCrafter decompressor(String name, int graphite, int coal, float power, ItemStack[] req) {
@@ -312,7 +335,11 @@ public class MetrumProduction {
             craftEffect = Fx.smeltsmoke;
             drawer = new DrawMulti(new DrawDefault(), new DrawGlowRegion() {{ color = flame; }},
                 new DrawCrucibleFlame() {{ flameColor = flame; midColor = flame; particleRad = 12f; particleSize = 1f; }});
-        }};
+        }
+            @Override public boolean canReplace(mindustry.world.Block other) {
+                return metrum.world.Upgrades.canReplace(this, other) || super.canReplace(other);
+            }
+        };
     }
 
     /** discovery weight of the open-pit mine, adjustable in the balance editor */

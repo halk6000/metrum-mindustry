@@ -39,6 +39,7 @@ public class MetrumMod extends Mod {
         MetrumPower.loadReactors();
         microPipe = new metrum.world.MicroPipe("micro-pipe");
         microPipe.requirements(mindustry.type.Category.liquid, mindustry.type.ItemStack.with(MetrumItems.steel, 12, mindustry.content.Items.silicon, 8, mindustry.content.Items.beryllium, 6));
+        MetrumProduction.upgradeFamilies();
         MetrumTechTree.load();
         MetrumTechTree.node(mindustry.content.Blocks.ductBridge, microPipe);
         // higher tiers: more flow; each costs the previous one x1.33

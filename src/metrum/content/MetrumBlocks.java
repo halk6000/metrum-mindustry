@@ -127,6 +127,7 @@ public class MetrumBlocks {
             with(Items.graphite, 45, Items.silicon, 30, Items.beryllium, 80));
         streamDrillT2Adv = streamDrill("stream-drill-t2-adv", 4, 120f, 0.06f, 0.025f, 3f,
             with(Items.graphite, 45, Items.silicon, 30, Items.beryllium, 80, MetrumItems.iron, 90));
+        metrum.world.Upgrades.family(streamDrillT1, streamDrillT1Adv, streamDrillT2, streamDrillT2Adv);
 
         rockScraper = new WallCrafter("rock-scraper") {{
             requirements(Category.production, with(Items.silicon, 100, Items.beryllium, 200, Items.graphite, 200));
@@ -156,7 +157,11 @@ public class MetrumBlocks {
     // are shadowed by the inherited fields, so "this.tier = tier" assigned the field to itself (tier stayed 1).
     private static BeamDrill streamDrill(String name, int drillTier, float time, float power,
                                          float steamUse, float boost, ItemStack[] req) {
-        BeamDrill d = new BeamDrill(name);
+        BeamDrill d = new BeamDrill(name) {
+            @Override public boolean canReplace(mindustry.world.Block other) {
+                return metrum.world.Upgrades.canReplace(this, other) || super.canReplace(other);
+            }
+        };
         d.requirements(Category.production, req);
         d.tier = drillTier;
         d.drillTime = time;
